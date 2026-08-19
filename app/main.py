@@ -12,13 +12,15 @@ from .erp_performance_patch import apply_erp_performance_patch
 from .logging_utils import configure_logging
 
 
-def _import_erp_monthly_excel(self) -> dict:
-    return choose_and_import_erp(self)
+def _import_erp_daily_excel(self, product_code: str) -> dict:
+    return choose_and_import_erp(self, product_code)
 
 
-# pywebview JS API에 ERP 업로드 기능을 노출합니다.
-Backend.import_erp_monthly_excel = _import_erp_monthly_excel
-# 출간 후 성과 조회에 ERP 월별 판매실적을 결합합니다.
+# pywebview JS API에 도서별 ERP 일별 업로드 기능을 노출합니다.
+Backend.import_erp_daily_excel = _import_erp_daily_excel
+# 하위 호환: 기존 관리자 화면에서 호출해도 제품코드 없이는 업로드하지 않도록 유지합니다.
+Backend.import_erp_monthly_excel = lambda self: {"ok": False, "message": "ERP 일별 데이터는 출간 후 성과 화면에서 도서를 선택한 뒤 업로드해 주세요."}
+# 출간 후 성과 조회에 ERP 일별 판매실적을 결합합니다.
 apply_erp_performance_patch()
 
 
@@ -28,7 +30,7 @@ def main() -> None:
         path.mkdir(parents=True, exist_ok=True)
 
     backend = Backend()
-    window = webview.create_window(
+    webview.create_window(
         "출판 마케팅 운영 시스템",
         url=UI_FILE.as_uri(),
         js_api=backend,
