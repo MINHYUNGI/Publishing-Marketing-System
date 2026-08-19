@@ -1,0 +1,32 @@
+name: Bootstrap v2.8.0 source
+
+on:
+  push:
+    paths:
+      - 'bootstrap/source-v2.8.0.tar.gz'
+      - '.github/workflows/bootstrap-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract full source
+        shell: bash
+        run: |
+          tar -xzf bootstrap/source-v2.8.0.tar.gz -C .
+          rm -rf bootstrap
+          rm -f .github/workflows/bootstrap-source.yml
+      - name: Commit imported source
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'Import v2.8.0 full source'
+          git push origin main
