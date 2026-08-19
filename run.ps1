@@ -49,7 +49,9 @@ if (-not (Test-Path -LiteralPath $PythonExe)) {
 $UiPatches = @(
     (Join-Path $ScriptDir "app\ui_runtime_patch.py"),
     (Join-Path $ScriptDir "app\admin_runtime_patch.py"),
-    (Join-Path $ScriptDir "app\erp_daily_ui_patch.py")
+    (Join-Path $ScriptDir "app\erp_daily_ui_patch.py"),
+    (Join-Path $ScriptDir "app\performance_period_patch.py"),
+    (Join-Path $ScriptDir "app\restart_ui_patch.py")
 )
 foreach ($UiPatch in $UiPatches) {
     if (Test-Path -LiteralPath $UiPatch) {
