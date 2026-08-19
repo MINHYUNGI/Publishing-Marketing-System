@@ -21,22 +21,21 @@ def apply_erp_performance_patch() -> None:
         ).data or []
         detail["ERP일별판매실적"] = rows
 
-        # 현재 단계에서는 SCM을 연결하지 않고 ERP 일별 데이터만 성과 그래프에 공급합니다.
+        # 현재 성과 UI의 일별 시리즈 필드에 ERP 순매출만 매핑합니다.
+        # SCM 관련 값은 0으로 유지하며 별도 연결 시점까지 사용하지 않습니다.
         erp_for_dashboard = []
         for row in rows:
             erp_for_dashboard.append({
                 "제품코드": product_code,
                 "판매일": row.get("매출일자"),
-                "데이터구분": "ERP",
-                "판매구분": "ERP",
-                "판매부수": row.get("매출부수") or 0,
-                "판매금액": row.get("매출금액") or 0,
-                "매출부수": row.get("매출부수") or 0,
-                "매출금액": row.get("매출금액") or 0,
-                "출고부수": row.get("출고부수") or 0,
-                "출고금액": row.get("출고금액") or 0,
-                "반품부수": row.get("반품부수") or 0,
-                "반품금액": row.get("반품금액") or 0,
+                "SCM실판매부수": 0,
+                "SCM환산매출액": 0,
+                "ERP출고부수": row.get("매출부수") or 0,
+                "ERP매출액": row.get("매출금액") or 0,
+                "ERP원출고부수": row.get("출고부수") or 0,
+                "ERP원출고금액": row.get("출고금액") or 0,
+                "ERP반품부수": row.get("반품부수") or 0,
+                "ERP반품금액": row.get("반품금액") or 0,
             })
         detail["판매실적일별"] = erp_for_dashboard
         return detail
