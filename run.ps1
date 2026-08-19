@@ -4,17 +4,35 @@
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $ScriptDir
 
-# GitHub 최신본 자동 반영. 네트워크 또는 Git 오류가 있어도 기존 로컬 버전으로 실행합니다.
-try {
-    $Git = Get-Command git -ErrorAction SilentlyContinue
-    if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
-        & git fetch origin main 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            & git reset --hard origin/main 2>$null | Out-Null
+# GitHub 최신본 자동 반영
+# 네트워크 드라이브의 ownership 판정과 PowerShell native-command 예외를 별도로 처리합니다.
+$Git = Get-Command git -ErrorAction SilentlyContinue
+if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
+    $SafeDir = $ScriptDir -replace '\\','/'
+    $OldPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+
+    # Y: 같은 네트워크 드라이브도 Git safe.directory로 자동 등록
+    & git config --global --add safe.directory "$SafeDir" 2>$null | Out-Null
+
+    $FetchOutput = & git -C "$ScriptDir" fetch origin main 2>&1
+    $FetchCode = $LASTEXITCODE
+
+    if ($FetchCode -eq 0) {
+        $ResetOutput = & git -C "$ScriptDir" reset --hard origin/main 2>&1
+        $ResetCode = $LASTEXITCODE
+        if ($ResetCode -eq 0) {
+            Write-Host "GitHub 최신 버전 확인 완료." -ForegroundColor DarkGreen
+        } else {
+            Write-Host "GitHub 업데이트 적용에 실패하여 현재 버전으로 실행합니다." -ForegroundColor Yellow
+            if ($ResetOutput) { Write-Host ($ResetOutput | Out-String) -ForegroundColor DarkYellow }
         }
+    } else {
+        Write-Host "GitHub 최신 버전 확인에 실패하여 현재 버전으로 실행합니다." -ForegroundColor Yellow
+        if ($FetchOutput) { Write-Host ($FetchOutput | Out-String) -ForegroundColor DarkYellow }
     }
-} catch {
-    Write-Host "GitHub 업데이트를 건너뛰고 현재 버전으로 실행합니다." -ForegroundColor Yellow
+
+    $ErrorActionPreference = $OldPreference
 }
 
 $AppHome = Join-Path $env:LOCALAPPDATA "MiraeN_Publishing_Marketing"
