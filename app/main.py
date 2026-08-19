@@ -8,6 +8,7 @@ import webview
 from .backend import Backend
 from .config import UI_FILE, DOCUMENT_ROOT, LOG_DIR, REPORT_DIR
 from .erp_import import choose_and_import_erp
+from .erp_performance_patch import apply_erp_performance_patch
 from .logging_utils import configure_logging
 
 
@@ -17,6 +18,8 @@ def _import_erp_monthly_excel(self) -> dict:
 
 # pywebview JS API에 ERP 업로드 기능을 노출합니다.
 Backend.import_erp_monthly_excel = _import_erp_monthly_excel
+# 출간 후 성과 조회에 ERP 월별 판매실적을 결합합니다.
+apply_erp_performance_patch()
 
 
 def main() -> None:
