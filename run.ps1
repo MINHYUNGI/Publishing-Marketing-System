@@ -1,11 +1,8 @@
 ﻿$ErrorActionPreference = "Stop"
 
-# Always use the directory containing this script as the application root.
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $ScriptDir
 
-# GitHub 최신본 자동 반영
-# 네트워크 드라이브의 ownership 판정과 PowerShell native-command 예외를 별도로 처리합니다.
 $Git = Get-Command git -ErrorAction SilentlyContinue
 if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
     $SafeDir = $ScriptDir -replace '\\','/'
@@ -49,10 +46,10 @@ if (-not (Test-Path -LiteralPath $PythonExe)) {
     if ($LASTEXITCODE -ne 0) { throw "필수 Python 패키지 설치에 실패했습니다." }
 }
 
-# 화면 패치를 순서대로 적용합니다.
 $UiPatches = @(
     (Join-Path $ScriptDir "app\ui_runtime_patch.py"),
-    (Join-Path $ScriptDir "app\admin_runtime_patch.py")
+    (Join-Path $ScriptDir "app\admin_runtime_patch.py"),
+    (Join-Path $ScriptDir "app\erp_daily_ui_patch.py")
 )
 foreach ($UiPatch in $UiPatches) {
     if (Test-Path -LiteralPath $UiPatch) {
