@@ -7,4 +7,7 @@
 - 실행 위치: `Y:\출판사업본부\06. 출판 마케팅 운영 시스템\`
 - 평소 실행: `출판 마케팅 운영 시스템 실행.vbs`
 
-공개 저장소이므로 API Key, Supabase Secret Key, OpenAI Key, 업무 첨부파일은 커밋하지 않습니다.
+## 운영 원칙
+- 프로그램 코드는 GitHub `main` 기준으로 관리합니다.
+- 실제 업무 데이터 및 첨부파일은 `data/` 아래에 두고 GitHub에 올리지 않습니다.
+- Supabase Secret Key, OpenAI API Key, `.env` 등 비밀정보는 Public 저장소에 커밋하지 않습니다.
