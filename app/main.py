@@ -7,7 +7,17 @@ import webview
 
 from .backend import Backend
 from .config import UI_FILE, DOCUMENT_ROOT, LOG_DIR, REPORT_DIR
+from .erp_import import choose_and_import_erp
 from .logging_utils import configure_logging
+
+
+def _import_erp_monthly_excel(self) -> dict:
+    return choose_and_import_erp(self)
+
+
+# pywebview JS API에 ERP 업로드 기능을 노출합니다.
+Backend.import_erp_monthly_excel = _import_erp_monthly_excel
+
 
 def main() -> None:
     configure_logging()
@@ -24,6 +34,7 @@ def main() -> None:
         min_size=(1100, 720),
     )
     webview.start(debug=False)
+
 
 if __name__ == "__main__":
     try:
