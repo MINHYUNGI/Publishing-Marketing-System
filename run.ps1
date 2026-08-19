@@ -52,7 +52,7 @@ if (-not (Test-Path -LiteralPath $PythonExe)) {
 # 화면 패치를 순서대로 적용합니다.
 $UiPatches = @(
     (Join-Path $ScriptDir "app\ui_runtime_patch.py"),
-    (Join-Path $ScriptDir "app\erp_ui_patch.py")
+    (Join-Path $ScriptDir "app\admin_runtime_patch.py")
 )
 foreach ($UiPatch in $UiPatches) {
     if (Test-Path -LiteralPath $UiPatch) {
