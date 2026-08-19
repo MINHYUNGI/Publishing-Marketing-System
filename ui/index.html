@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>v2.8.0 · 출판 마케팅 운영 시스템</title>
+<style>
+:root{--bg:#f4f6f9;--panel:#fff;--line:#dfe5ec;--text:#1f2937;--muted:#667085;--primary:#2864bd;--primary2:#1c4d96;--side:#182238;--soft:#eef4ff;--success:#18764a;--warn:#9a5b00;--danger:#b42318;--font-scale:1}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font-family:"Pretendard","Noto Sans KR","Segoe UI",Arial,sans-serif}
+button,input,select{font:inherit}.app{display:grid;grid-template-columns:255px minmax(0,1fr);min-height:100vh}.sidebar{background:var(--side);color:#fff;display:flex;flex-direction:column;height:100vh}
+.sidebar-toggle{position:absolute;top:18px;right:-16px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:#24324f;color:#fff;display:grid;place-items:center;cursor:pointer;z-index:20;font-size:15px;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.sidebar{position:relative;transition:width .2s ease}
+.app{transition:grid-template-columns .2s ease}
+.app.sidebar-collapsed{grid-template-columns:76px minmax(0,1fr)}
+.app.sidebar-collapsed .sidebar{width:76px}
+.app.sidebar-collapsed .brand{justify-content:center;padding:0}
+.app.sidebar-collapsed .brand>div:not(.logo){display:none}
+.app.sidebar-collapsed .nav{padding:15px 8px}
+.app.sidebar-collapsed .nav button{font-size:0;text-align:center;padding:12px 0}
+.app.sidebar-collapsed .nav button::first-letter{font-size:18px}
+.app.sidebar-collapsed .user{display:none}
+.app.sidebar-collapsed .sidebar-toggle{right:-16px}
+
+.brand{height:78px;padding:0 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.1)}.logo{width:36px;height:36px;border-radius:10px;background:#3478db;display:grid;place-items:center;font-weight:800}
+.brand strong{display:block;font-size:calc(16px * var(--font-scale))}.brand span{display:block;font-size:calc(11px * var(--font-scale));color:#aeb9ce;margin-top:3px}.nav{padding:15px 10px;flex:1}
+.nav-group{padding:12px 11px 7px;font-size:calc(10px * var(--font-scale));color:#7f91ae;font-weight:800}.nav button{width:100%;padding:12px;border:0;border-radius:9px;background:transparent;color:#ccd6e6;text-align:left;margin-bottom:4px;font-size:calc(14px * var(--font-scale))}
+.nav button.active{background:#3168ba;color:#fff;font-weight:800}.user{padding:15px 18px;border-top:1px solid rgba(255,255,255,.1);font-size:calc(12px * var(--font-scale));color:#bfc9da}.user b{display:block;color:#fff}
+.main{min-width:0}.top{height:78px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px}.top strong{font-size:calc(18px * var(--font-scale))}.top span{display:block;color:var(--muted);font-size:calc(12px * var(--font-scale));margin-top:4px}
+.top-actions{display:flex;align-items:center;gap:13px}.status{font-size:calc(12px * var(--font-scale));color:var(--muted)}.font-control{display:flex;align-items:center;gap:6px}.font-control label{font-size:calc(11px * var(--font-scale));color:var(--muted)}
+.font-control select{height:32px;border:1px solid #cbd4df;border-radius:7px;padding:0 8px;background:#fff;font-size:calc(11px * var(--font-scale))}
+.workspace{padding:26px 28px 40px;max-width:1800px;margin:0 auto}h1{margin:0 0 7px;font-size:calc(28px * var(--font-scale))}.sub{color:var(--muted);font-size:calc(14px * var(--font-scale))}
+.title{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}.badge{padding:6px 10px;border-radius:999px;background:var(--soft);color:var(--primary);font-size:calc(11px * var(--font-scale));font-weight:800}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}.step{background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px}.step b{display:block;font-size:calc(12px * var(--font-scale))}.step span{display:block;font-size:calc(10px * var(--font-scale));color:var(--muted);margin-top:4px}
+.step.active{border-color:#72a0e1;background:#f4f8ff}.step.done{border-color:#a9d8bf;background:#f4fbf7}.grid{display:grid;grid-template-columns:minmax(440px,520px) minmax(0,1fr);gap:16px;align-items:start}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 22px rgba(31,41,55,.05)}
+.head{display:flex;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}.head strong{font-size:calc(16px * var(--font-scale))}.head small{display:block;color:var(--muted);font-size:calc(11px * var(--font-scale));margin-top:4px}.form{padding:18px}
+.drop{border:1.5px dashed #9db1ca;border-radius:12px;background:#fbfcfe;padding:25px 16px;text-align:center;cursor:pointer}.drop:hover{background:var(--soft)}.drop .big{font-size:calc(35px * var(--font-scale))}.drop strong{display:block;margin-top:7px;font-size:calc(14px * var(--font-scale))}.drop span{display:block;font-size:calc(11px * var(--font-scale));color:var(--muted);margin-top:5px}
+.files{display:flex;flex-direction:column;gap:9px;max-height:370px;overflow:auto;margin-top:12px}.file{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.file-top{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:9px;align-items:center}
+.ext{width:38px;height:38px;border-radius:8px;background:#eef3fb;display:grid;place-items:center;font-size:calc(10px * var(--font-scale));font-weight:900;color:var(--primary)}.fname{font-size:calc(12px * var(--font-scale));font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fmeta{font-size:calc(10px * var(--font-scale));color:var(--muted);margin-top:3px}
+.product-link{margin-top:9px;padding-top:9px;border-top:1px dashed #d9e0e8}.product-link-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.product-link-label b{font-size:calc(11px * var(--font-scale));color:#475467}.linked-status{font-size:calc(10px * var(--font-scale));font-weight:800;color:var(--success);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.product-search{height:36px;border:1px solid #c9d4e1;border-radius:7px;padding:0 9px;font-size:calc(11px * var(--font-scale));min-width:0}.remove{height:32px;min-width:32px;border:1px solid #cbd4df;border-radius:7px;background:#fff;color:var(--danger);font-weight:800}
+.empty{padding:20px;text-align:center;color:var(--muted);font-size:calc(12px * var(--font-scale))}.field{margin-top:13px}.field label{display:block;font-size:calc(12px * var(--font-scale));font-weight:800;color:#475467;margin-bottom:6px}.select{width:100%;height:40px;border:1px solid #c9d4e1;border-radius:8px;padding:0 10px;background:#fff;font-size:calc(12px * var(--font-scale))}
+.batch-product{margin-top:13px;padding:11px;border:1px solid #d8e3f2;background:#f7faff;border-radius:9px}.batch-product b{display:block;font-size:calc(11px * var(--font-scale));margin-bottom:7px}.batch-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+.actions{display:flex;gap:8px;margin-top:15px}.btn{height:39px;border:0;border-radius:8px;padding:0 14px;font-weight:800;cursor:pointer;font-size:calc(12px * var(--font-scale))}.primary{background:var(--primary);color:#fff;flex:1}.primary:hover{background:var(--primary2)}.light{background:#fff;border:1px solid #cbd4df;color:#344054}.btn:disabled{opacity:.5;cursor:not-allowed}
+.progress{display:none;margin-top:14px}.progress.show{display:block}.track{height:8px;background:#edf1f5;border-radius:999px;overflow:hidden}.fill{height:100%;width:0;background:var(--primary);transition:width .3s}.plabel{font-size:calc(11px * var(--font-scale));color:var(--muted);margin-top:7px}
+.notice{margin-top:13px;padding:11px;border-radius:9px;background:#f7f9fc;font-size:calc(11px * var(--font-scale));color:#5d6877;line-height:1.55}.result-empty{padding:100px 20px;text-align:center;color:var(--muted);font-size:calc(14px * var(--font-scale))}.review{display:none}.review.show{display:block}
+.tabs{display:flex;gap:7px;padding:12px 16px;overflow:auto;border-bottom:1px solid var(--line);background:#fbfcfe}.tab{border:1px solid #cbd4df;background:#fff;border-radius:999px;padding:7px 11px;font-size:calc(11px * var(--font-scale));font-weight:800;white-space:nowrap}.tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:15px 18px;background:#fbfcfe;border-bottom:1px solid var(--line)}.summary div{font-size:calc(10px * var(--font-scale));color:var(--muted)}.summary b{display:block;color:var(--text);font-size:calc(13px * var(--font-scale));margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-wrap{overflow:auto;max-height:520px}table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:1080px}th{position:sticky;top:0;background:#f7f9fc;text-align:left;font-size:calc(11px * var(--font-scale));padding:10px;border-bottom:1px solid #cbd4df}td{padding:9px 10px;border-bottom:1px solid #edf0f4;font-size:calc(11px * var(--font-scale))}
+td input,td select{width:100%;height:32px;border:1px solid #cbd4df;border-radius:6px;padding:0 7px;font-size:calc(11px * var(--font-scale))}.conf{padding:4px 7px;border-radius:999px;font-size:calc(10px * var(--font-scale));font-weight:900}.high{background:#eaf7ef;color:var(--success)}.mid{background:#fff5df;color:var(--warn)}
+.review-actions{display:flex;justify-content:flex-end;gap:8px;padding:15px 18px;border-top:1px solid var(--line)}.toast{position:fixed;right:22px;bottom:22px;background:#1f2937;color:#fff;padding:13px 16px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.2s;z-index:100;font-size:calc(12px * var(--font-scale))}.toast.show{opacity:1;transform:translateY(0)}
+
+
+.mode-switch{display:flex;gap:8px;margin-bottom:14px}
+.mode-btn{height:38px;border:1px solid #cbd4df;background:#fff;color:#344054;border-radius:8px;padding:0 15px;font-weight:800;cursor:pointer;font-size:calc(12px * var(--font-scale))}
+.mode-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.existing-loader{display:none;padding:14px;border:1px solid #d8e3f2;background:#f7faff;border-radius:10px;margin-bottom:14px}
+.existing-loader.show{display:block}
+.existing-loader b{display:block;font-size:calc(12px * var(--font-scale));margin-bottom:8px}
+.existing-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.mode-note{font-size:calc(10px * var(--font-scale));color:var(--muted);margin-top:7px}
+
+.strategy-card{padding:16px 18px;border-bottom:1px solid var(--line);background:#fff}
+.strategy-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.strategy-title strong{font-size:calc(14px * var(--font-scale))}
+.strategy-title span{font-size:calc(10px * var(--font-scale));color:var(--muted)}
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.strategy-field{min-width:0}
+.strategy-field.full{grid-column:1/-1}
+.strategy-field label{display:block;font-size:calc(10px * var(--font-scale));font-weight:800;color:#667085;margin-bottom:5px}
+.strategy-field textarea,.strategy-field input{width:100%;border:1px solid #cbd4df;border-radius:7px;padding:8px 9px;background:#fff;color:var(--text);font-size:calc(11px * var(--font-scale));outline:none}
+.strategy-field textarea{min-height:68px;resize:vertical;line-height:1.45}
+.strategy-field input{height:36px}
+
+.activity-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);background:#fff}
+.activity-toolbar-left{font-size:calc(10px * var(--font-scale));color:var(--muted)}
+.add-activity-btn{height:34px;border:1px solid #7ea7e1;background:#f4f8ff;color:var(--primary);border-radius:8px;padding:0 12px;font-weight:800;cursor:pointer;font-size:calc(11px * var(--font-scale))}
+.add-activity-btn:hover{background:#eaf2ff}
+.manual-badge{display:inline-flex;align-items:center;margin-left:5px;padding:2px 6px;border-radius:999px;background:#fff5df;color:#9a5b00;font-size:calc(9px * var(--font-scale));font-weight:800}
+
+.selection-summary{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:11px 18px;border-bottom:1px solid var(--line);background:#f7faff}
+.selection-summary .metric{font-size:calc(10px * var(--font-scale));color:var(--muted)}
+.selection-summary .metric b{font-size:calc(14px * var(--font-scale));color:var(--text);margin-left:5px}
+.selection-summary .cost-total b{color:var(--primary);font-size:calc(17px * var(--font-scale))}
+
+@media(max-width:1250px){.grid{grid-template-columns:1fr}.app{grid-template-columns:220px minmax(0,1fr)}}@media(max-width:900px){.app{grid-template-columns:80px minmax(0,1fr)}.brand>div:not(.logo),.nav-group,.nav button,.user{font-size:0}.workspace{padding:18px}.steps{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}}
+
+/* 마케팅 기획 상세 대시보드 */
+.page-view{display:none}.page-view.active{display:block}
+.detail-toolbar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.detail-toolbar b{font-size:calc(13px * var(--font-scale))}.detail-toolbar select{flex:1;max-width:760px;height:40px;border:1px solid #c9d4e1;border-radius:8px;padding:0 10px;background:#fff}.detail-toolbar span{font-size:calc(11px * var(--font-scale));color:var(--muted)}
+.detail-panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(31,41,55,.045);margin-bottom:14px}.detail-head{min-height:50px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.detail-head b{font-size:calc(13px * var(--font-scale))}.detail-head span{font-size:calc(10px * var(--font-scale));color:var(--muted)}.detail-body{padding:16px}
+.basic-info-grid{display:grid;grid-template-columns:2fr 1fr 1fr .8fr;border-top:1px solid var(--line);border-left:1px solid var(--line)}.basic-info-cell{min-height:72px;padding:9px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.basic-info-label{font-size:calc(10px * var(--font-scale));font-weight:700;color:#7a8694;margin-bottom:4px}.basic-info-value{font-size:calc(13px * var(--font-scale));font-weight:600;line-height:1.35}.basic-info-value.title-value{font-size:calc(17px * var(--font-scale));font-weight:800}
+.strategy-grid-detail{display:grid;grid-template-columns:1fr 1fr;gap:10px}.strategy-box{border:1px solid var(--line);border-radius:8px;overflow:hidden}.strategy-box.full{grid-column:1/-1}.strategy-box-label{background:#f8fafc;border-bottom:1px solid var(--line);padding:9px 12px;font-size:calc(11px * var(--font-scale));font-weight:800;color:#566474}.strategy-box-value{min-height:86px;padding:12px 14px;font-size:calc(12px * var(--font-scale));line-height:1.65;white-space:pre-line}.strategy-box.full .strategy-box-value{min-height:96px}
+.detail-groups{padding:13px;background:#f7f9fb;display:flex;flex-direction:column;gap:13px}.marketing-group{background:#fff;border:1px solid #d7dee7;border-radius:9px;overflow:hidden}.marketing-group-head{min-height:46px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #d7dee7}.marketing-group-head b{font-size:calc(13px * var(--font-scale))}.marketing-group-head span{font-size:calc(11px * var(--font-scale));font-weight:800}.marketing-group.bookstore{border-color:#9fb7cf}.marketing-group.bookstore .marketing-group-head{background:#eaf2f8;color:#244f73}.marketing-group.sns{border-color:#a8c9bf}.marketing-group.sns .marketing-group-head{background:#edf6f2;color:#2f6a5b}.marketing-group.extra{border-color:#d8c39b}.marketing-group.extra .marketing-group-head{background:#faf4e8;color:#806332}
+.marketing-table{width:100%;min-width:900px;table-layout:fixed}.marketing-table th:nth-child(1),.marketing-table td:nth-child(1){width:210px}.marketing-table th:nth-child(3),.marketing-table td:nth-child(3),.marketing-table th:nth-child(4),.marketing-table td:nth-child(4){width:125px}.marketing-table th:nth-child(5),.marketing-table td:nth-child(5){width:145px;text-align:right}.detail-summary{padding:12px 18px;background:#eef4f8;border-top:1px solid #cbd9e5;display:flex;justify-content:flex-end;gap:22px;font-size:calc(11px * var(--font-scale));color:#6f7b88}.detail-summary strong{font-size:calc(13px * var(--font-scale));color:#244f73;margin-left:5px}
+.timeline-legend{display:flex;gap:15px;align-items:center;flex-wrap:wrap;padding:12px 17px;border-bottom:1px solid var(--line);background:#fbfcfd;font-size:calc(11px * var(--font-scale));color:#647180}.legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}.legend-dot.bookstore{background:#4f789b}.legend-dot.sns{background:#5b8b79}.legend-dot.extra{background:#b08a4a}.timeline-wrap-detail{padding:14px 16px 18px;overflow:auto}.timeline-detail{min-width:1080px;border:1px solid #dfe5eb;border-radius:9px;overflow:hidden}.timeline-head-detail,.timeline-row-detail{display:grid;grid-template-columns:300px 1fr}.timeline-head-detail{background:#f6f8fa;border-bottom:1px solid #dfe5eb}.timeline-left-head{padding:13px;font-weight:800;border-right:1px solid #dfe5eb}.timeline-axis-detail{height:52px;position:relative}.timeline-date-start,.timeline-date-end{position:absolute;bottom:7px;font-size:calc(10px * var(--font-scale));color:#758190}.timeline-date-start{left:10px}.timeline-date-end{right:10px}.timeline-group-title{padding:8px 13px;font-weight:800;border-top:1px solid #dfe5eb;border-bottom:1px solid #dfe5eb}.timeline-group-title.bookstore{background:#edf4f9;color:#2f5b7d}.timeline-group-title.sns{background:#eef6f2;color:#386f5d}.timeline-group-title.extra{background:#faf5ea;color:#80663b}.timeline-row-detail{min-height:50px;border-bottom:1px solid #edf0f3}.timeline-label-detail{padding:7px 13px;border-right:1px solid #e3e8ed}.timeline-channel-detail{font-size:calc(10px * var(--font-scale));font-weight:800;color:#617080}.timeline-activity-detail{font-size:calc(11px * var(--font-scale));font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.timeline-track-detail{position:relative;background:repeating-linear-gradient(to right,transparent 0,transparent calc(10% - 1px),#edf1f4 calc(10% - 1px),#edf1f4 10%)}.timeline-bar-detail{position:absolute;top:50%;transform:translateY(-50%);height:24px;border-radius:6px;padding:0 8px;display:flex;align-items:center;font-size:calc(9px * var(--font-scale));font-weight:800;white-space:nowrap;overflow:hidden}.timeline-bar-detail.bookstore{background:#dbeaf5;border:1px solid #9dbdd4;color:#2f5b7d}.timeline-bar-detail.sns{background:#dfeee8;border:1px solid #9fc3b4;color:#386f5d}.timeline-bar-detail.extra{background:#f2e7cf;border:1px solid #d4b982;color:#80663b}.timeline-point-detail{position:absolute;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;box-shadow:0 0 0 3px #fff}.timeline-point-detail.bookstore{background:#4f789b}.timeline-point-detail.sns{background:#5b8b79}.timeline-point-detail.extra{background:#b08a4a}.timeline-undated-detail{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#f1f3f5;border-radius:5px;padding:3px 7px;font-size:calc(9px * var(--font-scale));color:#788491}.publication-line{position:absolute;top:0;bottom:0;width:2px;background:#b54f4f;z-index:3;opacity:.7}.publication-badge{position:absolute;top:3px;transform:translateX(-50%);background:#fff2f1;border:1px solid #ddb0ac;color:#9a3f3f;border-radius:5px;padding:3px 6px;font-size:calc(9px * var(--font-scale));font-weight:800;z-index:5;white-space:nowrap}
+
+
+.timeline-axis-tick{position:absolute;top:26px;bottom:0;width:1px;background:#d9e0e7;z-index:1}.timeline-axis-tick-label{position:absolute;bottom:7px;transform:translateX(-50%);font-size:calc(9px * var(--font-scale));color:#6f7c8b;white-space:nowrap;z-index:2}.timeline-grid-line{position:absolute;top:0;bottom:0;width:1px;background:#edf1f4;z-index:0}.timeline-bar-detail,.timeline-point-detail,.timeline-undated-detail{cursor:help}.timeline-hover-tip{position:fixed;display:none;z-index:9999;max-width:360px;padding:9px 11px;border-radius:8px;background:#1f2937;color:#fff;font-size:12px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none;white-space:pre-line}.timeline-hover-tip.show{display:block}
+
+.detail-toolbar{display:flex;align-items:center;gap:10px}
+.detail-toolbar select{flex:1;min-width:0}
+.detail-toolbar .delete-plan-btn{margin-left:auto;border:1px solid #efb6b1;background:#fff5f4;color:#b42318;border-radius:8px;padding:9px 13px;font-weight:800;white-space:nowrap}
+.detail-toolbar .delete-plan-btn:hover{background:#fee9e7}
+.detail-toolbar .delete-plan-btn:disabled{opacity:.45;cursor:not-allowed}
+
+
+/* v2.5.5 시계열 즉시 편집 */
+.detail-head-actions{display:flex;align-items:center;gap:9px}.timeline-add-btn{height:34px;border:1px solid #7ea7e1;background:#f4f8ff;color:var(--primary);border-radius:8px;padding:0 12px;font-weight:800;cursor:pointer;font-size:calc(10px * var(--font-scale))}.timeline-add-btn:hover{background:#eaf2ff}
+.timeline-row-detail[data-activity-id],.marketing-table tr[data-activity-id]{cursor:pointer}.timeline-row-detail[data-activity-id]:hover{background:#fbfdff}.marketing-table tr[data-activity-id]:hover td{background:#f7fbff}.timeline-row-detail[data-activity-id] .timeline-label-detail{transition:background .15s}.timeline-row-detail[data-activity-id]:hover .timeline-label-detail{background:#f7fbff}
+.activity-edit-hint{font-size:calc(9px * var(--font-scale));color:#8894a3;margin-left:8px;font-weight:500}
+.activity-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);display:none;align-items:center;justify-content:center;z-index:10000;padding:24px}.activity-modal-backdrop.show{display:flex}.activity-modal{width:min(720px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:14px;border:1px solid #d7dee7;box-shadow:0 22px 60px rgba(15,23,42,.28)}.activity-modal-head{padding:16px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.activity-modal-head b{font-size:calc(15px * var(--font-scale))}.activity-modal-close{width:32px;height:32px;border:0;border-radius:8px;background:#f3f5f7;font-size:18px;cursor:pointer}.activity-modal-body{padding:18px}.activity-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.activity-form-field.full{grid-column:1/-1}.activity-form-field label{display:block;font-size:calc(10px * var(--font-scale));font-weight:800;color:#566474;margin-bottom:6px}.activity-form-field input,.activity-form-field select,.activity-form-field textarea{width:100%;border:1px solid #c9d4e1;border-radius:8px;background:#fff;padding:9px 10px;font-size:calc(11px * var(--font-scale));outline:none}.activity-form-field input,.activity-form-field select{height:40px}.activity-form-field textarea{min-height:76px;resize:vertical;line-height:1.5}.activity-modal-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px}.activity-modal-foot .spacer{flex:1}.activity-modal-btn{height:38px;border-radius:8px;padding:0 15px;font-weight:800;cursor:pointer}.activity-modal-btn.cancel{border:1px solid #cbd4df;background:#fff;color:#344054}.activity-modal-btn.save{border:1px solid #2e69bc;background:#316fc8;color:#fff}.activity-modal-btn.delete{border:1px solid #efb6b1;background:#fff5f4;color:#b42318}.activity-modal-btn.delete:disabled{opacity:.4;cursor:not-allowed}.activity-saving{opacity:.6;pointer-events:none}
+@media(max-width:720px){.activity-form-grid{grid-template-columns:1fr}.activity-form-field.full{grid-column:auto}}
+
+
+/* v2.5.6 도서별 참조파일 */
+/* v2.5.11 참조자료 드래그앤드롭 + 이미지 썸네일 */
+.reference-dropzone{margin:0 16px 12px;border:2px dashed #a8bfdc;border-radius:10px;background:#f8fbff;min-height:92px;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;cursor:pointer;transition:.15s;color:#52657a}.reference-dropzone:hover,.reference-dropzone.dragover{border-color:#3976c8;background:#eef5ff;box-shadow:0 0 0 3px rgba(57,118,200,.08)}.reference-dropzone b{display:block;font-size:calc(11px * var(--font-scale));color:#244f73;margin-bottom:4px}.reference-dropzone span{font-size:calc(9px * var(--font-scale));color:#738295}.reference-preview{width:76px;height:76px;border-radius:8px;background:#eef4f9;display:grid;place-items:center;overflow:hidden;cursor:pointer;border:1px solid #e1e7ee}.reference-preview img{width:100%;height:100%;object-fit:cover;display:block}.reference-preview .reference-icon{width:100%;height:100%;border-radius:0}.reference-card{grid-template-columns:76px minmax(0,1fr)!important;align-items:center!important}.reference-card.image-card{min-height:122px}.reference-thumb-loading{font-size:11px;color:#8391a2}.reference-drop-hint{font-size:calc(8px * var(--font-scale));color:#8a97a6;margin-top:5px}
+
+.reference-files-wrap{padding:14px 16px}.reference-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.reference-toolbar .ref-path{font-size:calc(9px * var(--font-scale));color:#7b8794;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%}.reference-add-btn{height:34px;border:1px solid #7ea7e1;background:#f4f8ff;color:var(--primary);border-radius:8px;padding:0 12px;font-weight:800;cursor:pointer}.reference-add-btn:hover{background:#eaf2ff}.reference-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}.reference-card{border:1px solid #dce3eb;border-radius:9px;background:#fff;padding:11px;display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:start}.reference-icon{width:42px;height:42px;border-radius:8px;background:#eef4f9;display:grid;place-items:center;font-size:19px}.reference-name{font-size:calc(11px * var(--font-scale));font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.reference-meta{font-size:calc(9px * var(--font-scale));color:#718096;margin-top:3px;line-height:1.5}.reference-desc{font-size:calc(9px * var(--font-scale));color:#475467;margin-top:5px;line-height:1.45;min-height:14px}.reference-actions{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end;border-top:1px solid #edf0f3;padding-top:8px}.reference-actions button{height:29px;border:1px solid #cbd4df;background:#fff;border-radius:6px;padding:0 9px;font-size:calc(9px * var(--font-scale));font-weight:800}.reference-actions button.danger{color:#b42318;border-color:#efc5c2}.reference-empty{padding:25px;text-align:center;color:#7b8794;border:1px dashed #cbd5e1;border-radius:8px;background:#fbfcfd}.ref-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);display:none;align-items:center;justify-content:center;z-index:10020;padding:20px}.ref-modal-backdrop.show{display:flex}.ref-modal{width:min(650px,96vw);max-height:90vh;background:#fff;border-radius:12px;box-shadow:0 24px 70px rgba(15,23,42,.25);overflow:auto}.ref-modal-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line)}.ref-modal-body{padding:16px 18px}.ref-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ref-field.full{grid-column:1/-1}.ref-field label{display:block;font-size:calc(10px * var(--font-scale));font-weight:800;color:#475467;margin-bottom:6px}.ref-field input,.ref-field select,.ref-field textarea{width:100%;border:1px solid #c9d4e1;border-radius:7px;padding:8px}.ref-field textarea{min-height:72px;resize:vertical}.ref-selected-files{margin-top:8px;padding:9px;border:1px solid #dfe5ec;border-radius:7px;background:#f8fafc;font-size:calc(9px * var(--font-scale));color:#596579;max-height:100px;overflow:auto}.ref-modal-foot{display:flex;gap:8px;padding:13px 18px;border-top:1px solid var(--line)}.ref-modal-foot .spacer{flex:1}.ref-modal-foot button{height:34px;border-radius:7px;padding:0 12px;font-weight:800;border:1px solid #cbd4df;background:#fff}.ref-modal-foot button.save{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* v2.5.7 동일 날짜 활동 우선순위 드래그 */
+.activity-drag-handle{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:7px;border-radius:5px;color:#7b8794;cursor:grab;font-weight:900;user-select:none}.activity-drag-handle:hover{background:#edf3f8;color:#3f6585}.marketing-table tr[draggable="true"],.timeline-row-detail[draggable="true"]{cursor:grab}.marketing-table tr.activity-dragging,.timeline-row-detail.activity-dragging{opacity:.45}.marketing-table tr.activity-drop-target td,.timeline-row-detail.activity-drop-target{box-shadow:inset 0 2px 0 #3775c7}.activity-order-hint{font-size:calc(9px * var(--font-scale));color:#788491;font-weight:500;margin-left:8px}
+
+.strategy-box{cursor:pointer;transition:border-color .15s,box-shadow .15s,background .15s}.strategy-box:hover{border-color:#8db2df;box-shadow:0 0 0 2px rgba(49,111,200,.08);background:#fbfdff}.strategy-edit-hint{font-size:calc(9px * var(--font-scale));color:#6f7b8a;font-weight:500;margin-left:8px}.strategy-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);display:none;align-items:center;justify-content:center;z-index:10030;padding:24px}.strategy-modal-backdrop.show{display:flex}.strategy-modal{width:min(720px,96vw);background:#fff;border-radius:14px;border:1px solid #d7dee7;box-shadow:0 22px 60px rgba(15,23,42,.28)}.strategy-modal-head{padding:16px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.strategy-modal-body{padding:18px}.strategy-modal-body label{display:block;font-size:calc(10px * var(--font-scale));font-weight:800;color:#566474;margin-bottom:7px}.strategy-modal-body textarea{width:100%;min-height:170px;border:1px solid #c9d4e1;border-radius:8px;padding:11px 12px;font-size:calc(11px * var(--font-scale));line-height:1.6;resize:vertical;outline:none}.strategy-modal-note{font-size:calc(9px * var(--font-scale));color:#7b8794;margin-top:7px;line-height:1.5}.strategy-modal-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}.strategy-modal-foot button{height:38px;border-radius:8px;padding:0 15px;font-weight:800;cursor:pointer}.strategy-modal-foot .cancel{border:1px solid #cbd4df;background:#fff;color:#344054}.strategy-modal-foot .save{border:1px solid #2e69bc;background:#316fc8;color:#fff}.strategy-saving{opacity:.6;pointer-events:none}
+
+/* ===== v2.7.0 출간 후 성과 화면 ===== */
+.performance-toolbar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px}.performance-toolbar b{font-size:calc(13px * var(--font-scale))}.performance-toolbar select{flex:1;max-width:760px;height:40px;border:1px solid #c9d4e1;border-radius:8px;padding:0 10px;background:#fff}.performance-toolbar span{font-size:calc(10px * var(--font-scale));color:var(--muted)}
+.performance-note{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff9e8;border:1px solid #ead9a8;color:#725b21;border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:calc(10px * var(--font-scale));line-height:1.5}.performance-note b{color:#5d4915}.performance-note .tag{white-space:nowrap;border:1px solid #ddc988;background:#fffdf5;border-radius:999px;padding:4px 8px;font-weight:800}
+.perf-hero{display:grid;grid-template-columns:minmax(0,1fr) 560px;gap:14px}.perf-book-card,.perf-kpi-card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 20px rgba(31,41,55,.04)}.perf-book-card{padding:18px 20px}.perf-book-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}.perf-pill{font-size:calc(9px * var(--font-scale));font-weight:800;border-radius:999px;padding:5px 8px;background:#edf3f8;color:#46657f}.perf-pill.live{background:#edf7f2;color:#356d59}.perf-book-card h2{margin:0;font-size:calc(23px * var(--font-scale));letter-spacing:-.04em}.perf-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:#687686;font-size:calc(10px * var(--font-scale))}.perf-plan-line{margin-top:14px;padding-top:12px;border-top:1px solid #edf0f3;font-size:calc(11px * var(--font-scale));line-height:1.65;color:#455466}.perf-plan-line b{color:#253f58}
+.perf-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px}.perf-kpi{border:1px solid #e0e6ec;border-radius:9px;padding:11px 12px;background:#fbfcfd}.perf-kpi span{display:block;color:#7c8997;font-size:calc(9px * var(--font-scale))}.perf-kpi strong{display:block;margin-top:5px;font-size:calc(19px * var(--font-scale));color:#263a50}.perf-kpi small{display:block;margin-top:4px;color:#8793a1;font-size:calc(8px * var(--font-scale));line-height:1.35}.perf-kpi.positive strong{color:#34735b}
+.perf-section{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(31,41,55,.035);margin-top:14px}.perf-section-head{min-height:50px;padding:0 17px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:14px}.perf-section-head b{font-size:calc(13px * var(--font-scale))}.perf-section-head span{font-size:calc(9px * var(--font-scale));color:#7d8996}.perf-section-body{padding:15px 17px}
+.perf-chart-shell{border:1px solid #dfe5eb;border-radius:10px;overflow:hidden;background:#fbfcfd}.perf-chart-controls{padding:10px 13px;border-bottom:1px solid #e3e8ed;display:flex;align-items:center;justify-content:space-between;gap:10px}.perf-periods{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.perf-periods button{border:1px solid #d6dee7;background:#fff;color:#697888;border-radius:6px;padding:5px 9px;font-size:calc(9px * var(--font-scale));font-weight:800;cursor:pointer}.perf-periods button.active{background:#294e6e;color:#fff;border-color:#294e6e}.perf-legend{display:flex;gap:14px;color:#6b7888;font-size:calc(9px * var(--font-scale));white-space:nowrap}.perf-legend i{display:inline-block;width:18px;height:3px;border-radius:2px;background:#3f739d;margin-right:5px;vertical-align:middle}.perf-legend i.erp{height:9px;background:#9aa7b5}.perf-chart{height:320px;overflow:hidden}.perf-chart svg{width:100%;height:100%;display:block}
+.perf-activity-axis{border-top:1px solid #e2e7ec;background:#fff;padding:11px 13px 13px}.perf-activity-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.perf-activity-title b{font-size:calc(11px * var(--font-scale))}.perf-activity-title span{font-size:calc(8px * var(--font-scale));color:#84909d}.perf-activity-table{border:1px solid #e1e6eb;border-radius:8px;overflow:hidden}.perf-act-row{display:grid;grid-template-columns:220px 1fr;min-height:39px;border-bottom:1px solid #edf0f3}.perf-act-row:last-child{border-bottom:0}.perf-act-label{padding:6px 9px;border-right:1px solid #e6ebef;min-width:0}.perf-act-label b{display:block;font-size:calc(10px * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.perf-act-label small{display:block;color:#7e8a97;font-size:calc(8px * var(--font-scale));margin-top:2px}.perf-act-track{position:relative;background:repeating-linear-gradient(to right,#fff 0,#fff calc(12.5% - 1px),#eef1f4 calc(12.5% - 1px),#eef1f4 12.5%)}.perf-act-bar{position:absolute;top:8px;height:22px;border-radius:5px;padding:0 7px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:calc(8px * var(--font-scale));font-weight:800}.perf-act-bar.bookstore{background:#dceaf4;border:1px solid #a8c0d1;color:#315d7e}.perf-act-bar.sns{background:#e1efe9;border:1px solid #abc7bb;color:#3d6f5f}.perf-act-bar.extra{background:#f2e8d4;border:1px solid #d9c398;color:#7f6638}.perf-pub-line{position:absolute;top:0;bottom:0;width:2px;background:#b65454;z-index:3}
+.perf-two-col{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.perf-table{width:100%;border-collapse:collapse}.perf-table th{background:#f7f9fb;color:#637181;font-size:calc(9px * var(--font-scale));text-align:left;padding:9px 10px;border-bottom:1px solid #dfe5eb}.perf-table td{font-size:calc(9px * var(--font-scale));padding:10px;border-bottom:1px solid #edf0f3;vertical-align:middle;line-height:1.45}.perf-table tr:last-child td{border-bottom:0}.perf-status{display:inline-block;border-radius:999px;padding:4px 7px;font-size:calc(8px * var(--font-scale));font-weight:800}.perf-status.done{background:#e8f5ef;color:#34735b}.perf-status.run{background:#eaf2fa;color:#38698e}.perf-status.plan{background:#f5efe1;color:#826c3d}.perf-money{text-align:right;font-variant-numeric:tabular-nums}
+.perf-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.perf-summary-box{border:1px solid #e1e6eb;border-radius:9px;padding:11px;background:#fbfcfd}.perf-summary-box span{font-size:calc(8px * var(--font-scale));color:#7e8a98}.perf-summary-box strong{display:block;margin-top:5px;font-size:calc(16px * var(--font-scale));color:#30465c}.perf-summary-box small{display:block;margin-top:4px;color:#8793a1;font-size:calc(8px * var(--font-scale))}.perf-insight{margin-top:10px;border-left:4px solid #5c8a76;background:#f4faf7;border-radius:7px;padding:11px 12px;color:#506477;font-size:calc(9px * var(--font-scale));line-height:1.6}.perf-insight b{color:#356d59}
+.perf-pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.perf-pm-card{border:1px solid #e0e6ec;border-radius:9px;overflow:hidden}.perf-pm-card .head{display:block;padding:10px 12px;background:#f7f9fb;border-bottom:1px solid #e2e7ec}.perf-pm-card .head b{font-size:calc(10px * var(--font-scale))}.perf-pm-card textarea{width:100%;min-height:150px;border:0;outline:none;resize:vertical;padding:12px;font-family:inherit;font-size:calc(10px * var(--font-scale));line-height:1.6}.perf-save-row{display:flex;justify-content:flex-end;margin-top:10px}.perf-save-row button{border:1px solid #7398b6;background:#355f80;color:#fff;border-radius:7px;padding:8px 13px;font-weight:800;cursor:pointer}
+.perf-empty{padding:44px 20px;text-align:center;color:#98a2b3;font-size:calc(10px * var(--font-scale))}
+@media(max-width:1200px){.perf-hero,.perf-two-col{grid-template-columns:1fr}.perf-pm-grid{grid-template-columns:1fr}.perf-act-row{grid-template-columns:180px 1fr}.perf-kpis{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:850px){.perf-kpis,.perf-summary-grid{grid-template-columns:1fr 1fr}.perf-act-row{grid-template-columns:140px 1fr}.perf-chart-controls{align-items:flex-start;flex-direction:column}}
+
+
+/* ===== v2.7.1 목업 충실도 개선: 출간 후 성과 ===== */
+#performancePage .title{margin-bottom:12px}
+#performancePage .performance-toolbar{padding:10px 13px;margin-bottom:10px;border-radius:9px;box-shadow:0 3px 12px rgba(31,41,55,.03)}
+#performancePage .performance-note{padding:8px 11px;margin-bottom:12px;border-radius:8px}
+.p271-book-card{display:grid;grid-template-columns:92px minmax(0,1fr) 520px;gap:18px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 5px 18px rgba(31,41,55,.05)}
+.p271-cover{height:124px;border-radius:7px;background:linear-gradient(155deg,#11365f,#477da7 56%,#eef3f7 57%);color:#fff;padding:10px;position:relative;overflow:hidden;box-shadow:0 8px 20px rgba(30,55,80,.16)}.p271-cover:after{content:'BOOK';position:absolute;right:-7px;bottom:-8px;font-size:34px;font-weight:800;color:rgba(255,255,255,.15)}.p271-cover small{font-size:7px}.p271-cover b{display:block;font-size:12px;line-height:1.35;margin-top:14px;word-break:keep-all}.p271-book-info .eyebrow{font-size:10px;color:#5c6c7f;font-weight:800;margin-bottom:5px}.p271-book-info h2{font-size:23px;line-height:1.26;margin:0 0 8px;letter-spacing:-.035em}.p271-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#6f7b8a}.p271-summary{margin-top:9px;font-size:11px;line-height:1.6;color:#405064}.p271-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.p271-kpi{border:1px solid #dbe3ec;border-radius:9px;padding:11px 12px;background:#fbfcfe}.p271-kpi span{font-size:9px;color:#718096}.p271-kpi strong{display:block;font-size:18px;margin-top:5px}.p271-kpi small{display:block;font-size:8px;color:#8b97a5;margin-top:4px;line-height:1.35}.p271-kpi strong.up{color:#2f7a61}
+.p271-flow{display:flex;gap:7px;margin:14px 0 12px;align-items:center;font-size:10px;color:#718096}.p271-flow b{color:#405064}.p271-flow i{font-style:normal;color:#a0a9b5}
+.p271-panel{background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 5px 18px rgba(31,41,55,.05);margin-bottom:12px;overflow:hidden}.p271-panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--line)}.p271-panel-head h3{font-size:14px;margin:0}.p271-panel-head p{font-size:9px;color:var(--muted);margin:4px 0 0;line-height:1.45}.p271-panel-tag{font-size:9px;font-weight:800;border:1px solid #d9e1e9;background:#f8fafc;border-radius:999px;padding:5px 8px;color:#637080;white-space:nowrap}
+.p271-summary-grid{display:grid;grid-template-columns:1.1fr 1fr .9fr;gap:10px;padding:14px 16px}.p271-summary-box{border:1px solid var(--line);border-radius:9px;padding:12px;background:#fff}.p271-summary-box span{font-size:9px;color:var(--muted)}.p271-summary-box strong{display:block;font-size:16px;margin-top:5px}.p271-summary-box p{font-size:10px;line-height:1.55;color:#536174;margin:7px 0 0}.p271-summary-box.good{background:#f5fbf8;border-color:#d6e9df}.p271-summary-box.warn{background:#fffaf0;border-color:#efe1bf}
+.p271-sales-shell{padding:12px 16px 16px}.p271-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.p271-period{display:flex;gap:5px;align-items:center;font-size:9px;color:#718096}.p271-period button{height:25px;border:1px solid #d6dee7;background:#fff;border-radius:6px;padding:0 8px;font-size:9px;font-weight:800;color:#647180}.p271-period button.active{background:#294966;border-color:#294966;color:#fff}.p271-legend{display:flex;gap:13px;font-size:9px;color:#6c7887}.p271-legend span:before{content:'';display:inline-block;width:14px;height:3px;border-radius:3px;background:#316fc8;margin-right:5px;vertical-align:middle}.p271-legend span.erp:before{height:8px;background:#a2adbb}
+.p271-sales-grid{display:grid;grid-template-columns:155px 1fr;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}.p271-sales-left{background:#fbfcfd;border-right:1px solid var(--line)}.p271-chart-label{height:220px;padding:12px;font-size:10px;font-weight:800}.p271-activity-label{height:38px;border-top:1px solid #e8edf2;padding:7px 10px;overflow:hidden}.p271-activity-label b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.p271-activity-label small{display:block;font-size:8px;color:#7b8794;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.p271-timeline-area{position:relative;overflow:hidden}.p271-chart{height:220px;position:relative;background:linear-gradient(#fff,#fbfcfe)}.p271-chart svg{width:100%;height:100%;display:block}.p271-axis{height:28px;border-top:1px solid var(--line);position:relative;background:#fbfcfd}.p271-tick{position:absolute;bottom:6px;transform:translateX(-50%);font-size:8px;color:#718096;white-space:nowrap}.p271-activity-track{height:38px;border-top:1px solid #e8edf2;position:relative;background:#fff}.p271-actbar{position:absolute;top:8px;height:22px;border-radius:5px;padding:0 7px;display:flex;align-items:center;font-size:8px;font-weight:800;white-space:nowrap;overflow:hidden;z-index:3}.p271-actbar.store{background:#dbeaf5;border:1px solid #9dbdd4;color:#2f5b7d}.p271-actbar.sns{background:#dfeee8;border:1px solid #9fc3b4;color:#386f5d}.p271-actbar.extra{background:#f2e7cf;border:1px solid #d4b982;color:#80663b}.p271-publine{position:absolute;top:0;bottom:0;width:2px;background:rgba(181,79,79,.58);z-index:5}.p271-pubbadge{position:absolute;top:6px;transform:translateX(-50%);font-size:8px;font-weight:800;color:#9a3f3f;background:#fff2f1;border:1px solid #ddb0ac;border-radius:4px;padding:2px 5px;z-index:8;white-space:nowrap}.p271-note{font-size:9px;color:#7a8796;margin-top:8px;line-height:1.5}.p271-note b{color:#405064}
+.p271-two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}.p271-table-wrap{padding:0 16px 15px;overflow:auto}.p271-table{width:100%;border-collapse:collapse;min-width:650px}.p271-table th{font-size:9px;color:#667485;text-align:left;background:#f8fafc;border-bottom:1px solid var(--line);padding:8px 9px}.p271-table td{font-size:10px;padding:9px;border-bottom:1px solid #edf0f3;color:#405064;vertical-align:middle}.p271-table td strong{color:#243549}.p271-money{text-align:right;white-space:nowrap}.p271-status{display:inline-block;font-size:8px;font-weight:800;border-radius:999px;padding:4px 6px}.p271-status.done{background:#eef8f4;color:#2f7a61}.p271-status.run{background:#edf4fd;color:#316fc8}.p271-status.plan{background:#fff8e9;color:#9a6d25}
+.p271-budget{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px 14px}.p271-budget div{border:1px solid var(--line);border-radius:8px;padding:10px}.p271-budget span{font-size:8px;color:var(--muted)}.p271-budget strong{display:block;font-size:15px;margin-top:5px}.p271-budget strong.good{color:#2f7a61}
+.p271-audience{padding:13px 16px 16px}.p271-audience-grid{display:grid;grid-template-columns:190px 1fr;gap:14px}.p271-donut-wrap{display:flex;gap:12px;align-items:center}.p271-donut{width:98px;height:98px;border-radius:50%;background:conic-gradient(#2f6bd5 0 42.2%,#27b7a4 42.2% 100%);position:relative;flex:0 0 auto}.p271-donut:after{content:'여성\\A57.8%';white-space:pre;position:absolute;inset:21px;background:#fff;border-radius:50%;display:grid;place-items:center;text-align:center;font-size:11px;font-weight:800;line-height:1.15}.p271-mini-legend{font-size:9px;line-height:1.9;color:#536174}.p271-age-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px}.p271-age{font-size:9px}.p271-age .row{display:flex;justify-content:space-between;margin-bottom:4px}.p271-track{height:6px;background:#edf1f5;border-radius:99px;overflow:hidden}.p271-fill{height:100%;background:#4c8292;border-radius:99px}.p271-match{margin-top:12px;border-left:3px solid #2f7a61;background:#f2f9f6;border-radius:7px;padding:9px 11px;font-size:9px;color:#526579}.p271-match b{color:#23644f}
+.p271-digital-cards{padding:12px 16px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.p271-digital{border:1px solid var(--line);border-radius:9px;padding:11px;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center}.p271-ico{width:34px;height:34px;border-radius:8px;background:#eef3fb;color:#315fba;display:grid;place-items:center;font-weight:800}.p271-digital b{display:block;font-size:10px}.p271-digital small{display:block;font-size:8px;color:#7a8796;margin-top:3px}.p271-metrics{display:flex;gap:12px;font-size:9px;text-align:right}.p271-metrics strong{display:block;font-size:11px}.p271-signal{font-size:8px;font-weight:800;padding:4px 6px;border-radius:999px;background:#eef8f4;color:#2f7a61}.p271-placeholder{color:#83909d;font-size:9px;font-weight:700}
+.p271-pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 16px}.p271-pm-card{border:1px solid var(--line);border-radius:9px;overflow:hidden}.p271-pm-card h4{font-size:10px;margin:0;padding:10px 12px;background:#f8fafc;border-bottom:1px solid var(--line)}.p271-pm-card textarea{width:100%;min-height:112px;border:0;resize:vertical;padding:11px 12px;font-size:10px;line-height:1.65;outline:none;color:#405064}.p271-pm-card .foot{border-top:1px solid var(--line);padding:7px 12px;font-size:8px;color:#8793a1;background:#fbfcfd}.p271-save-row{display:flex;justify-content:flex-end;padding:0 16px 14px}.p271-save-row button{height:32px;border:1px solid #2f69b7;background:#316fc8;color:#fff;border-radius:7px;padding:0 12px;font-size:9px;font-weight:800}
+@media(max-width:1200px){.p271-book-card{grid-template-columns:80px 1fr}.p271-kpis{grid-column:1/-1}.p271-two-col{grid-template-columns:1fr}.p271-audience-grid{grid-template-columns:1fr}.p271-digital-cards{grid-template-columns:1fr}}
+@media(max-width:860px){.p271-book-card{grid-template-columns:70px 1fr}.p271-kpis{grid-template-columns:repeat(2,1fr)}.p271-summary-grid{grid-template-columns:1fr}.p271-sales-grid{grid-template-columns:115px 1fr}.p271-pm-grid{grid-template-columns:1fr}}
+
+
+/* ===== v2.7.2 UI 가독성 개선 ===== */
+:root{--side:#223f57}
+.app{grid-template-columns:310px minmax(0,1fr)}
+.sidebar{background:#223f57}
+.sidebar-toggle{background:#223f57;border-color:rgba(255,255,255,.25)}
+.brand{height:112px;padding:0 30px;gap:16px;border-bottom:1px solid rgba(255,255,255,.14)}
+.logo{width:50px;height:50px;border-radius:12px;background:#fff;color:#22527b;font-size:27px;font-weight:900;box-shadow:none}
+.brand strong{font-size:22px;line-height:1.15;letter-spacing:-.03em}
+.brand span{font-size:15px;color:#d8e3ec;margin-top:4px}
+.nav{padding:27px 18px 20px}
+.nav-group{padding:17px 18px 10px;font-size:14px;color:#90b0d4;font-weight:900;letter-spacing:.02em}
+.nav-group.result-group{margin-top:18px}
+.nav button{height:58px;padding:0 18px;border-radius:12px;margin-bottom:8px;font-size:17px;font-weight:750;color:#e6edf4;display:flex;align-items:center;gap:14px;letter-spacing:-.02em}
+.nav button:hover{background:rgba(255,255,255,.07)}
+.nav button.active{background:#fff;color:#1f4f75;font-weight:900;box-shadow:0 8px 20px rgba(13,35,52,.12)}
+.nav-icon{width:22px;display:inline-flex;justify-content:center;font-size:18px;font-weight:500}
+.nav-label{white-space:nowrap}
+.user{padding:18px 30px;font-size:13px;color:#b9cad8}
+.user b{font-size:14px;margin-bottom:3px}
+@media(max-width:1250px){.app{grid-template-columns:270px minmax(0,1fr)}}
+@media(max-width:900px){.app{grid-template-columns:80px minmax(0,1fr)}.nav button{padding:0;justify-content:center}.nav-label{display:none}.nav-icon{font-size:20px}.brand{padding:0;justify-content:center}.logo{width:44px;height:44px}.brand>div:not(.logo),.nav-group,.user{display:none}}
+
+#performancePage .performance-toolbar b{font-size:15px}
+#performancePage .performance-toolbar select{font-size:14px;height:44px}
+#performancePage .performance-toolbar span,#performancePage .performance-note{font-size:13px}
+.p271-cover small{font-size:10px}.p271-cover b{font-size:16px}
+.p271-book-info .eyebrow{font-size:13px}.p271-book-info h2{font-size:28px}.p271-meta{font-size:13px}.p271-summary{font-size:14px}
+.p271-kpi{padding:14px}.p271-kpi span{font-size:12px}.p271-kpi strong{font-size:22px}.p271-kpi small{font-size:11px}
+.p271-flow{font-size:13px;margin:16px 0 14px}
+.p271-panel{border-radius:13px;margin-bottom:15px}.p271-panel-head{padding:18px 20px}.p271-panel-head h3{font-size:18px;letter-spacing:-.02em}.p271-panel-head p{font-size:12px;margin-top:5px}.p271-panel-tag{font-size:11px;padding:6px 9px}
+.p271-summary-grid{padding:17px 20px;gap:12px}.p271-summary-box{padding:15px}.p271-summary-box span{font-size:12px}.p271-summary-box strong{font-size:20px}.p271-summary-box p{font-size:13px}
+.p271-sales-shell{padding:15px 20px 19px}.p271-period,.p271-legend{font-size:12px}.p271-period button{height:30px;font-size:11px}.p271-sales-grid{grid-template-columns:190px 1fr}.p271-chart-label{font-size:13px}.p271-activity-label{height:48px;padding:9px 12px}.p271-activity-label b{font-size:13px}.p271-activity-label small{font-size:10px}.p271-axis{height:32px}.p271-tick{font-size:10px}.p271-activity-track{height:48px}.p271-actbar{top:10px;height:27px;font-size:10px}.p271-pubbadge{font-size:10px}.p271-note{font-size:11px}
+.p271-table-wrap{padding:0 20px 18px}.p271-table th{font-size:12px;padding:10px 11px}.p271-table td{font-size:13px;padding:11px}.p271-placeholder{font-size:11px}.p271-status{font-size:10px;padding:5px 8px}
+.p271-budget{padding:15px 20px 18px;gap:10px}.p271-budget div{padding:13px}.p271-budget span{font-size:11px}.p271-budget strong{font-size:19px}
+.p271-audience{padding:16px 20px 20px}.p271-mini-legend,.p271-age{font-size:12px}.p271-match{font-size:12px;padding:11px 13px}.p271-donut:after{font-size:13px}
+.p271-digital-cards{padding:15px 20px 20px;gap:12px}.p271-digital{padding:14px;grid-template-columns:40px 1fr auto}.p271-ico{width:40px;height:40px}.p271-digital b{font-size:14px}.p271-digital small{font-size:11px}.p271-metrics{font-size:11px}.p271-metrics strong{font-size:14px}.p271-signal{font-size:10px}
+.p271-pm-grid{padding:15px 20px 20px;gap:14px}.p271-pm-card h4{font-size:14px;padding:13px 15px}.p271-pm-card textarea{min-height:145px;padding:14px 15px;font-size:13px}.p271-pm-card .foot{font-size:10px;padding:9px 15px}.p271-save-row{padding:0 20px 18px}.p271-save-row button{height:38px;font-size:12px;padding:0 15px}
+
+/* ===== v2.8.0 : 목업형 레프트 메뉴 + 최소 글자 가독성 상향 ===== */
+:root{--side:#203b55}
+.app{grid-template-columns:328px minmax(0,1fr)}
+.sidebar{background:#203b55}
+.brand{height:112px;padding:0 30px;gap:15px;border-bottom:1px solid rgba(255,255,255,.15)}
+.logo{width:52px;height:52px;border-radius:13px;background:#fff;color:#174c78;font-size:24px;font-weight:900}
+.brand strong{font-size:24px;line-height:1.1;color:#fff;letter-spacing:-.04em}
+.brand span{font-size:16px;color:#d6e1eb;margin-top:4px}
+.nav{padding:25px 19px;overflow-y:auto}
+.nav-group{padding:20px 18px 10px;font-size:15px;color:#8eb1d6;font-weight:800;letter-spacing:.02em}
+.nav button{padding:16px 18px;border-radius:12px;margin-bottom:8px;font-size:18px;font-weight:700;color:#e1e8ef;line-height:1.3}
+.nav button.active{background:#fff;color:#173f62;font-weight:900;box-shadow:0 5px 14px rgba(6,25,43,.12)}
+.nav button:hover:not(.active){background:rgba(255,255,255,.07);color:#fff}
+.user{padding:18px 30px;font-size:14px;color:#c4d3df}
+.user b{font-size:15px}
+.sidebar-toggle{top:25px;background:#294b69}
+
+/* 성과 화면의 가장 작은 글자들을 끌어올림 */
+.p271-panel-head p{font-size:14px!important;line-height:1.55}
+.p271-panel-tag{font-size:13px!important;padding:7px 10px}
+.p271-table th{font-size:13px!important}
+.p271-table td{font-size:14px!important;line-height:1.5}
+.p271-placeholder{font-size:13px!important}
+.p271-status{font-size:12px!important}
+.p271-digital b{font-size:15px!important}
+.p271-digital small{font-size:13px!important;line-height:1.45}
+.p271-metrics{font-size:13px!important}
+.p271-metrics strong{font-size:15px!important}
+.p271-signal{font-size:12px!important;padding:5px 8px}
+.p271-mini-legend,.p271-age .row,.p271-match,.p271-note{font-size:13px!important;line-height:1.55}
+.p271-period,.p271-legend{font-size:13px!important}
+.p271-summary-box span,.p271-kpi span,.p271-budget span{font-size:13px!important}
+.p271-summary-box p,.p271-kpi small{font-size:13px!important;line-height:1.5}
+.p271-tl-label small,.p271-axis-label{font-size:12px!important}
+.p271-pm-card .foot{font-size:13px!important}
+@media(max-width:1100px){
+  .app{grid-template-columns:285px minmax(0,1fr)}
+  .brand{padding:0 22px}.nav{padding-left:14px;padding-right:14px}
+}
+
+
+/* ===== v2.8.0 : 레프트 메뉴 원목업 비율 복원 ===== */
+.app{grid-template-columns:208px minmax(0,1fr)!important}
+.sidebar{background:#203b55!important}
+.brand{
+  height:68px!important;
+  padding:0 16px!important;
+  gap:10px!important;
+  border-bottom:1px solid rgba(255,255,255,.14)!important
+}
+.logo{
+  width:36px!important;
+  height:36px!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:#174c78!important;
+  font-size:16px!important;
+  font-weight:900!important
+}
+.brand strong{
+  font-size:16px!important;
+  line-height:1.1!important;
+  color:#fff!important;
+  letter-spacing:-.035em!important
+}
+.brand span{
+  font-size:11px!important;
+  color:#d6e1eb!important;
+  margin-top:2px!important
+}
+.nav{
+  padding:16px 8px!important;
+  overflow-y:auto!important
+}
+.nav-group{
+  padding:14px 12px 7px!important;
+  font-size:10px!important;
+  color:#8eb1d6!important;
+  font-weight:800!important;
+  letter-spacing:.035em!important
+}
+.nav button{
+  min-height:38px!important;
+  padding:10px 12px!important;
+  border-radius:8px!important;
+  margin-bottom:5px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  color:#e1e8ef!important;
+  line-height:1.25!important;
+  gap:9px!important
+}
+.nav button.active{
+  background:#fff!important;
+  color:#173f62!important;
+  font-weight:900!important;
+  box-shadow:0 4px 10px rgba(6,25,43,.10)!important
+}
+.nav button:hover:not(.active){
+  background:rgba(255,255,255,.07)!important;
+  color:#fff!important
+}
+.user{
+  padding:13px 16px!important;
+  font-size:10px!important;
+  color:#c4d3df!important
+}
+.user b{font-size:11px!important}
+.sidebar-toggle{
+  top:24px!important;
+  width:30px!important;
+  height:30px!important;
+  font-size:13px!important;
+  background:#294b69!important
+}
+@media(max-width:1100px){
+  .app{grid-template-columns:208px minmax(0,1fr)!important}
+  .brand{padding:0 16px!important}
+  .nav{padding:16px 8px!important}
+}
+
+</style>
+
+<style>
+
+
+
+.reference-inline-uploader{display:none;padding:14px 16px 0}
+.reference-inline-uploader.open{display:block}
+.reference-inline-form{display:none;margin-top:10px;padding:14px;border:1px solid #dbe3ec;border-radius:10px;background:#fbfcfe}
+.reference-inline-form.show{display:block}
+.ref-selected-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;margin-bottom:12px;border:1px solid #e3e8ef;border-radius:8px;background:#fff}
+.ref-selected-summary span{display:block;font-size:11px;color:#7b8794;margin-bottom:3px}
+.ref-selected-summary b{display:block;font-size:12px;word-break:break-all}
+.reference-inline-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.reference-inline-foot button{padding:8px 14px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;font-weight:700}
+.reference-inline-foot button.save{background:#2864bd;border-color:#2864bd;color:#fff}
+
+/* v2.5.16 - weekly timeline + weekend shading */
+.timeline-weekend-band{
+  position:absolute;
+  top:0;
+  bottom:0;
+  z-index:0;
+  pointer-events:none;
+}
+.timeline-weekend-band.sat{
+  background:rgba(88,107,132,.045);
+}
+.timeline-weekend-band.sun{
+  background:rgba(177,90,90,.045);
+}
+.timeline-axis-detail .timeline-weekend-band{
+  top:0;
+  bottom:0;
+}
+.timeline-track-detail .timeline-grid-line,
+.timeline-track-detail .publication-line,
+.timeline-track-detail .timeline-bar-detail,
+.timeline-track-detail .timeline-point-detail,
+.timeline-track-detail .timeline-undated-detail{
+  z-index:2;
+}
+.timeline-weekend-legend{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  color:#7b8794;
+}
+.timeline-weekend-swatch{
+  width:12px;height:12px;border-radius:3px;
+  background:linear-gradient(90deg,rgba(88,107,132,.12) 0 50%,rgba(177,90,90,.12) 50% 100%);
+  border:1px solid #d9e0e7;
+}
+
+/* v2.5.17 - Monday weekly axis, no daily grid lines */
+.timeline-track-detail{
+  background-image:none !important;
+}
+.timeline-grid-line{
+  width:1px !important;
+  background:#d7dee7 !important;
+  opacity:.85 !important;
+}
+.timeline-axis-tick{
+  width:1px !important;
+  background:#d7dee7 !important;
+  opacity:.9 !important;
+}
+.timeline-weekend-band{
+  z-index:0 !important;
+}
+.timeline-bar-detail,
+.timeline-point-detail,
+.timeline-undated-detail,
+.publication-line{
+  z-index:2 !important;
+}
+
+/* ===== 영업 목표: 수불 사업계획 vs 마케팅 기획 목표 ===== */
+.sales-target-review{padding:15px 18px;border-bottom:1px solid var(--line);background:#fbfcfe}
+.sales-target-review .strategy-title{margin-bottom:10px}
+.sales-target-grid{display:grid;grid-template-columns:140px repeat(5,minmax(110px,1fr));gap:7px;align-items:center}
+.sales-target-grid .hdr{font-size:calc(9px * var(--font-scale));font-weight:800;color:#637083;text-align:center}
+.sales-target-grid .rowlabel{font-size:calc(10px * var(--font-scale));font-weight:800;color:#526174}
+.sales-target-grid input{width:100%;height:34px;border:1px solid #cbd4df;border-radius:7px;padding:0 8px;text-align:right;font-size:calc(10px * var(--font-scale));background:#fff}
+.sales-goal-layout{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(390px,.94fr);gap:15px;align-items:stretch}
+.sales-goal-chart-card{border:1px solid #dfe5ec;border-radius:10px;background:#fff;padding:13px 14px;min-height:470px}
+.sales-goal-chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:3px}
+.sales-goal-chart-head b{font-size:calc(13px * var(--font-scale));color:#344054}.sales-goal-chart-head small{display:block;margin-top:3px;color:#7d8997;font-size:calc(9px * var(--font-scale))}
+.sales-goal-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:calc(9px * var(--font-scale));color:#687588}
+.sales-goal-legend span{display:flex;align-items:center;gap:6px}.sales-goal-line{display:inline-block;width:22px;height:3px;border-radius:9px}.sales-goal-line.business{background:#6685a7}.sales-goal-line.marketing{background:#438a6e}
+#salesGoalChart{height:410px;width:100%;margin-top:4px}#salesGoalChart svg{width:100%;height:100%;display:block}
+.sales-goal-kpis{display:flex;flex-direction:column;gap:11px}.sales-kpi-title{display:flex;justify-content:space-between;align-items:end;padding:2px 2px 0}.sales-kpi-title b{font-size:calc(13px * var(--font-scale));color:#344054}.sales-kpi-title span{font-size:calc(9px * var(--font-scale));color:#8390a0}
+.sales-kpi-card{border:1px solid #dfe5ec;border-radius:10px;background:#fff;padding:14px 15px}.sales-kpi-card.business{border-left:4px solid #6685a7}.sales-kpi-card.marketing{border-left:4px solid #438a6e}
+.sales-kpi-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:11px}.sales-kpi-head b{font-size:calc(11px * var(--font-scale));color:#344054}.sales-kpi-head span{font-size:calc(9px * var(--font-scale));color:#8491a1}
+.sales-kpi-main{display:grid;grid-template-columns:1fr 1fr;gap:9px}.sales-kpi-main>div{padding:10px 11px;background:#f7f9fc;border-radius:8px}.sales-kpi-main span{display:block;font-size:calc(9px * var(--font-scale));color:#7a8796;margin-bottom:3px}.sales-kpi-main b{font-size:calc(19px * var(--font-scale));color:#263a50}.sales-kpi-main small{font-size:calc(9px * var(--font-scale));color:#7b8794;margin-left:2px}
+.sales-kpi-sub{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;padding-top:9px;border-top:1px solid #edf0f3;font-size:calc(9px * var(--font-scale));color:#7b8794}.sales-kpi-sub b{color:#445164}
+.sales-milestones{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sales-milestones>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e4ebe7;border-radius:8px;background:#fafcfa}.sales-milestones span{font-size:calc(9px * var(--font-scale));color:#697888}.sales-milestones b{font-size:calc(12px * var(--font-scale));color:#356d59}.sales-milestones .strong{background:#edf7f2;border-color:#cfe2d8}.sales-milestones .strong b{font-size:calc(14px * var(--font-scale))}
+.sales-goal-empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:360px;color:#98a2b3;font-size:calc(11px * var(--font-scale))}
+@media(max-width:1150px){.sales-goal-layout{grid-template-columns:1fr}.sales-target-grid{grid-template-columns:120px repeat(5,minmax(90px,1fr))}}
+
+.marketing-goal-sales{display:block;margin-top:3px;font-size:11px!important;font-weight:700;color:#657587!important;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<button class="sidebar-toggle" onclick="toggleSidebar()" title="메뉴 접기/펼치기">☰</button>
+<div class="brand"><div class="logo">M</div><div><strong>출판 마케팅</strong><span>운영 시스템</span></div></div>
+<nav class="nav">
+  <div class="nav-group">PLAN</div>
+  <button id="navUpload" class="active" title="AI 문서 등록" onclick="showAppPage('upload')"><span class="nav-icon">＋</span><span class="nav-label">AI 문서 등록</span></button>
+  <button id="navDetail" title="마케팅 기획 상세" onclick="showAppPage('detail')"><span class="nav-icon">▤</span><span class="nav-label">마케팅 기획 상세</span></button>
+  <div class="nav-group result-group">RESULT</div>
+  <button id="navPerformance" title="출간 후 성과" onclick="showAppPage('performance')"><span class="nav-icon">▥</span><span class="nav-label">출간 후 성과</span></button>
+</nav>
+<div class="user"><b>개발 모드</b>AI 등록 · 기획 상세 · 출간 후 성과</div>
+</aside>
+<main class="main">
+<header class="top">
+<div><strong id="pageHeaderTitle">AI 문서 등록</strong><span id="pageHeaderSub">제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.</span></div>
+<div class="top-actions">
+<div class="font-control"><label>글자 크기</label><select id="fontScale" onchange="setFontScale(this.value)"><option value="100">100%</option><option value="110">110%</option><option value="120">120%</option><option value="130">130%</option><option value="140">140%</option><option value="150">150%</option></select></div>
+<div class="status" id="connectionStatus">연결 준비 중...</div>
+</div>
+</header>
+<div class="workspace">
+<div id="uploadPage" class="page-view active">
+<div class="title"><div><h1>AI 문서 등록</h1><div class="sub">각 문서에 해당하는 도서를 제품인덱스에서 직접 연결한 뒤 AI 분석을 진행합니다.</div></div><span class="badge">사람 확인 후 저장</span></div>
+<section class="steps"><div class="step active"><b>1. 문서·제품 연결</b><span>복수 파일 + 제품 선택</span></div><div class="step"><b>2. AI 분석</b><span>마케팅활동 추출</span></div><div class="step"><b>3. 제품 확인</b><span>사용자 확정 제품</span></div><div class="step"><b>4. 활동 검토</b><span>일정·비용 수정</span></div><div class="step"><b>5. 일괄 등록</b><span>Supabase 저장</span></div></section>
+<section class="grid">
+<div class="panel">
+<div class="head"><div><strong>문서 업로드 · 제품 연결</strong><small>여러 파일을 올리고 각 문서에 제품인덱스 제품을 연결합니다.</small></div><span class="badge" id="count">0개</span></div>
+<div class="form">
+<div class="mode-switch">
+  <button id="newModeBtn" class="mode-btn active" onclick="setMode('new')">신규 기획 등록</button>
+  <button id="existingModeBtn" class="mode-btn" onclick="setMode('existing')">기존 기획 불러오기</button>
+</div>
+<div id="existingLoader" class="existing-loader">
+  <b>기존 마케팅 기획 불러오기</b>
+  <div class="existing-row">
+    <input id="existingProduct" class="product-search" list="productOptions" placeholder="제품명 또는 제품코드 검색">
+    <button class="btn light" onclick="loadExistingPlan()">불러오기</button>
+  </div>
+  <div class="mode-note">Supabase에 저장된 전략정보와 마케팅활동을 불러와 바로 수정할 수 있습니다.</div>
+</div>
+<div id="newUploadArea">
+<div class="drop" onclick="selectFiles()"><div class="big">📚</div><strong>클릭해 여러 파일 선택</strong><span>선택 후 각 문서 아래에서 제품인덱스의 제품을 직접 연결합니다.</span></div>
+<div id="files" class="files"><div class="empty">선택된 문서가 없습니다.</div></div>
+<datalist id="productOptions"></datalist>
+
+
+</div>
+<div class="field"><label>등록자</label><select id="registrar" class="select"><option value="">불러오는 중...</option></select></div>
+<div class="actions"><button class="btn light" onclick="clearFiles()">전체 삭제</button><button id="analyzeBtn" class="btn primary" onclick="primaryAction()" disabled>제품 연결 후 AI 분석</button></div>
+<div id="analysisError" style="display:none;margin-top:12px;padding:12px 14px;border:1px solid #efc5c2;background:#fff2f1;color:#8f2f2f;border-radius:8px;font-size:12px;line-height:1.55;white-space:pre-wrap"></div>
+<div id="progress" class="progress"><div class="track"><div id="fill" class="fill"></div></div><div id="plabel" class="plabel"></div></div>
+<div class="notice">제품코드는 AI가 추정하지 않습니다. 사용자가 제품인덱스에서 직접 선택한 제품을 기준으로 AI가 마케팅활동만 추출합니다.</div>
+</div></div>
+
+<div class="panel">
+<div id="resultEmpty" class="result-empty">문서를 선택하고 제품을 연결한 뒤 AI 분석을 시작해 주세요.</div>
+<div id="review" class="review">
+<div class="head"><div><strong>AI 추출 결과 검토</strong><small>사람이 확정한 제품과 AI가 추출한 활동을 확인합니다.</small></div><span class="conf high">분석 완료</span></div>
+<div id="tabs" class="tabs"></div>
+<div class="summary"><div>현재 문서<b id="sFile">-</b></div><div>제품코드<b id="sCode">-</b></div><div>제품명<b id="sProduct">-</b></div><div>추출 활동<b id="sCount">0건</b></div></div>
+<div class="strategy-card">
+  <div class="strategy-title"><strong>마케팅 전략정보</strong><span>AI 추출 후 사람이 수정·확정</span></div>
+  <div class="strategy-grid">
+    <div class="strategy-field">
+      <label>마케팅 타깃 독자</label>
+      <textarea id="strategyTarget" placeholder="핵심 타깃 독자"></textarea>
+    </div>
+    <div class="strategy-field">
+      <label>핵심 키워드</label>
+      <textarea id="strategyKeywords" placeholder="쉼표로 구분"></textarea>
+    </div>
+    <div class="strategy-field full">
+      <label>마케팅 문구 / 핵심 메시지</label>
+      <textarea id="strategyMessage" placeholder="대표 마케팅 문구"></textarea>
+    </div>
+    <div class="strategy-field full">
+      <label>마케팅 전략</label>
+      <textarea id="strategyPlan" placeholder="상위 마케팅 전략"></textarea>
+    </div>
+    <div class="strategy-field full">
+      <label>USP / 도서 차별점</label>
+      <textarea id="strategyUsp" placeholder="핵심 차별점"></textarea>
+    </div>
+  </div>
+</div>
+<div class="sales-target-review">
+  <div class="strategy-title"><strong>영업 목표</strong><span>Excel 셀에서 직접 추출 · 사람이 수정·확정</span></div>
+  <div class="sales-target-grid">
+    <div></div><div class="hdr">초도 배본</div><div class="hdr">출간 ~3개월</div><div class="hdr">출간 ~6개월</div><div class="hdr">출간 ~12개월</div><div class="hdr">BEP</div>
+    <div class="rowlabel">매출 부수</div>
+    <input id="goalInitialUnits" inputmode="numeric"><input id="goalMonth3Units" inputmode="numeric"><input id="goalMonth6Units" inputmode="numeric"><input id="goalMonth12Units" inputmode="numeric"><input id="goalBepUnits" inputmode="numeric">
+    <div class="rowlabel">매출액</div>
+    <input id="goalInitialSales" inputmode="numeric"><input id="goalMonth3Sales" inputmode="numeric"><input id="goalMonth6Sales" inputmode="numeric"><input id="goalMonth12Sales" inputmode="numeric"><input id="goalBepSales" inputmode="numeric">
+  </div>
+</div>
+<div class="selection-summary">
+  <div class="metric">등록 선택 <b id="selectedCount">0/0건</b></div>
+  <div class="metric cost-total">선택 비용 합계 <b id="selectedCost">0원</b></div>
+</div>
+<div class="activity-toolbar">
+  <div class="activity-toolbar-left">기획서에 없는 추가 마케팅 활동도 직접 등록할 수 있습니다.</div>
+  <button class="add-activity-btn" onclick="addManualActivity()">＋ 활동 추가</button>
+</div>
+<div class="table-wrap"><table><thead><tr><th style="width:50px">등록</th><th style="width:135px">분류</th><th style="width:145px">채널·매체</th><th style="width:235px">활동 내용</th><th style="width:115px">시작일</th><th style="width:115px">종료일</th><th style="width:130px">비용</th><th style="width:90px">확신도</th></tr></thead><tbody id="body"></tbody></table></div>
+<div class="review-actions"><button class="btn light" onclick="resetAnalysis()">다시 분석</button><button id="finalRegisterBtn" class="btn primary" onclick="registerAll()">전체 문서 확인 후 등록</button></div>
+</div></div>
+</section>
+</div>
+
+<div id="performancePage" class="page-view">
+  <div class="title"><div><h1>출간 후 성과</h1><div class="sub">출간 전 마케팅 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.</div></div><span class="badge">PLAN → EXECUTION → RESULT</span></div>
+  <div class="performance-toolbar"><b>도서 선택</b><select id="performanceProductSelect" onchange="loadPerformanceDetail(this.value)"></select><span id="performanceLoadState">목록 불러오는 중...</span></div>
+  <div class="performance-note"><div><b>현재 단계</b> · Supabase의 기획·활동 데이터는 실제 연결됩니다. SCM·ERP 일별 판매 원천은 아직 본 시스템에 연결되지 않아 판매 그래프와 누적 실적은 <b>화면 검증용 예시 데이터</b>로 표시합니다.</div><span class="tag">SCM/ERP 연동 예정</span></div>
+  <div id="performanceContent"><div class="perf-empty">도서를 선택하면 출간 후 성과 화면을 표시합니다.</div></div>
+</div>
+
+<div id="detailPage" class="page-view">
+<div class="title"><div><h1>마케팅 기획 상세</h1><div class="sub">등록된 도서 정보, 마케팅 전략, 활동 내역과 시계열을 조회합니다.</div></div></div>
+<div class="detail-toolbar"><b>도서 선택</b><select id="detailProductSelect" onchange="loadMarketingPlanDetail(this.value)"></select><span id="detailLoadState">목록 불러오는 중...</span><button id="deletePlanBtn" class="delete-plan-btn" onclick="deleteCurrentMarketingPlan()" disabled>기획 삭제</button></div>
+<section class="detail-panel"><div class="detail-head"><b>도서 기본 정보</b><span>등록된 제품 정보</span></div><div class="detail-body"><div class="basic-info-grid">
+<div class="basic-info-cell"><div class="basic-info-label">도서명</div><div class="basic-info-value title-value" id="detailTitle">—</div></div><div class="basic-info-cell"><div class="basic-info-label">저자명</div><div class="basic-info-value" id="detailAuthor">—</div></div><div class="basic-info-cell"><div class="basic-info-label">출간일</div><div class="basic-info-value" id="detailPubDate">—</div></div><div class="basic-info-cell"><div class="basic-info-label">정가</div><div class="basic-info-value" id="detailPrice">—</div></div>
+<div class="basic-info-cell"><div class="basic-info-label">분류</div><div class="basic-info-value" id="detailCategory">—</div></div><div class="basic-info-cell"><div class="basic-info-label">제품코드</div><div class="basic-info-value" id="detailCode">—</div></div><div class="basic-info-cell"><div class="basic-info-label">개발 PM</div><div class="basic-info-value" id="detailDevPM">—</div></div><div class="basic-info-cell"><div class="basic-info-label">마케팅 PM</div><div class="basic-info-value" id="detailMktPM">—</div></div>
+</div></div></section>
+<section class="detail-panel" id="salesGoalPanel">
+  <div class="detail-head"><b>영업 목표</b><span>수불 사업계획 vs 마케팅 기획 목표 · 부수 기준</span></div>
+  <div class="detail-body">
+    <div class="sales-goal-layout">
+      <div class="sales-goal-chart-card">
+        <div class="sales-goal-chart-head"><div><b>누적 목표 부수 추이</b><small id="salesGoalRange">사업계획연도 기준 + 다음해</small></div><div class="sales-goal-legend"><span><i class="sales-goal-line business"></i>수불 사업계획</span><span><i class="sales-goal-line marketing"></i>마케팅 기획 목표</span></div></div>
+        <div id="salesGoalChart"><div class="sales-goal-empty">영업 목표 데이터를 불러오는 중입니다.</div></div>
+      </div>
+      <div class="sales-goal-kpis">
+        <div class="sales-kpi-title"><b>목표 핵심 수치</b><span>기준이 다른 목표를 분리 표시</span></div>
+        <div class="sales-kpi-card business">
+          <div class="sales-kpi-head"><b id="businessGoalTitle">수불 사업계획</b><span>달력연도 기준</span></div>
+          <div class="sales-kpi-main"><div><span>목표 부수</span><b id="businessGoalUnits">—</b></div><div><span>목표 매출액</span><b id="businessGoalSales">—</b></div></div>
+          <div class="sales-kpi-sub"><span>계획 정가 <b id="businessGoalPrice">—</b></span><span>계획 첫출고일 <b id="businessGoalShipDate">—</b></span></div>
+        </div>
+        <div class="sales-kpi-card marketing">
+          <div class="sales-kpi-head"><b>마케팅 기획서 목표</b><span>출간일 기준</span></div>
+          <div class="sales-milestones"><div><span>초도</span><b id="marketingGoalInitial">—</b><small class="marketing-goal-sales" id="marketingGoalInitialSales">—</small></div><div><span>출간 후 3개월 누적</span><b id="marketingGoal3">—</b><small class="marketing-goal-sales" id="marketingGoal3Sales">—</small></div><div><span>출간 후 6개월 누적</span><b id="marketingGoal6">—</b><small class="marketing-goal-sales" id="marketingGoal6Sales">—</small></div><div class="strong"><span>출간 후 12개월 누적</span><b id="marketingGoal12">—</b><small class="marketing-goal-sales" id="marketingGoal12Sales">—</small></div></div>
+          <div class="sales-kpi-sub"><span>BEP <b id="marketingGoalBep">—</b></span><span>현재 출간일 <b id="marketingGoalPubDate">—</b></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="detail-panel"><div class="detail-head"><b>마케팅 전략 <span class="strategy-edit-hint">각 항목 더블클릭 = 바로 수정</span></b><span>기획 등록 시 저장된 내용</span></div><div class="detail-body"><div class="strategy-grid-detail">
+<div class="strategy-box" ondblclick="openStrategyEditor('target_readers')"><div class="strategy-box-label">타깃 독자</div><div class="strategy-box-value" id="detailTarget">—</div></div><div class="strategy-box" ondblclick="openStrategyEditor('core_keywords')"><div class="strategy-box-label">핵심 키워드</div><div class="strategy-box-value" id="detailKeywords">—</div></div><div class="strategy-box" ondblclick="openStrategyEditor('marketing_message')"><div class="strategy-box-label">마케팅 메시지</div><div class="strategy-box-value" id="detailMessage">—</div></div><div class="strategy-box" ondblclick="openStrategyEditor('usp')"><div class="strategy-box-label">USP 전략</div><div class="strategy-box-value" id="detailUsp">—</div></div><div class="strategy-box full" ondblclick="openStrategyEditor('marketing_strategy')"><div class="strategy-box-label">마케팅 전략</div><div class="strategy-box-value" id="detailStrategy">—</div></div>
+</div></div></section>
+<section class="detail-panel"><div class="detail-head"><b>등록된 마케팅 활동 <span class="activity-order-hint">같은 시작일의 활동은 마우스로 위·아래 이동해 우선순위를 바꿀 수 있습니다.</span></b><span>분류별 그룹 · 시작일 · 우선순위</span></div><div id="detailActivityGroups" class="detail-groups"></div><div class="detail-summary"><span>등록 활동 <strong id="detailActivityCount">0건</strong></span><span>총 마케팅 비용 <strong id="detailActivityCost">0원</strong></span></div></section>
+<section class="detail-panel"><div class="detail-head"><b>마케팅 활동 시계열 <span class="activity-edit-hint">더블클릭 = 수정·삭제 · 같은 날짜 내 드래그 = 우선순위 변경</span></b><div class="detail-head-actions"><span id="detailTimelineRange">등록 일정 기준</span><button class="timeline-add-btn" onclick="openNewActivityEditor()">＋ 활동 추가</button></div></div><div class="timeline-legend"><span><i class="legend-dot bookstore"></i>서점 마케팅</span><span><i class="legend-dot sns"></i>SNS 바이럴 마케팅</span><span><i class="legend-dot extra"></i>추가 마케팅</span><span>붉은선 = 출간일</span><span class="timeline-weekend-legend"><i class="timeline-weekend-swatch"></i>토·일 배경</span></div><div class="timeline-wrap-detail"><div id="detailTimeline" class="timeline-detail"></div></div></section>
+<section class="detail-panel">
+  <div class="detail-head">
+    <b>참조 자료</b>
+    <div class="detail-head-actions">
+      <span>도서 표지 · 이벤트 페이지 · 이미지 · PDF 등</span>
+      <button class="reference-add-btn" onclick="openReferenceInlineUploader()">＋ 파일 등록</button>
+    </div>
+  </div>
+
+  <div id="referenceInlineUploader" class="reference-inline-uploader">
+    <div id="referenceDropzone" class="reference-dropzone">
+      <div>
+        <b>파일을 이곳에 끌어다 놓으세요</b>
+        <span>JPG · JPEG · JFIF · PNG · WEBP · GIF · BMP · PDF · Word · Excel · PowerPoint</span>
+        <div class="reference-drop-hint">드래그앤드롭하거나 이 영역을 클릭해 파일을 선택하세요.</div>
+      </div>
+    </div>
+
+    <div id="referenceInlineForm" class="reference-inline-form">
+      <div class="ref-selected-summary">
+        <div><span>선택 파일</span><b id="referenceInlineSelectedFiles">선택된 파일이 없습니다.</b></div>
+        <button class="btn light" onclick="pickReferenceFilesInline()">파일 변경</button>
+      </div>
+      <div class="ref-form-grid">
+        <div class="ref-field">
+          <label>파일 분류</label>
+          <select id="referenceInlineCategory">
+            <option>도서표지</option><option>이벤트페이지</option><option>참조이미지</option><option>PDF</option><option selected>참조파일</option>
+          </select>
+        </div>
+        <div class="ref-field">
+          <label>연결 활동 (선택)</label>
+          <select id="referenceInlineActivity"><option value="">도서 전체 참조</option></select>
+        </div>
+        <div class="ref-field full">
+          <label>설명</label>
+          <textarea id="referenceInlineDescription" placeholder="예: 예스24 펀딩 이벤트 페이지 캡처, 초판 표지 시안"></textarea>
+        </div>
+      </div>
+      <div class="reference-inline-foot">
+        <button onclick="closeReferenceInlineUploader()">취소</button>
+        <button class="save" onclick="saveReferenceFilesInline()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="reference-files-wrap">
+    <div class="reference-toolbar">
+      <span class="ref-path" id="referenceStoragePath">Y드라이브 제품별 폴더에 저장</span>
+      <span id="referenceFileCount" class="fmeta">0개</span>
+    </div>
+    <div id="referenceFileGrid" class="reference-grid"><div class="reference-empty">등록된 참조자료가 없습니다.</div></div>
+  </div>
+</section>
+</div>
+</div></div>
+</main>
+</div>
+
+
+<div id="referenceFileModal" class="ref-modal-backdrop" onclick="if(event.target===this)closeReferenceFileModal()">
+ <div class="ref-modal">
+  <div class="ref-modal-head"><b id="referenceModalTitle">참조파일 등록</b><button class="activity-modal-close" onclick="closeReferenceFileModal()">×</button></div>
+  <div class="ref-modal-body"><div class="ref-form-grid">
+   <div class="ref-field"><label>파일 분류</label><select id="referenceCategory"><option>도서표지</option><option>이벤트페이지</option><option>참조이미지</option><option>PDF</option><option selected>참조파일</option></select></div>
+   <div class="ref-field"><label>연결 활동 (선택)</label><select id="referenceActivity"><option value="">도서 전체 참조</option></select></div>
+   <div class="ref-field full" id="referencePickArea"><label>파일</label><button class="btn light" style="width:100%" onclick="pickReferenceFiles()">파일 선택</button><div id="referenceSelectedFiles" class="ref-selected-files">선택된 파일이 없습니다.</div></div>
+   <div class="ref-field full"><label>설명</label><textarea id="referenceDescription" placeholder="예: 예스24 펀딩 이벤트 페이지 캡처, 초판 표지 시안"></textarea></div>
+  </div></div>
+  <div class="ref-modal-foot"><span class="spacer"></span><button onclick="closeReferenceFileModal()">취소</button><button class="save" onclick="saveReferenceFiles()">저장</button></div>
+ </div>
+</div>
+<div id="strategyEditorModal" class="strategy-modal-backdrop" onclick="if(event.target===this)closeStrategyEditor()">
+ <div id="strategyEditorBox" class="strategy-modal">
+  <div class="strategy-modal-head"><b id="strategyEditorTitle">마케팅 전략 수정</b><button class="activity-modal-close" onclick="closeStrategyEditor()">×</button></div>
+  <div class="strategy-modal-body"><label id="strategyEditorLabel">내용</label><textarea id="strategyEditorValue"></textarea><div id="strategyEditorNote" class="strategy-modal-note">저장하면 Supabase에 즉시 반영됩니다.</div></div>
+  <div class="strategy-modal-foot"><button class="cancel" onclick="closeStrategyEditor()">취소</button><button class="save" onclick="saveStrategyEditor()">저장</button></div>
+ </div>
+</div>
+<div id="activityEditorModal" class="activity-modal-backdrop" onclick="if(event.target===this)closeActivityEditor()">
+  <div id="activityEditorBox" class="activity-modal">
+    <div class="activity-modal-head"><b id="activityEditorTitle">마케팅 활동 수정</b><button class="activity-modal-close" onclick="closeActivityEditor()">×</button></div>
+    <div class="activity-modal-body">
+      <div class="activity-form-grid">
+        <div class="activity-form-field"><label>마케팅 분류</label><select id="editActivityCategory"><option>서점 마케팅</option><option value="SNS·바이럴">SNS 바이럴 마케팅</option><option>추가 마케팅</option></select></div>
+        <div class="activity-form-field"><label>채널 / 매체</label><input id="editActivityChannel" placeholder="예: 교보문고, 유튜브"></div>
+        <div class="activity-form-field full"><label>마케팅 활동명</label><input id="editActivityName" placeholder="활동명을 입력하세요"></div>
+        <div class="activity-form-field"><label>시작일</label><input id="editActivityStart" type="date"></div>
+        <div class="activity-form-field"><label>종료일</label><input id="editActivityEnd" type="date"></div>
+        <div class="activity-form-field"><label>비용</label><input id="editActivityCost" type="text" inputmode="numeric" placeholder="0" oninput="onActivityEditorMoney(this)"></div>
+        <div class="activity-form-field"><label>URL</label><input id="editActivityUrl" placeholder="https://..."></div>
+        <div class="activity-form-field full"><label>일정 비고</label><input id="editActivitySchedule" placeholder="예: 8월 내, 초판 한정, 일정 미정"></div>
+        <div class="activity-form-field full"><label>마케팅 세부 내용 / 비고</label><textarea id="editActivityNote" placeholder="활동의 세부 내용, 조건, 참고사항 등을 입력하세요."></textarea></div>
+      </div>
+    </div>
+    <div class="activity-modal-foot"><button id="deleteActivityBtn" class="activity-modal-btn delete" onclick="deleteActivityFromEditor()">활동 삭제</button><span class="spacer"></span><button class="activity-modal-btn cancel" onclick="closeActivityEditor()">취소</button><button id="saveActivityBtn" class="activity-modal-btn save" onclick="saveActivityFromEditor()">저장</button></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+let selected=[],results=[],active=0,users=[],products=[],productByCode=new Map(),displayToCode=new Map(),currentMode="new";
+let referenceFiles=[],pendingReferenceFiles=[],editingReferenceFileId=null;
+window.addEventListener("pywebviewready",bootstrap);
+
+function toggleSidebar(){
+  const app=document.querySelector(".app");
+  app.classList.toggle("sidebar-collapsed");
+  localStorage.setItem("sidebarCollapsed", app.classList.contains("sidebar-collapsed") ? "1" : "0");
+}
+function applySidebarState(){
+  const collapsed=localStorage.getItem("sidebarCollapsed")==="1";
+  document.querySelector(".app")?.classList.toggle("sidebar-collapsed",collapsed);
+}
+applySidebarState();
+
+
+async function bootstrap(){
+ const r=await pywebview.api.initialize();
+ if(!r.ok){connectionStatus.textContent="연결 실패";toast(r.message);return}
+ users=r.users||[];products=r.products||[];
+ products.forEach(p=>{productByCode.set(String(p.제품코드),p);displayToCode.set(productDisplay(p),String(p.제품코드));});
+ productOptions.innerHTML=products.map(p=>`<option value="${esc(productDisplay(p))}"></option>`).join("");
+ registrar.innerHTML='<option value="">선택</option>'+users.map(u=>`<option value="${u.사용자ID}">${esc(u.이름)} · ${esc(u.담당BU||"-")}</option>`).join("");
+ connectionStatus.textContent=`● Supabase 연결됨 · 제품인덱스 ${products.length.toLocaleString("ko-KR")}건`;
+ setupReferenceDropzone();
+ const saved=localStorage.getItem("fontScale")||"100";fontScale.value=saved;setFontScale(saved,false);
+}
+function productDisplay(p){const category=[p.최종대분류,p.최종중분류].filter(Boolean).join(" / ");return `${p.제품코드} | ${p.제품명}${category?" | "+category:""}`;}
+function resolveProductCode(v){v=(v||"").trim();if(!v)return null;if(displayToCode.has(v))return displayToCode.get(v);const code=v.split("|")[0].trim();return productByCode.has(code)?code:null;}
+function setFontScale(v,save=true){document.documentElement.style.setProperty("--font-scale",Number(v)/100);if(save)localStorage.setItem("fontScale",v);}
+
+function setMode(mode){
+ currentMode=mode;
+ const isExisting=mode==="existing";
+ newModeBtn.classList.toggle("active",!isExisting);
+ existingModeBtn.classList.toggle("active",isExisting);
+ existingLoader.classList.toggle("show",isExisting);
+ newUploadArea.style.display=isExisting?"none":"block";
+ selected=[];results=[];renderFiles();resetAnalysis();
+ analyzeBtn.disabled=isExisting?false:true;
+ analyzeBtn.textContent=isExisting?"기존 기획 수정 저장":"제품 연결 후 AI 분석";
+ if(window.finalRegisterBtn) finalRegisterBtn.textContent=isExisting?"기존 기획 수정 저장":"전체 문서 확인 후 등록";
+ resultEmpty.textContent=isExisting
+   ?"제품을 검색해 기존 마케팅 기획을 불러와 주세요."
+   :"문서를 선택하고 제품을 연결한 뒤 AI 분석을 시작해 주세요.";
+}
+
+async function loadExistingPlan(){
+ const code=resolveProductCode(existingProduct.value);
+ if(!code){toast("제품인덱스에서 제품을 선택해 주세요.");return}
+ const r=await pywebview.api.load_existing_plan(code);
+ if(!r.ok){toast(r.message);return}
+ results=[r.result];active=0;
+ if(r.result.registrar_id){
+   registrar.value=r.result.registrar_id;
+ }
+ resultEmpty.style.display="none";
+ review.classList.add("show");
+ renderTabs();renderResult();
+ analyzeBtn.disabled=false;
+ analyzeBtn.textContent="기존 기획 수정 저장";
+ if(window.finalRegisterBtn) finalRegisterBtn.textContent="기존 기획 수정 저장";
+ document.querySelectorAll(".step").forEach((e,i)=>{
+   e.classList.toggle("active",i===3);
+   e.classList.toggle("done",i<3);
+ });
+ toast("기존 마케팅 기획을 불러왔습니다.");
+}
+
+async function primaryAction(){
+ if(currentMode==="existing"){
+   await saveExistingPlan();
+ }else{
+   await analyze();
+ }
+}
+
+async function saveExistingPlan(){
+ if(!results.length){toast("먼저 기존 기획을 불러와 주세요.");return}
+ if(!registrar.value){toast("등록자를 선택해 주세요.");return}
+ saveActiveEdits();
+ const r=await pywebview.api.save_existing_plan(results[0],registrar.value);
+ if(!r.ok){toast(r.message);return}
+ toast(`기존 기획을 저장했습니다. 수정 ${r.updated}건 · 추가 ${r.inserted}건 · 삭제 ${r.deleted}건`);
+}
+
+async function selectFiles(){const r=await pywebview.api.select_files();if(!r.ok){toast(r.message);return}const old=new Map(selected.map(x=>[x.path,x]));selected=(r.files||[]).map(f=>({...f,product_code:old.get(f.path)?.product_code||null}));renderFiles();}
+function renderFiles(){
+ count.textContent=selected.length+"개";
+ files.innerHTML=selected.length?selected.map((f,i)=>{const p=f.product_code?productByCode.get(String(f.product_code)):null;return `<div class="file"><div class="file-top"><div class="ext">${esc(f.extension.toUpperCase())}</div><div><div class="fname">${esc(f.name)}</div><div class="fmeta">${bytes(f.size)} · ${p?"제품 연결 완료":"제품 연결 필요"}</div></div><button class="remove" onclick="removeFile(${i})">×</button></div><div class="product-link"><div class="product-link-label"><b>제품인덱스 연결</b><span class="linked-status">${p?esc(p.제품코드+" · "+p.제품명):"미연결"}</span></div><div class="product-search-row"><input class="product-search" list="productOptions" value="${p?esc(productDisplay(p)):""}" placeholder="제품명 또는 제품코드 검색" onchange="linkProduct(${i},this.value)"><button class="btn light" onclick="clearProduct(${i})">해제</button></div></div></div>`}).join(""):'<div class="empty">선택된 문서가 없습니다.</div>';
+ updateAnalyzeButton();
+}
+function linkProduct(i,v){const code=resolveProductCode(v);if(!code){selected[i].product_code=null;toast("제품인덱스 목록에서 제품을 선택해 주세요.");}else selected[i].product_code=code;renderFiles();}
+function clearProduct(i){selected[i].product_code=null;renderFiles();}
+function updateAnalyzeButton(){
+ if(currentMode==="existing"){
+   analyzeBtn.disabled=!results.length;
+   analyzeBtn.textContent="기존 기획 수정 저장";
+   return;
+ }
+ analyzeBtn.disabled=!selected.length||selected.some(f=>!f.product_code);
+ analyzeBtn.textContent=selected.length&&selected.every(f=>f.product_code)?"선택 문서 AI 분석":"제품 연결 후 AI 분석";
+}
+function removeFile(i){selected.splice(i,1);renderFiles();}function clearFiles(){selected=[];results=[];renderFiles();resetAnalysis();}
+function bytes(n){return n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(1)+" MB";}
+function esc(v){return String(v??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));}
+function formatMoney(v){if(v===null||v===undefined||v==="")return "";const n=Number(String(v).replace(/,/g,""));return Number.isFinite(n)?Math.round(n).toLocaleString("ko-KR"):"";}
+function parseMoney(v){const raw=String(v??"").replace(/,/g,"").trim();if(!raw)return null;const n=Number(raw);return Number.isFinite(n)?Math.round(n):null;}
+function onMoneyInput(el){const digits=el.value.replace(/[^\d]/g,"");el.value=digits?Number(digits).toLocaleString("ko-KR"):"";}
+
+async function analyze(){
+ if(!selected.length)return;
+ if(selected.some(f=>!f.product_code)){toast("모든 문서에 제품을 먼저 연결해 주세요.");return}
+ const errBox=document.getElementById("analysisError");
+ if(errBox){errBox.style.display="none";errBox.textContent="";}
+ progress.classList.add("show");fill.style.width="15%";plabel.textContent="문서 텍스트를 추출하고 있습니다...";analyzeBtn.disabled=true;
+ document.querySelectorAll(".step").forEach((e,i)=>{e.classList.toggle("active",i===1);e.classList.toggle("done",i===0)});
+ const timer=setInterval(()=>{const w=parseInt(fill.style.width)||15;if(w<88)fill.style.width=(w+4)+"%";},700);
+ try{
+   const r=await pywebview.api.analyze_files(selected.map(f=>({path:f.path,product_code:f.product_code})));
+   fill.style.width="100%";
+   if(!r.ok){
+     const msg=[r.message,r.detail].filter(Boolean).join("\n");
+     if(errBox){errBox.textContent=msg||"AI 분석에 실패했습니다.";errBox.style.display="block";}
+     toast(r.message||"AI 분석에 실패했습니다.");
+     return;
+   }
+   results=r.results||[];
+   if(r.errors?.length){
+     const detail=r.errors.map(e=>`- ${e.file_name||"문서"}: ${e.message||"알 수 없는 오류"}`).join("\n");
+     if(errBox){errBox.textContent=`일부 문서 분석 실패\n${detail}`;errBox.style.display="block";}
+   }
+   if(!results.length){
+     if(errBox){errBox.textContent="AI가 분석 결과를 반환하지 않았습니다. 로그를 확인해 주세요.";errBox.style.display="block";}
+     toast("AI 분석 결과가 없습니다.");
+     return;
+   }
+   showResults();
+ }catch(e){
+   const msg=e?.message||String(e);
+   if(errBox){errBox.textContent="AI 분석 호출 오류\n"+msg;errBox.style.display="block";}
+   toast("AI 분석 호출 중 오류가 발생했습니다.");
+ }finally{
+   clearInterval(timer);
+   analyzeBtn.disabled=false;
+   progress.classList.remove("show");fill.style.width="0";plabel.textContent="";
+ }
+}
+function showResults(){active=0;resultEmpty.style.display="none";review.classList.add("show");renderTabs();renderResult();document.querySelectorAll(".step").forEach((e,i)=>{e.classList.toggle("active",i===3);e.classList.toggle("done",i<3)});}
+function renderTabs(){tabs.innerHTML=results.map((r,i)=>`<button class="tab ${i===active?"active":""}" onclick="setActive(${i})">${i+1}. ${esc(r.file_name)}</button>`).join("");}
+function setActive(i){saveActiveEdits();active=i;renderTabs();renderResult();}
+function renderResult(){const r=results[active],a=r.analysis;
+ const st=a.strategy||{};
+ strategyTarget.value=st.target_readers||"";
+ strategyKeywords.value=(st.core_keywords||[]).join(", ");
+ strategyMessage.value=st.marketing_message||"";
+ strategyPlan.value=st.marketing_strategy||"";
+ strategyUsp.value=st.usp||"";
+ const gt=a.sales_targets||{};
+ goalInitialUnits.value=formatMoney(gt.initial_units);goalMonth3Units.value=formatMoney(gt.month3_units);goalMonth6Units.value=formatMoney(gt.month6_units);goalMonth12Units.value=formatMoney(gt.month12_units);goalBepUnits.value=formatMoney(gt.bep_units);
+ goalInitialSales.value=formatMoney(gt.initial_sales);goalMonth3Sales.value=formatMoney(gt.month3_sales);goalMonth6Sales.value=formatMoney(gt.month6_sales);goalMonth12Sales.value=formatMoney(gt.month12_sales);goalBepSales.value=formatMoney(gt.bep_sales);
+sFile.textContent=r.file_name;sCode.textContent=a.product_code||"-";sProduct.textContent=a.product_name||"-";sCount.textContent=(a.activities||[]).length+"건";body.innerHTML=(a.activities||[]).map(x=>`<tr><td><input class="sel" type="checkbox" onchange="updateSelectionSummary()" ${x.selected===false?"":"checked"}></td><td><select class="cat"><option ${x.activity_category==="서점 마케팅"?"selected":""}>서점 마케팅</option><option ${x.activity_category==="SNS·바이럴"?"selected":""}>SNS·바이럴</option><option ${x.activity_category==="기타 추가 마케팅"?"selected":""}>기타 추가 마케팅</option></select></td><td><input class="channel" value="${esc(x.channel_or_media||"")}"></td><td><input class="name" value="${esc(x.activity_name||"")}" title="${x.registration_method==="PM"?"사용자 수기 추가 활동":""}">${x.registration_method==="PM"?'<span class="manual-badge">수기</span>':""}</td><td><input class="start" type="date" value="${x.start_date||""}"></td><td><input class="end" type="date" value="${x.end_date||""}"></td><td><input class="cost" type="text" inputmode="numeric" value="${esc(formatMoney(x.cost))}" oninput="onMoneyInput(this);updateSelectionSummary()"></td><td><span class="conf ${x.confidence>=.9?"high":"mid"}">${Math.round((x.confidence||0)*100)}%</span></td></tr>`).join("");updateSelectionSummary();requestAnimationFrame(updateSelectionSummary);}
+function saveActiveEdits(){if(!results.length)return;
+ const analysis=results[active].analysis;
+ analysis.strategy=analysis.strategy||{};
+ analysis.strategy.target_readers=strategyTarget.value.trim()||null;
+ analysis.strategy.core_keywords=strategyKeywords.value.split(",").map(x=>x.trim()).filter(Boolean);
+ analysis.strategy.marketing_message=strategyMessage.value.trim()||null;
+ analysis.strategy.marketing_strategy=strategyPlan.value.trim()||null;
+ analysis.strategy.usp=strategyUsp.value.trim()||null;
+ analysis.sales_targets=analysis.sales_targets||{};
+ analysis.sales_targets.initial_units=parseMoney(goalInitialUnits.value);analysis.sales_targets.month3_units=parseMoney(goalMonth3Units.value);analysis.sales_targets.month6_units=parseMoney(goalMonth6Units.value);analysis.sales_targets.month12_units=parseMoney(goalMonth12Units.value);analysis.sales_targets.bep_units=parseMoney(goalBepUnits.value);
+ analysis.sales_targets.initial_sales=parseMoney(goalInitialSales.value);analysis.sales_targets.month3_sales=parseMoney(goalMonth3Sales.value);analysis.sales_targets.month6_sales=parseMoney(goalMonth6Sales.value);analysis.sales_targets.month12_sales=parseMoney(goalMonth12Sales.value);analysis.sales_targets.bep_sales=parseMoney(goalBepSales.value);
+ const acts=analysis.activities||[];[...body.querySelectorAll("tr")].forEach((tr,i)=>{const a=acts[i];a.selected=tr.querySelector(".sel").checked;a.activity_category=tr.querySelector(".cat").value;a.channel_or_media=tr.querySelector(".channel").value;a.activity_name=tr.querySelector(".name").value;a.start_date=tr.querySelector(".start").value||null;a.end_date=tr.querySelector(".end").value||null;a.cost=parseMoney(tr.querySelector(".cost").value);});}
+
+[goalInitialUnits,goalMonth3Units,goalMonth6Units,goalMonth12Units,goalBepUnits,goalInitialSales,goalMonth3Sales,goalMonth6Sales,goalMonth12Sales,goalBepSales].forEach(el=>el?.addEventListener("input",()=>onMoneyInput(el)));
+
+function addManualActivity(){
+ if(!results.length){
+   toast("먼저 AI 분석을 완료하거나 기존 기획을 불러와 주세요.");
+   return;
+ }
+ saveActiveEdits();
+ const analysis=results[active].analysis;
+ analysis.activities=analysis.activities||[];
+ analysis.activities.push({
+   activity_id:null,
+   activity_category:"기타 추가 마케팅",
+   detail_category:null,
+   channel_or_media:"",
+   activity_name:"",
+   start_date:null,
+   end_date:null,
+   schedule_note:null,
+   cost:null,
+   url:null,
+   note:null,
+   plan_execution_type:"계획",
+   registration_method:"PM",
+   evidence:"사용자 수기 추가",
+   confidence:1.0,
+   needs_review:false,
+   selected:true
+ });
+ renderResult();
+
+ // 새로 추가한 마지막 행의 활동 내용 입력칸에 포커스
+ const rows=[...body.querySelectorAll("tr")];
+ const last=rows[rows.length-1];
+ if(last){
+   const input=last.querySelector(".name");
+   if(input) input.focus();
+ }
+ toast("새 마케팅 활동 행을 추가했습니다.");
+}
+
+function updateSelectionSummary(){
+ const rows=[...body.querySelectorAll("tr")];
+ let count=0,total=0;
+ rows.forEach(tr=>{
+   const checked=tr.querySelector(".sel")?.checked;
+   if(checked){
+     count++;
+     total+=parseMoney(tr.querySelector(".cost")?.value)||0;
+   }
+ });
+ selectedCount.textContent=`${count}/${rows.length}건`;
+ selectedCost.textContent=`${total.toLocaleString("ko-KR")}원`;
+}
+function resetAnalysis(){results=[];review.classList.remove("show");resultEmpty.style.display="block";progress.classList.remove("show");fill.style.width="0";document.querySelectorAll(".step").forEach((e,i)=>{e.classList.toggle("active",i===0);e.classList.remove("done")});}
+async function registerAll(){
+ if(currentMode==="existing"){
+   await saveExistingPlan();
+   return;
+ }
+ saveActiveEdits();
+ if(!registrar.value){toast("등록자를 선택해 주세요.");return}
+ const r=await pywebview.api.register_results(results,registrar.value);
+ if(!r.ok){toast(r.message);return}
+ document.querySelectorAll(".step").forEach((e,i)=>{e.classList.toggle("active",i===4);e.classList.toggle("done",i<5)});
+ let msg=`${r.registered_documents}개 문서와 ${r.registered_activities}개 활동을 등록했습니다.`;
+ if(r.skipped?.length)msg+=` ${r.skipped.length}개 문서는 건너뛰었습니다.`;
+ toast(msg);
+}
+
+let marketingPlanList=[];
+let currentDetailCode=null,currentDetailTitle="",currentDetailActivityCount=0,currentDetailActivities=[],currentDetailPlan={};
+let editingStrategyField=null;
+let editingActivityId=null;
+function showAppPage(page){
+ const upload=page==="upload",detail=page==="detail",performance=page==="performance";
+ document.getElementById("uploadPage").classList.toggle("active",upload);
+ document.getElementById("detailPage").classList.toggle("active",detail);
+ document.getElementById("performancePage").classList.toggle("active",performance);
+ document.getElementById("navUpload").classList.toggle("active",upload);
+ document.getElementById("navDetail").classList.toggle("active",detail);
+ document.getElementById("navPerformance").classList.toggle("active",performance);
+ pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":"출간 후 성과";
+ pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.";
+ if(detail) loadMarketingPlanList();
+ if(performance) loadPerformancePlanList();
+}
+function cleanProductName(v){return String(v||"").replace(/^전문>/,"").replace("100세까지월500만원받는ETF연금수업","100살까지 월 500만 원 받는 ETF 연금 수업");}
+function detailMoney(v){return Number(v||0).toLocaleString("ko-KR")+"원";}
+function detailGroupClass(g){return g==="서점 마케팅"?"bookstore":g==="SNS·바이럴"?"sns":"extra";}
+function detailGroupName(g){return g==="SNS·바이럴"?"SNS 바이럴 마케팅":g;}
+async function loadMarketingPlanList(){
+ detailLoadState.textContent="Supabase에서 불러오는 중...";
+ const r=await pywebview.api.get_marketing_plan_list();
+ if(!r.ok){detailLoadState.textContent="목록 조회 실패";toast(r.message);return;}
+ marketingPlanList=r.plans||[];
+ detailProductSelect.innerHTML=marketingPlanList.map(x=>`<option value="${esc(x.제품코드)}">${esc(cleanProductName(x.제품명))} · ${esc(x.제품코드)}</option>`).join("");
+ detailLoadState.textContent=`${marketingPlanList.length}개 기획`;
+ deletePlanBtn.disabled=!marketingPlanList.length;
+ if(marketingPlanList.length){await loadMarketingPlanDetail(detailProductSelect.value);}
+ else{clearMarketingPlanDetail();}
+}
+async function loadMarketingPlanDetail(code){
+ if(!code)return;detailLoadState.textContent="상세 불러오는 중...";
+ const r=await pywebview.api.get_marketing_plan_detail(code);
+ if(!r.ok){detailLoadState.textContent="상세 조회 실패";toast(r.message);return;}
+ const d=r.detail||{},b=d.기본정보||{},p=d.마케팅기획||{},a=d.마케팅활동||[],bp=d.사업계획목표||{},bm=d.사업계획월별목표||[],sg=d.영업목표||{};
+ currentDetailCode=code;currentDetailTitle=cleanProductName(b.도서명)||code;currentDetailActivityCount=a.length;currentDetailActivities=a;currentDetailPlan=p;deletePlanBtn.disabled=false;
+ const put=(id,v)=>document.getElementById(id).textContent=(v===null||v===undefined||v==="")?"—":v;
+ put("detailTitle",cleanProductName(b.도서명));put("detailAuthor",b.저자명);put("detailPubDate",b.출간일);put("detailPrice",b.정가!=null?detailMoney(b.정가):null);put("detailCategory",[b.대분류,b.중분류].filter(Boolean).join(" / "));put("detailCode",b.제품코드);put("detailDevPM",b.개발PM);put("detailMktPM",b.마케팅PM);
+ put("detailTarget",p.타깃독자);put("detailKeywords",(p.핵심키워드||[]).map(x=>"#"+x).join("  "));put("detailMessage",p.마케팅문구);put("detailUsp",p.USP);put("detailStrategy",p.마케팅전략);
+ renderSalesGoalDashboard(b,bp,bm,sg);renderMarketingDetailActivities(a);renderMarketingTimeline(a,b.출간일);await loadReferenceFiles(code);detailLoadState.textContent="Supabase 실시간 데이터";
+}
+function clearMarketingPlanDetail(){
+ currentDetailCode=null;currentDetailTitle="";currentDetailActivityCount=0;currentDetailActivities=[];currentDetailPlan={};deletePlanBtn.disabled=true;
+ ["detailTitle","detailAuthor","detailPubDate","detailPrice","detailCategory","detailCode","detailDevPM","detailMktPM","detailTarget","detailKeywords","detailMessage","detailUsp","detailStrategy"].forEach(id=>document.getElementById(id).textContent="—");
+ salesGoalChart.innerHTML='<div class="sales-goal-empty">등록된 영업 목표가 없습니다.</div>';["businessGoalUnits","businessGoalSales","businessGoalPrice","businessGoalShipDate","marketingGoalInitial","marketingGoal3","marketingGoal6","marketingGoal12","marketingGoalBep","marketingGoalPubDate"].forEach(id=>document.getElementById(id).textContent="—");
+ detailActivityGroups.innerHTML='<div class="empty">등록된 마케팅 기획이 없습니다.</div>';detailActivityCount.textContent="0건";detailActivityCost.textContent="0원";detailTimeline.innerHTML='<div class="empty">등록된 일정이 없습니다.</div>';detailTimelineRange.textContent="등록 일정 기준";
+}
+
+function goalNum(v){const n=Number(v);return Number.isFinite(n)?n:null}
+function goalHas(v){return v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))}
+function addMonthsDate(dateStr,months){if(!dateStr)return null;const d=new Date(dateStr+"T00:00:00");const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+months);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return d}
+function fmtGoalUnits(v){return goalHas(v)?Number(v).toLocaleString("ko-KR")+"부":"—"}
+function fmtGoalSales(v){if(!goalHas(v))return"—";const n=Number(v);return (n/1000000).toLocaleString("ko-KR",{minimumFractionDigits:1,maximumFractionDigits:1})+"백만원"}
+function quarterLabel(y,q){const m={1:"1월",2:"3월",3:"6월",4:"9월"};return String(y).slice(-2)+"년 "+m[q]}
+function renderSalesGoalDashboard(base,business,monthly,sales){
+ const pub=base.출간일||null;const by=Number(business.사업계획연도)||(pub?new Date(pub+"T00:00:00").getFullYear():new Date().getFullYear());
+ businessGoalTitle.textContent=by+" 수불 사업계획";businessGoalUnits.textContent=fmtGoalUnits(business.연간계획부수);businessGoalSales.textContent=fmtGoalSales(business.연간계획매출액);businessGoalPrice.textContent=goalHas(business.계획정가)?Number(business.계획정가).toLocaleString("ko-KR")+"원":"—";businessGoalShipDate.textContent=business.계획첫출고일||"—";
+ const init=goalNum(sales.초도배본부수),m3=goalNum(sales.출간3개월부수),m6=goalNum(sales.출간6개월부수),m12=goalNum(sales.출간12개월부수);let c0=init,c3=init===null&&m3===null?null:(init||0)+(m3||0),c6=(init===null&&m3===null&&m6===null)?null:(init||0)+(m3||0)+(m6||0),c12=(init===null&&m3===null&&m6===null&&m12===null)?null:(init||0)+(m3||0)+(m6||0)+(m12||0);
+ marketingGoalInitial.textContent=fmtGoalUnits(c0);marketingGoal3.textContent=fmtGoalUnits(c3);marketingGoal6.textContent=fmtGoalUnits(c6);marketingGoal12.textContent=fmtGoalUnits(c12);
+ const s0=goalNum(sales.초도배본매출액),s3=goalNum(sales.출간3개월매출액),s6=goalNum(sales.출간6개월매출액),s12=goalNum(sales.출간12개월매출액);
+ const cs0=s0,cs3=s0===null&&s3===null?null:(s0||0)+(s3||0),cs6=(s0===null&&s3===null&&s6===null)?null:(s0||0)+(s3||0)+(s6||0),cs12=(s0===null&&s3===null&&s6===null&&s12===null)?null:(s0||0)+(s3||0)+(s6||0)+(s12||0);
+ const gi=document.getElementById("marketingGoalInitialSales"),g3=document.getElementById("marketingGoal3Sales"),g6=document.getElementById("marketingGoal6Sales"),g12=document.getElementById("marketingGoal12Sales");
+ if(gi)gi.textContent=fmtGoalSales(cs0);if(g3)g3.textContent=fmtGoalSales(cs3);if(g6)g6.textContent=fmtGoalSales(cs6);if(g12)g12.textContent=fmtGoalSales(cs12);
+ marketingGoalBep.textContent=fmtGoalUnits(sales.BEP부수);marketingGoalPubDate.textContent=pub||"—";salesGoalRange.textContent=`${by}년 1분기 ~ ${by+1}년 4분기`;
+ const plot={w:760,h:410,l:62,r:20,t:32,b:56};const pw=plot.w-plot.l-plot.r,ph=plot.h-plot.t-plot.b;const start=new Date(by,0,1),end=new Date(by+2,0,1);const xDate=d=>plot.l+Math.max(0,Math.min(1,(d-start)/(end-start)))*pw;
+ const quarterData=[];for(let q=0;q<4;q++){const rows=(monthly||[]).filter(x=>{const d=new Date(String(x.매출월).slice(0,10)+"T00:00:00");return d.getFullYear()===by&&Math.floor(d.getMonth()/3)===q});if(rows.length)quarterData.push({q:q+1,units:rows.reduce((a,x)=>a+Number(x.계획부수||0),0),date:new Date(by,q*3+3,0)});}
+ let running=0;const bp=[];quarterData.sort((a,b)=>a.q-b.q).forEach(x=>{running+=x.units;bp.push({date:x.date,value:running})});
+ const mp=[];if(pub){const pd=new Date(pub+"T00:00:00");if(c0!==null)mp.push({date:pd,value:c0,label:"초도"});const d3=addMonthsDate(pub,3),d6=addMonthsDate(pub,6),d12=addMonthsDate(pub,12);if(c3!==null)mp.push({date:d3,value:c3,label:"3개월"});if(c6!==null)mp.push({date:d6,value:c6,label:"6개월"});if(c12!==null)mp.push({date:d12,value:c12,label:"12개월"});}
+ const vals=[...bp,...mp].map(x=>x.value).filter(Number.isFinite);if(!vals.length){salesGoalChart.innerHTML='<div class="sales-goal-empty">영업 목표 데이터가 없습니다.</div>';return}
+ const rawMax=Math.max(...vals,1000)*1.12;const step=rawMax<=5000?1000:rawMax<=15000?3000:Math.ceil(rawMax/4/5000)*5000;const yMax=Math.ceil(rawMax/step)*step;const y=v=>plot.t+ph-(v/yMax)*ph;
+ const yTicks=[];for(let v=0;v<=yMax+1;v+=step)yTicks.push(v);const qTicks=[];for(let i=0;i<8;i++){const yy=by+Math.floor(i/4),q=i%4+1,d=new Date(yy,(q-1)*3,1);qTicks.push({label:quarterLabel(yy,q),x:xDate(d)});}
+ const poly=pts=>pts.map(p=>`${xDate(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");const escSvg=v=>String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+ const gridY=yTicks.map(v=>`<line x1="${plot.l}" y1="${y(v)}" x2="${plot.w-plot.r}" y2="${y(v)}" stroke="#e7ecf2"/><text x="${plot.l-10}" y="${y(v)+4}" text-anchor="end" font-size="13" fill="#6f7f91">${v>=10000?(v/10000).toFixed(v%10000?1:0)+"만":v>=1000?(v/1000)+"천":v}</text>`).join("");
+ const gridX=qTicks.map(q=>`<line x1="${q.x}" y1="${plot.t}" x2="${q.x}" y2="${plot.h-plot.b}" stroke="#f0f3f6"/><text x="${q.x}" y="${plot.h-20}" text-anchor="middle" font-size="13" fill="#667789">${q.label}</text>`).join("");
+ const pubX=pub?xDate(new Date(pub+"T00:00:00")):null;const bpLine=bp.length>1?`<polyline points="${poly(bp)}" fill="none" stroke="#6685a7" stroke-width="3"/>`:"";const mpLine=mp.length>1?`<polyline points="${poly(mp)}" fill="none" stroke="#438a6e" stroke-width="3"/>`:"";
+ const pointHtml=(pts,color,labels=false)=>pts.map(p=>`<circle cx="${xDate(p.date)}" cy="${y(p.value)}" r="5" fill="#fff" stroke="${color}" stroke-width="2.5"/>${labels?`<text x="${xDate(p.date)}" y="${y(p.value)-11}" text-anchor="middle" font-size="12" font-weight="700" fill="${color}">${Number(p.value).toLocaleString("ko-KR")}</text>`:""}`).join("");
+ salesGoalChart.innerHTML=`<svg viewBox="0 0 ${plot.w} ${plot.h}" preserveAspectRatio="xMidYMid meet">${gridY}${gridX}${pubX!==null?`<line x1="${pubX}" y1="${plot.t}" x2="${pubX}" y2="${plot.h-plot.b}" stroke="#d85b57" stroke-width="1.5" stroke-dasharray="5 4"/><rect x="${pubX-36}" y="6" width="72" height="22" rx="5" fill="#fff0ef" stroke="#e6b5b1"/><text x="${pubX}" y="21" text-anchor="middle" font-size="11" font-weight="800" fill="#a34444">출간 ${escSvg(pub.slice(5).replace('-','/'))}</text>`:""}${bpLine}${mpLine}${pointHtml(bp,"#6685a7",true)}${pointHtml(mp,"#438a6e",true)}</svg>`;
+}
+
+const strategyFieldMeta={
+ target_readers:{label:"타깃 독자",dbKey:"타깃독자"},
+ core_keywords:{label:"핵심 키워드",dbKey:"핵심키워드"},
+ marketing_message:{label:"마케팅 메시지",dbKey:"마케팅문구"},
+ usp:{label:"USP 전략",dbKey:"USP"},
+ marketing_strategy:{label:"마케팅 전략",dbKey:"마케팅전략"}
+};
+function openStrategyEditor(field){
+ if(!currentDetailCode){toast("먼저 도서를 선택해 주세요.");return;}
+ editingStrategyField=field;const m=strategyFieldMeta[field];if(!m)return;
+ strategyEditorTitle.textContent=m.label+" 수정";strategyEditorLabel.textContent=m.label;
+ const raw=currentDetailPlan?.[m.dbKey];strategyEditorValue.value=field==="core_keywords"?(Array.isArray(raw)?raw.map(x=>"#"+x).join(" "):String(raw||"")):String(raw||"");
+ strategyEditorNote.textContent=field==="core_keywords"?"#ETF #월배당 또는 ETF, 월배당처럼 입력할 수 있습니다. 저장 시 키워드 배열로 정리됩니다.":"저장하면 Supabase에 즉시 반영되고 이 화면도 다시 불러옵니다.";
+ strategyEditorModal.classList.add("show");setTimeout(()=>strategyEditorValue.focus(),40);
+}
+function closeStrategyEditor(){strategyEditorModal.classList.remove("show");editingStrategyField=null;}
+async function saveStrategyEditor(){
+ if(!editingStrategyField||!currentDetailCode)return;const field=editingStrategyField,value=strategyEditorValue.value;
+ const payload={};payload[field]=value;strategyEditorBox.classList.add("strategy-saving");
+ try{const r=await pywebview.api.update_marketing_plan_strategy(currentDetailCode,payload);if(!r.ok){toast(r.message||"마케팅 전략 저장에 실패했습니다.");return;}closeStrategyEditor();toast("마케팅 전략을 수정했습니다.");await loadMarketingPlanDetail(currentDetailCode);marketingPlanList=[];}
+ catch(e){toast("마케팅 전략 저장 실패: "+e);}finally{strategyEditorBox.classList.remove("strategy-saving");}
+}
+
+async function deleteCurrentMarketingPlan(){
+ if(!currentDetailCode)return;
+ const message=`${currentDetailTitle}\n\n이 마케팅 기획을 삭제하시겠습니까?\n등록된 마케팅 전략과 마케팅 활동 ${currentDetailActivityCount}건, 연결된 문서 등록정보가 함께 삭제됩니다.\n도서 기본정보(마케팅대상제품/제품인덱스)는 삭제되지 않습니다.`;
+ if(!confirm(message))return;
+ deletePlanBtn.disabled=true;detailLoadState.textContent="삭제 중...";
+ const r=await pywebview.api.delete_marketing_plan(currentDetailCode);
+ if(!r.ok){deletePlanBtn.disabled=false;detailLoadState.textContent="삭제 실패";toast(r.message);return;}
+ toast(`마케팅 기획을 삭제했습니다. 활동 ${r.deleted_activities||0}건 · 문서 ${r.deleted_documents||0}건`);
+ marketingPlanList=[];currentDetailCode=null;await loadMarketingPlanList();
+}
+function activityOrderValue(x){const n=Number(x.정렬순서);return Number.isFinite(n)?n:1000000;}
+function sortDetailActivities(rows){return [...rows].sort((x,y)=>{const dx=x.시작일||"9999-12-31",dy=y.시작일||"9999-12-31";if(dx!==dy)return dx.localeCompare(dy);const ox=activityOrderValue(x),oy=activityOrderValue(y);if(ox!==oy)return ox-oy;return String(x.활동명||"").localeCompare(String(y.활동명||""),"ko");});}
+function renderMarketingDetailActivities(a){
+ const order=["서점 마케팅","SNS·바이럴","추가 마케팅"];
+ detailActivityGroups.innerHTML=order.map(g=>{const rows=sortDetailActivities(a.filter(x=>x.활동분류===g));if(!rows.length)return"";const cost=rows.reduce((s,x)=>s+Number(x.비용||0),0);return `<div class="marketing-group ${detailGroupClass(g)}"><div class="marketing-group-head"><b>${detailGroupName(g)}</b><span>${rows.length}건 · ${detailMoney(cost)}</span></div><div class="table-wrap" style="max-height:none"><table class="marketing-table"><thead><tr><th>채널 / 매체</th><th>활동 내용</th><th>시작일</th><th>종료일</th><th>비용</th></tr></thead><tbody>${rows.map(x=>`<tr data-activity-id="${esc(x.활동ID||"")}" data-activity-group="${esc(x.활동분류||"")}" data-activity-date="${esc(x.시작일||"")}" draggable="true" ondblclick="openActivityEditor('${esc(x.활동ID||"")}')"><td>${esc(x.채널또는매체||"—")}</td><td><span class="activity-drag-handle" title="같은 날짜 내 우선순위 이동">⋮⋮</span><b>${esc(x.활동명||"")}</b>${x.일정비고?`<div class="fmeta">${esc(x.일정비고)}</div>`:""}</td><td>${esc(x.시작일||"미정")}</td><td>${esc(x.종료일||"미정")}</td><td>${detailMoney(x.비용)}</td></tr>`).join("")}</tbody></table></div></div>`;}).join("");
+ detailActivityCount.textContent=a.length+"건";detailActivityCost.textContent=detailMoney(a.reduce((s,x)=>s+Number(x.비용||0),0));bindActivityDragAndDrop();
+}
+function renderMarketingTimeline(a,pub){
+ const dates=a.flatMap(x=>[x.시작일,x.종료일]).filter(Boolean);if(pub)dates.push(pub);if(!dates.length){detailTimeline.innerHTML='<div class="empty">날짜가 등록된 활동이 없습니다.</div>';return;}
+ let min=new Date(Math.min(...dates.map(x=>new Date(x+"T00:00:00")))),max=new Date(Math.max(...dates.map(x=>new Date(x+"T00:00:00"))));
+ min.setDate(min.getDate()-7);max.setDate(max.getDate()+14);
+ // 주차 기준은 항상 월요일로 맞춘다.
+ const minDow=min.getDay();min.setDate(min.getDate()-((minDow+6)%7));
+ const maxDow=max.getDay();max.setDate(max.getDate()+((7-maxDow)%7));
+ const span=Math.max(1,max-min),spanDays=Math.max(1,Math.round(span/86400000)),pct=d=>Math.max(0,Math.min(100,(new Date(d+"T00:00:00")-min)/span*100)),pubx=pub?pct(pub):null;
+ const tickStep=spanDays<=100?7:(spanDays<=210?14:28),ticks=[];
+ let td=new Date(min);
+ while(td<=max){ticks.push(new Date(td));td.setDate(td.getDate()+tickStep);}
+ if(!ticks.length)ticks.push(new Date(min));
+ const tickPct=d=>Math.max(0,Math.min(100,(d-min)/span*100)),fmtTick=d=>String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+ const axisTicks=ticks.map(d=>`<div class="timeline-axis-tick" style="left:${tickPct(d)}%"></div><span class="timeline-axis-tick-label" style="left:${tickPct(d)}%">${fmtTick(d)}</span>`).join("");
+ const gridLines=ticks.map(d=>`<div class="timeline-grid-line" style="left:${tickPct(d)}%"></div>`).join("");
+ const weekendBands=[];
+ let wd=new Date(min);
+ while(wd<=max){
+   const day=wd.getDay();
+   if(day===6||day===0){
+     const left=tickPct(wd);
+     const next=new Date(wd);next.setDate(next.getDate()+1);
+     const right=tickPct(next>max?max:next);
+     weekendBands.push(`<div class="timeline-weekend-band ${day===6?"sat":"sun"}" style="left:${left}%;width:${Math.max(.35,right-left)}%"></div>`);
+   }
+   wd.setDate(wd.getDate()+1);
+ }
+ const weekendHtml=weekendBands.join("");
+ detailTimelineRange.textContent=min.toISOString().slice(0,10)+" ~ "+max.toISOString().slice(0,10);
+ let head=`<div class="timeline-head-detail"><div class="timeline-left-head">마케팅 활동</div><div class="timeline-axis-detail">${weekendHtml}${axisTicks}${pub?`<div class="publication-line" style="left:${pubx}%"></div><div class="publication-badge" style="left:${pubx}%">출간일 ${esc(pub)}</div>`:""}</div></div>`;
+ let rows=["서점 마케팅","SNS·바이럴","추가 마케팅"].map(g=>{const rr=sortDetailActivities(a.filter(x=>x.활동분류===g));if(!rr.length)return"";return `<div class="timeline-group-title ${detailGroupClass(g)}">${detailGroupName(g)} · ${rr.length}건 · ${detailMoney(rr.reduce((s,x)=>s+Number(x.비용||0),0))}</div>`+rr.map(x=>{const line=pub?`<div class="publication-line" style="left:${pubx}%"></div>`:"";const period=x.시작일?(x.종료일?(x.시작일===x.종료일?x.시작일:`${x.시작일} ~ ${x.종료일}`):x.시작일):(x.일정비고||"일정 미정");const tip=`${x.활동명||""}
+채널/매체: ${x.채널또는매체||"—"}
+기간: ${period}
+비용: ${detailMoney(x.비용)}${x.일정비고?`
+일정비고: ${x.일정비고}`:""}`;let bar=x.시작일?(x.종료일&&x.종료일!==x.시작일?`<div class="timeline-bar-detail ${detailGroupClass(g)}" data-tooltip="${esc(tip)}" style="left:${pct(x.시작일)}%;width:${Math.max(2,pct(x.종료일)-pct(x.시작일))}%">${esc(x.시작일.slice(5))}~${esc(x.종료일.slice(5))}</div>`:`<div class="timeline-point-detail ${detailGroupClass(g)}" data-tooltip="${esc(tip)}" style="left:${pct(x.시작일)}%"></div>`):`<span class="timeline-undated-detail" data-tooltip="${esc(tip)}">${esc(x.일정비고||"일정 미정")}</span>`;return `<div class="timeline-row-detail" data-activity-id="${esc(x.활동ID||"")}" data-activity-group="${esc(x.활동분류||"")}" data-activity-date="${esc(x.시작일||"")}" draggable="true" ondblclick="openActivityEditor('${esc(x.활동ID||"")}')"><div class="timeline-label-detail"><div class="timeline-channel-detail">${esc(x.채널또는매체||"—")}</div><div class="timeline-activity-detail"><span class="activity-drag-handle" title="같은 날짜 내 우선순위 이동">⋮⋮</span>${esc(x.활동명||"")}</div></div><div class="timeline-track-detail">${weekendHtml}${gridLines}${line}${bar}</div></div>`;}).join("");}).join("");detailTimeline.innerHTML=head+rows;bindTimelineTooltips();bindActivityDragAndDrop();
+}
+
+let draggedActivityId=null;
+function bindActivityDragAndDrop(){
+ document.querySelectorAll('[data-activity-id][draggable="true"]').forEach(el=>{
+  if(el.dataset.dragBound==='1')return;el.dataset.dragBound='1';
+  el.addEventListener('dragstart',e=>{draggedActivityId=el.dataset.activityId;el.classList.add('activity-dragging');if(e.dataTransfer){e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggedActivityId||'');}});
+  el.addEventListener('dragend',()=>{draggedActivityId=null;document.querySelectorAll('.activity-dragging,.activity-drop-target').forEach(x=>x.classList.remove('activity-dragging','activity-drop-target'));});
+  el.addEventListener('dragover',e=>{if(!draggedActivityId||draggedActivityId===el.dataset.activityId)return;e.preventDefault();document.querySelectorAll('.activity-drop-target').forEach(x=>x.classList.remove('activity-drop-target'));el.classList.add('activity-drop-target');if(e.dataTransfer)e.dataTransfer.dropEffect='move';});
+  el.addEventListener('dragleave',()=>el.classList.remove('activity-drop-target'));
+  el.addEventListener('drop',async e=>{e.preventDefault();el.classList.remove('activity-drop-target');const sourceId=draggedActivityId,targetId=el.dataset.activityId;if(!sourceId||!targetId||sourceId===targetId)return;await reorderActivityByDrag(sourceId,targetId);});
+ });
+}
+async function reorderActivityByDrag(sourceId,targetId){
+ const source=currentDetailActivities.find(x=>String(x.활동ID)===String(sourceId)),target=currentDetailActivities.find(x=>String(x.활동ID)===String(targetId));
+ if(!source||!target)return;
+ const sd=source.시작일||'',td=target.시작일||'';
+ if(source.활동분류!==target.활동분류||sd!==td){toast('우선순위는 같은 마케팅 분류 · 같은 시작일의 활동끼리만 변경할 수 있습니다.');return;}
+ const bucket=sortDetailActivities(currentDetailActivities.filter(x=>x.활동분류===source.활동분류&&(x.시작일||'')===sd));
+ const ids=bucket.map(x=>String(x.활동ID));const from=ids.indexOf(String(sourceId)),to=ids.indexOf(String(targetId));if(from<0||to<0)return;
+ const [moved]=ids.splice(from,1);ids.splice(to,0,moved);
+ try{detailLoadState.textContent='우선순위 저장 중...';const r=await pywebview.api.reorder_marketing_activities(currentDetailCode,source.활동분류,source.시작일||null,ids);if(!r.ok){toast(r.message||'우선순위 저장에 실패했습니다.');detailLoadState.textContent='Supabase 실시간 데이터';return;}toast('마케팅 활동 우선순위를 저장했습니다.');await loadMarketingPlanDetail(currentDetailCode);}catch(e){toast('우선순위 저장 실패: '+e);detailLoadState.textContent='Supabase 실시간 데이터';}
+}
+function onActivityEditorMoney(el){
+ const digits=String(el.value||"").replace(/[^0-9]/g,"");
+ el.value=digits?Number(digits).toLocaleString("ko-KR"):"";
+}
+function editorCostValue(){return Number(String(editActivityCost.value||"").replace(/[^0-9]/g,""))||0;}
+function openNewActivityEditor(){
+ if(!currentDetailCode){toast("먼저 도서를 선택해 주세요.");return;}
+ editingActivityId=null;activityEditorTitle.textContent="마케팅 활동 추가";deleteActivityBtn.disabled=true;
+ editActivityCategory.value="서점 마케팅";editActivityChannel.value="";editActivityName.value="";editActivityStart.value="";editActivityEnd.value="";editActivityCost.value="";editActivityUrl.value="";editActivitySchedule.value="";editActivityNote.value="";
+ activityEditorModal.classList.add("show");setTimeout(()=>editActivityName.focus(),50);
+}
+function openActivityEditor(activityId){
+ const a=currentDetailActivities.find(x=>String(x.활동ID)===String(activityId));if(!a)return;
+ editingActivityId=activityId;activityEditorTitle.textContent="마케팅 활동 수정";deleteActivityBtn.disabled=false;
+ editActivityCategory.value=a.활동분류||"서점 마케팅";editActivityChannel.value=a.채널또는매체||"";editActivityName.value=a.활동명||"";editActivityStart.value=a.시작일||"";editActivityEnd.value=a.종료일||"";editActivityCost.value=Number(a.비용||0).toLocaleString("ko-KR");editActivityUrl.value=a.URL||"";editActivitySchedule.value=a.일정비고||"";editActivityNote.value=a.비고||"";
+ activityEditorModal.classList.add("show");setTimeout(()=>editActivityName.focus(),50);
+}
+function closeActivityEditor(){activityEditorModal.classList.remove("show");editingActivityId=null;}
+function activityEditorPayload(){return {activity_category:editActivityCategory.value,channel_or_media:editActivityChannel.value.trim(),activity_name:editActivityName.value.trim(),start_date:editActivityStart.value||null,end_date:editActivityEnd.value||null,cost:editorCostValue(),url:editActivityUrl.value.trim()||null,schedule_note:editActivitySchedule.value.trim()||null,note:editActivityNote.value.trim()||null};}
+async function saveActivityFromEditor(){
+ const payload=activityEditorPayload();if(!payload.activity_name){toast("마케팅 활동명을 입력해 주세요.");editActivityName.focus();return;}
+ if(payload.start_date&&payload.end_date&&payload.end_date<payload.start_date){toast("종료일은 시작일보다 빠를 수 없습니다.");return;}
+ activityEditorBox.classList.add("activity-saving");
+ try{
+  const r=editingActivityId?await pywebview.api.update_marketing_activity(editingActivityId,payload):await pywebview.api.create_marketing_activity(currentDetailCode,payload);
+  if(!r.ok){toast(r.message||"저장에 실패했습니다.");return;}
+  const wasNew=!editingActivityId;closeActivityEditor();toast(wasNew?"마케팅 활동을 추가했습니다.":"마케팅 활동을 수정했습니다.");
+  await loadMarketingPlanDetail(currentDetailCode);marketingPlanList=[];
+ }catch(e){toast("활동 저장 실패: "+e);}finally{activityEditorBox.classList.remove("activity-saving");}
+}
+async function deleteActivityFromEditor(){
+ if(!editingActivityId)return;const a=currentDetailActivities.find(x=>String(x.활동ID)===String(editingActivityId));
+ if(!confirm(`'${a?.활동명||"선택한 활동"}'을 삭제하시겠습니까?\n삭제 후 되돌릴 수 없습니다.`))return;
+ activityEditorBox.classList.add("activity-saving");
+ try{
+  const r=await pywebview.api.delete_marketing_activity(editingActivityId);if(!r.ok){toast(r.message||"삭제에 실패했습니다.");return;}
+  closeActivityEditor();toast("마케팅 활동을 삭제했습니다.");await loadMarketingPlanDetail(currentDetailCode);marketingPlanList=[];
+ }catch(e){toast("활동 삭제 실패: "+e);}finally{activityEditorBox.classList.remove("activity-saving");}
+}
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(activityEditorModal.classList.contains("show"))closeActivityEditor();if(referenceFileModal.classList.contains("show"))closeReferenceFileModal();if(strategyEditorModal.classList.contains("show"))closeStrategyEditor();});
+
+function referenceIcon(ext){ext=(ext||"").toLowerCase();if(["jpg","jpeg", "jfif","png","webp","gif","bmp"].includes(ext))return "🖼️";if(ext==="pdf")return "📕";if(["xlsx","xls"].includes(ext))return "📊";if(["docx","doc"].includes(ext))return "📄";if(["pptx","ppt"].includes(ext))return "📽️";return "📎";}
+function fileSizeText(n){n=Number(n||0);if(n>=1024*1024)return (n/1024/1024).toFixed(1)+" MB";if(n>=1024)return (n/1024).toFixed(0)+" KB";return n+" B";}
+async function loadReferenceFiles(code){
+ if(!code){referenceFiles=[];renderReferenceFiles();return;}
+ try{const r=await pywebview.api.get_reference_files(code);if(!r.ok){toast(r.message);return;}referenceFiles=r.files||[];renderReferenceFiles();referenceStoragePath.textContent=`Y:\\출판사업본부\\06. 출판 마케팅 운영 시스템\\data\\attachments\\${code}\\`;}
+ catch(e){toast("참조파일 조회 실패: "+e);}
+}
+function isReferenceImage(ext){return ["jpg","jpeg","jfif","png","webp","gif","bmp"].includes(String(ext||"").toLowerCase());}
+function renderReferenceFiles(){
+ referenceFileCount.textContent=referenceFiles.length+"개";
+ if(!referenceFiles.length){referenceFileGrid.innerHTML='<div class="reference-empty">등록된 참조파일이 없습니다.<br>위 영역으로 파일을 드래그앤드롭하거나 ＋ 파일 등록 버튼을 이용해 주세요.</div>';return;}
+ referenceFileGrid.innerHTML=referenceFiles.map(f=>{const img=isReferenceImage(f.파일형식);const preview=img?`<div class="reference-preview" onclick="openReferenceFile('${esc(f.파일ID)}')"><span id="refthumb_${esc(f.파일ID)}" class="reference-thumb-loading">불러오는 중</span></div>`:`<div class="reference-preview" onclick="openReferenceFile('${esc(f.파일ID)}')"><div class="reference-icon">${referenceIcon(f.파일형식)}</div></div>`;return `<div class="reference-card ${img?'image-card':''}">${preview}<div><div class="reference-name" title="${esc(f.원본파일명||"")}">${esc(f.원본파일명||"")}</div><div class="reference-meta">${esc(f.파일분류||"참조파일")} · ${fileSizeText(f.파일크기)}${f.활동ID?" · 활동 연결":""}</div><div class="reference-desc">${esc(f.설명||"설명 없음")}</div></div><div class="reference-actions"><button onclick="openReferenceFile('${esc(f.파일ID)}')">열기</button><button onclick="editReferenceFile('${esc(f.파일ID)}')">정보 수정</button><button class="danger" onclick="deleteReferenceFile('${esc(f.파일ID)}')">삭제</button></div></div>`}).join("");
+ hydrateReferenceThumbnails();
+}
+async function hydrateReferenceThumbnails(){
+ for(const f of referenceFiles.filter(x=>isReferenceImage(x.파일형식))){
+  const holder=document.getElementById(`refthumb_${f.파일ID}`);if(!holder)continue;
+  try{const r=await pywebview.api.get_reference_thumbnail(String(f.파일ID));if(r?.ok&&r.thumbnail){const img=document.createElement("img");img.src=r.thumbnail;img.alt=f.원본파일명||"이미지";holder.replaceWith(img);}else holder.textContent="이미지";}catch(e){holder.textContent="이미지";}
+ }
+}
+
+function populateReferenceActivities(selectedId=""){
+ referenceActivity.innerHTML='<option value="">도서 전체 참조</option>'+currentDetailActivities.map(a=>`<option value="${esc(a.활동ID||"")}">${esc((a.활동명||"")+" · "+(a.채널또는매체||""))}</option>`).join("");
+ referenceActivity.value=selectedId||"";
+}
+function openReferenceFileModal(){
+ // 정보 수정 팝업은 기존 파일의 '정보 수정'에서만 사용합니다.
+ if(!currentDetailCode){toast("먼저 도서를 선택해 주세요.");return;}
+ editingReferenceFileId=null;pendingReferenceFiles=[];referenceModalTitle.textContent="참조파일 등록";referenceCategory.value="참조파일";referenceDescription.value="";populateReferenceActivities();referencePickArea.style.display="block";referenceSelectedFiles.textContent="선택된 파일이 없습니다.";referenceFileModal.classList.add("show");
+}
+function editReferenceFile(id){const f=referenceFiles.find(x=>String(x.파일ID)===String(id));if(!f)return;editingReferenceFileId=id;pendingReferenceFiles=[];referenceModalTitle.textContent="참조파일 정보 수정";referenceCategory.value=f.파일분류||"참조파일";referenceDescription.value=f.설명||"";populateReferenceActivities(f.활동ID||"");referencePickArea.style.display="none";referenceFileModal.classList.add("show");}
+function closeReferenceFileModal(){referenceFileModal.classList.remove("show");editingReferenceFileId=null;pendingReferenceFiles=[];}
+const referenceAllowedExt=new Set(["jpg","jpeg","jfif","png","webp","gif","bmp","pdf","doc","docx","xls","xlsx","ppt","pptx"]);
+
+function populateReferenceInlineActivities(selected=""){
+ const sel=document.getElementById("referenceInlineActivity");if(!sel)return;
+ sel.innerHTML='<option value="">도서 전체 참조</option>';
+ (currentDetailActivities||[]).forEach(a=>{
+   const o=document.createElement("option");o.value=a.활동ID||"";
+   o.textContent=`${a.채널또는매체||""}${a.채널또는매체?" · ":""}${a.활동명||"활동"}`;
+   if(String(o.value)===String(selected))o.selected=true;sel.appendChild(o);
+ });
+}
+function openReferenceInlineUploader(){
+ if(!currentDetailCode){toast("먼저 도서를 선택해 주세요.");return;}
+ pendingReferenceFiles=[];
+ const box=document.getElementById("referenceInlineUploader"),form=document.getElementById("referenceInlineForm");
+ box?.classList.add("open");form?.classList.remove("show");
+ const label=document.getElementById("referenceInlineSelectedFiles");if(label)label.textContent="선택된 파일이 없습니다.";
+ document.getElementById("referenceInlineCategory").value="참조파일";
+ document.getElementById("referenceInlineDescription").value="";
+ populateReferenceInlineActivities();
+ setupReferenceDropzone();
+ setTimeout(()=>box?.scrollIntoView({behavior:"smooth",block:"nearest"}),30);
+}
+function closeReferenceInlineUploader(){
+ document.getElementById("referenceInlineUploader")?.classList.remove("open");
+ document.getElementById("referenceInlineForm")?.classList.remove("show");
+ pendingReferenceFiles=[];
+}
+function setupReferenceDropzone(){
+ const dz=document.getElementById("referenceDropzone");if(!dz||dz.dataset.bound)return;dz.dataset.bound="1";
+ dz.addEventListener("click",()=>pickReferenceFilesInline());
+ ["dragenter","dragover"].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();e.stopPropagation();dz.classList.add("dragover");}));
+ ["dragleave","drop"].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();e.stopPropagation();dz.classList.remove("dragover");}));
+ dz.addEventListener("drop",e=>handleReferenceDroppedFiles([...e.dataTransfer.files]));
+}
+function showInlineReferenceSelection(){
+ const form=document.getElementById("referenceInlineForm"),label=document.getElementById("referenceInlineSelectedFiles");
+ if(label)label.innerHTML=pendingReferenceFiles.length?pendingReferenceFiles.map(f=>`${esc(f.name)} <span style="color:#98a2b3">(${fileSizeText(f.size)})</span>`).join("<br>"):"선택된 파일이 없습니다.";
+ if(pendingReferenceFiles.length)form?.classList.add("show");else form?.classList.remove("show");
+}
+async function handleReferenceDroppedFiles(files){
+ if(!currentDetailCode){toast("먼저 도서를 선택해 주세요.");return;}
+ const valid=files.filter(f=>{const ext=(f.name.split(".").pop()||"").toLowerCase();return referenceAllowedExt.has(ext)&&f.size<=50*1024*1024;});
+ if(!valid.length){toast("지원되는 참조파일이 없습니다. 파일 형식 또는 50MB 제한을 확인해 주세요.");return;}
+ const items=[];
+ for(const f of valid){
+  try{const data=await readFileAsDataURL(f);items.push({name:f.name,size:f.size,extension:(f.name.split(".").pop()||"").toLowerCase(),data_base64:data});}
+  catch(e){console.error(e);}
+ }
+ pendingReferenceFiles=items;populateReferenceInlineActivities();showInlineReferenceSelection();
+}
+async function pickReferenceFilesInline(){
+ try{
+  const r=await pywebview.api.select_reference_files();if(!r.ok){toast(r.message);return;}
+  pendingReferenceFiles=r.files||[];populateReferenceInlineActivities();showInlineReferenceSelection();
+ }catch(e){toast("파일 선택 실패: "+e);}
+}
+async function saveReferenceFilesInline(){
+ try{
+  if(!pendingReferenceFiles.length){toast("등록할 파일을 선택해 주세요.");return;}
+  const r=await pywebview.api.add_reference_files(
+    currentDetailCode,pendingReferenceFiles,
+    document.getElementById("referenceInlineCategory").value,
+    document.getElementById("referenceInlineDescription").value.trim()||null,
+    document.getElementById("referenceInlineActivity").value||null,
+    registrar.value||null
+  );
+  if(!r.ok){toast(r.message);return;}
+  toast(`${r.count||0}개 참조파일을 등록했습니다.`);
+  closeReferenceInlineUploader();await loadReferenceFiles(currentDetailCode);
+ }catch(e){toast("참조파일 저장 실패: "+e);}
+}
+function readFileAsDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("파일 읽기 실패"));r.readAsDataURL(file);});}
+async function pickReferenceFiles(){try{const r=await pywebview.api.select_reference_files();if(!r.ok){toast(r.message);return;}pendingReferenceFiles=r.files||[];referenceSelectedFiles.innerHTML=pendingReferenceFiles.length?pendingReferenceFiles.map(f=>`${esc(f.name)} <span style="color:#98a2b3">(${fileSizeText(f.size)})</span>`).join("<br>"):"선택된 파일이 없습니다.";}catch(e){toast("파일 선택 실패: "+e);}}
+async function saveReferenceFiles(){
+ try{
+  if(editingReferenceFileId){const r=await pywebview.api.update_reference_file(editingReferenceFileId,{file_category:referenceCategory.value,activity_id:referenceActivity.value||null,description:referenceDescription.value.trim()||null});if(!r.ok){toast(r.message);return;}closeReferenceFileModal();toast("참조파일 정보를 수정했습니다.");await loadReferenceFiles(currentDetailCode);return;}
+  if(!pendingReferenceFiles.length){toast("등록할 파일을 선택해 주세요.");return;}
+  const r=await pywebview.api.add_reference_files(currentDetailCode,pendingReferenceFiles,referenceCategory.value,referenceDescription.value.trim()||null,referenceActivity.value||null,registrar.value||null);if(!r.ok){toast(r.message);return;}closeReferenceFileModal();toast(`${r.count||0}개 참조파일을 등록했습니다.`);await loadReferenceFiles(currentDetailCode);
+ }catch(e){toast("참조파일 저장 실패: "+e);}
+}
+async function openReferenceFile(id){try{const r=await pywebview.api.open_reference_file(id);if(!r.ok)toast(r.message);}catch(e){toast("파일 열기 실패: "+e);}}
+async function deleteReferenceFile(id){const f=referenceFiles.find(x=>String(x.파일ID)===String(id));if(!confirm(`'${f?.원본파일명||"선택한 파일"}'을 삭제하시겠습니까?\nY드라이브의 실제 파일과 DB 등록정보가 함께 삭제됩니다.`))return;try{const r=await pywebview.api.delete_reference_file(id);if(!r.ok){toast(r.message);return;}toast("참조파일을 삭제했습니다.");await loadReferenceFiles(currentDetailCode);}catch(e){toast("참조파일 삭제 실패: "+e);}}
+
+function bindTimelineTooltips(){
+ let tip=document.getElementById("timelineHoverTip");if(!tip){tip=document.createElement("div");tip.id="timelineHoverTip";tip.className="timeline-hover-tip";document.body.appendChild(tip)}
+ detailTimeline.querySelectorAll("[data-tooltip]").forEach(el=>{el.onmouseenter=e=>{tip.textContent=el.dataset.tooltip||"";tip.classList.add("show")};el.onmousemove=e=>{const pad=14,w=tip.offsetWidth||300,h=tip.offsetHeight||80;let x=e.clientX+14,y=e.clientY+14;if(x+w>window.innerWidth-pad)x=e.clientX-w-14;if(y+h>window.innerHeight-pad)y=e.clientY-h-14;tip.style.left=x+"px";tip.style.top=y+"px"};el.onmouseleave=()=>tip.classList.remove("show")});
+}
+
+
+// ===== v2.8.0 출간 후 성과 · Supabase 실제 데이터 연결 =====
+let performancePlanList=[];
+let currentPerformanceCode=null;
+let currentPerformanceData=null;
+let performancePeriod=30;
+
+function perfNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function perfDate(v){if(!v)return null;const d=new Date(String(v).slice(0,10)+"T00:00:00");return Number.isNaN(d.getTime())?null:d}
+function perfDateText(v){const d=perfDate(v);return d?`${d.getMonth()+1}/${d.getDate()}`:"—"}
+function perfDday(pub){const d=perfDate(pub);if(!d)return "출간일 미정";const t=new Date();t.setHours(0,0,0,0);const diff=Math.floor((t-d)/86400000);return diff>=0?`출간 D+${diff}`:`출간 D${diff}`}
+function perfBudget(a){return (a||[]).reduce((s,x)=>s+perfNum(x.비용),0)}
+function perfActualBudget(a){return (a||[]).reduce((s,x)=>s+perfNum(x.실제비용),0)}
+function perfGoal12(s,bp){return perfNum(s?.출간12개월부수)||perfNum(bp?.연간계획부수)||0}
+function perfSeries(rows){return (rows||[]).map(x=>({date:x.판매일,scm:perfNum(x.SCM실판매부수),erp:perfNum(x.ERP출고부수),scmSales:perfNum(x.SCM환산매출액),erpSales:perfNum(x.ERP매출액)})).filter(x=>x.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function perfActivityStatus(a){
+ if(a.실행상태)return String(a.실행상태);
+ const today=new Date();today.setHours(0,0,0,0);
+ const s=perfDate(a.실제시작일||a.시작일),e=perfDate(a.실제종료일||a.종료일)||s;
+ if(!s)return "예정";if(e<today)return "완료";if(s<=today&&e>=today)return "진행";return "예정";
+}
+function perfStatusClass(s){const v=String(s||"");return v.includes("완료")?"done":v.includes("진행")?"run":"plan"}
+function perfMoneyWon(v){const n=perfNum(v);return n?`${Math.round(n/10000).toLocaleString("ko-KR")}만원`:"—"}
+function perfRatio(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function perfEscMultiline(v){return esc(v||"").replace(/\n/g,"<br>")}
+
+async function loadPerformancePlanList(){
+ performanceLoadState.textContent="Supabase에서 불러오는 중...";
+ const r=await pywebview.api.get_marketing_plan_list();
+ if(!r.ok){performanceLoadState.textContent="목록 조회 실패";toast(r.message);return;}
+ performancePlanList=r.plans||[];
+ performanceProductSelect.innerHTML=performancePlanList.map(x=>`<option value="${esc(x.제품코드)}">${esc(cleanProductName(x.제품명))} · ${esc(x.제품코드)}</option>`).join("");
+ performanceLoadState.textContent=`${performancePlanList.length}개 기획`;
+ if(performancePlanList.length)await loadPerformanceDetail(performanceProductSelect.value);
+ else performanceContent.innerHTML='<div class="perf-empty">등록된 마케팅 기획이 없습니다.</div>';
+}
+async function loadPerformanceDetail(code){
+ if(!code)return;
+ performanceLoadState.textContent="성과 데이터 불러오는 중...";
+ currentPerformanceCode=code;
+ const r=await pywebview.api.get_post_launch_performance(code);
+ if(!r.ok){performanceLoadState.textContent="조회 실패";toast(r.message);return;}
+ currentPerformanceData=r.detail||{};
+ const salesCount=(currentPerformanceData.판매실적일별||[]).length;
+ performanceLoadState.textContent=`Supabase 실제 데이터 · 판매 ${salesCount.toLocaleString("ko-KR")}일`;
+ renderPerformancePage(currentPerformanceData);
+}
+
+function renderPerformancePage(r){
+ const b=r.기본정보||{},p=r.마케팅기획||{},acts=sortDetailActivities(r.마케팅활동||[]),sales=r.영업목표||{},bp=r.사업계획목표||{};
+ const salesRows=r.판매실적일별||[],contents=r.콘텐츠성과||[],buyer=r.구매자반응||{},evaluation=r.마케팅성과평가||{};
+ const series=perfSeries(salesRows),pub=b.출간일||"",goal12=perfGoal12(sales,bp),budget=perfBudget(acts),actualBudget=perfActualBudget(acts);
+ const cumulative=series.reduce((s,x)=>s+x.scm,0),scmAmount=series.reduce((s,x)=>s+x.scmSales,0),erpQty=series.reduce((s,x)=>s+x.erp,0),erpAmount=series.reduce((s,x)=>s+x.erpSales,0);
+ const last7=series.slice(-7).reduce((s,x)=>s+x.scm,0),prev7=series.slice(-14,-7).reduce((s,x)=>s+x.scm,0),wow=prev7?((last7-prev7)/prev7*100):null;
+ const goalRate=goal12?cumulative/goal12*100:0,execRate=budget?actualBudget/budget*100:0;
+ const done=acts.filter(a=>perfActivityStatus(a).includes("완료")).length,run=acts.filter(a=>perfActivityStatus(a).includes("진행")).length;
+ const title=cleanProductName(b.도서명||currentPerformanceCode),planMessage=p.마케팅전략||p.마케팅문구||"등록된 마케팅 전략이 없습니다.";
+ const price=perfNum(b.정가),cat=[b.대분류,b.중분류].filter(Boolean).join(" · ")||"마케팅 대상 도서";
+ currentPerformanceData.__series=series;
+
+ const contentHtml=contents.length?contents.slice(0,6).map((c,i)=>`
+   <div class="p271-digital">
+    <div class="p271-ico">${(c.플랫폼||"").toLowerCase().includes("youtube")||String(c.플랫폼||"").includes("유튜브")?"▶":"#"}</div>
+    <div><b>${esc(c.콘텐츠명||c.채널명||"콘텐츠")}</b><small>${esc([c.채널명,c.게시일].filter(Boolean).join(" · "))}</small></div>
+    <div class="p271-metrics">
+      <div><small>조회</small><strong>${c.조회수!=null?perfNum(c.조회수).toLocaleString("ko-KR"):"—"}</strong></div>
+      <div><small>댓글</small><strong>${c.댓글수!=null?perfNum(c.댓글수).toLocaleString("ko-KR"):"—"}</strong></div>
+      <span class="p271-signal">실데이터</span>
+    </div>
+   </div>`).join(""):`<div class="perf-empty">등록된 SNS·바이럴 콘텐츠 성과가 없습니다.</div>`;
+
+ const ages=[
+   ["20대",buyer["20대비율"]],["30대",buyer["30대비율"]],["40대",buyer["40대비율"]],["50대",buyer["50대비율"]],["60대+",buyer["60대이상비율"]]
+ ];
+ const maxAge=Math.max(1,...ages.map(x=>perfRatio(x[1])));
+ const buyerHtml=buyer&&buyer.구매자반응ID?`
+  <div class="p271-audience-grid">
+   <div class="p271-donut-wrap">
+    <div class="p271-donut" style="background:conic-gradient(#2f6bd5 0 ${perfRatio(buyer.남성비율)}%,#27b7a4 ${perfRatio(buyer.남성비율)}% 100%)"></div>
+    <div class="p271-mini-legend"><b>${esc(buyer.데이터출처||"YES24")}</b><br>남성 ${perfRatio(buyer.남성비율).toFixed(1)}%<br>여성 ${perfRatio(buyer.여성비율).toFixed(1)}%</div>
+   </div>
+   <div class="p271-age-bars">${ages.map(x=>`<div class="p271-age"><div class="row"><span>${x[0]}</span><b>${perfRatio(x[1]).toFixed(1)}%</b></div><div class="p271-track"><div class="p271-fill" style="width:${perfRatio(x[1])/maxAge*100}%"></div></div></div>`).join("")}</div>
+  </div>
+  <div class="p271-match"><b>기준일 ${esc(buyer.기준일||"—")}</b> · Supabase에 저장된 구매자 성별·연령 실데이터입니다.</div>`:`<div class="perf-empty">등록된 YES24 구매자 반응 데이터가 없습니다.</div>`;
+
+ performanceContent.innerHTML=`
+ <section class="p271-book-card">
+  <div class="p271-cover"><small>${esc(b.중분류||"MIRAE N")}</small><b>${esc(title)}</b></div>
+  <div class="p271-book-info"><div class="eyebrow">${esc(cat)} · 제품코드 ${esc(b.제품코드||currentPerformanceCode)}</div><h2>${esc(title)}</h2><div class="p271-meta"><span>출간일 ${esc(pub||"—")}</span><span>개발PM ${esc(b.개발PM||"—")}</span><span>마케팅PM ${esc(b.마케팅PM||"—")}</span>${price?`<span>정가 ${price.toLocaleString("ko-KR")}원</span>`:""}</div><div class="p271-summary">${esc(planMessage)}</div></div>
+  <div class="p271-kpis">
+   <div class="p271-kpi"><span>SCM 누적 실판매</span><strong>${series.length?cumulative.toLocaleString("ko-KR")+"부":"—"}</strong><small>${series.length?`환산매출 ${perfMoneyWon(scmAmount)}`:"판매실적 데이터 없음"}</small></div>
+   <div class="p271-kpi"><span>ERP 누적 매출</span><strong>${series.length?perfMoneyWon(erpAmount):"—"}</strong><small>${series.length?`순출고 ${erpQty.toLocaleString("ko-KR")}부`:"판매실적 데이터 없음"}</small></div>
+   <div class="p271-kpi"><span>12개월 목표 대비</span><strong>${series.length&&goal12?goalRate.toFixed(1)+"%":"—"}</strong><small>${goal12?goal12.toLocaleString("ko-KR")+"부 목표 기준":"영업목표 없음"}</small></div>
+   <div class="p271-kpi"><span>최근 7일 실판매</span><strong class="${wow!==null&&wow>=0?"up":""}">${wow===null?"—":`${wow>=0?"+":""}${wow.toFixed(1)}%`}</strong><small>${series.length>=14?"직전 7일 대비":"14일 이상 데이터 필요"}</small></div>
+  </div>
+ </section>
+
+ <div class="p271-flow"><b>회의 흐름</b><i>→</i> 현재 경과 <i>→</i> 판매·활동 연결 <i>→</i> 계획 대비 실행 <i>→</i> 콘텐츠·구매자 반응 <i>→</i> PM 판단</div>
+
+ <section class="p271-panel"><div class="p271-panel-head"><div><h3>1. 현재 경과 요약</h3><p>Supabase에 축적된 실제 판매·실행 데이터를 기준으로 현재 상태를 보여줍니다.</p></div><span class="p271-panel-tag">${esc(perfDday(pub))}</span></div>
+  <div class="p271-summary-grid">
+   <div class="p271-summary-box good"><span>판매 흐름</span><strong>${wow===null?"데이터 축적 중":wow>=0?"최근 판매 흐름 상승":"최근 판매 흐름 둔화"}</strong><p>${wow===null?"판매실적일별 데이터가 연결되면 최근 7일과 직전 7일을 자동 비교합니다.":`최근 7일 실판매가 직전 7일 대비 ${Math.abs(wow).toFixed(1)}% ${wow>=0?"증가":"감소"}했습니다.`}</p></div>
+   <div class="p271-summary-box"><span>계획 실행</span><strong>완료 ${done}건 · 진행 ${run}건</strong><p>출간 전에 등록한 총 ${acts.length}건의 활동과 실제 실행정보를 비교합니다.</p></div>
+   <div class="p271-summary-box warn"><span>예산 집행</span><strong>${actualBudget?execRate.toFixed(1)+"%":"실제비용 입력 대기"}</strong><p>${actualBudget?`계획 ${perfMoneyWon(budget)} 중 ${perfMoneyWon(actualBudget)} 집행.`:"마케팅활동의 실제비용이 입력되면 자동 계산합니다."}</p></div>
+  </div>
+ </section>
+
+ <section class="p271-panel"><div class="p271-panel-head"><div><h3>2. 판매 추이 및 마케팅 실행 타임라인</h3><p>SCM 실판매와 ERP 출고를 실제 마케팅 집행기간과 같은 날짜축에서 비교합니다.</p></div><span class="p271-panel-tag">${series.length?"Supabase 실데이터":"판매 데이터 없음"}</span></div>
+  <div class="p271-sales-shell"><div class="p271-toolbar"><div class="p271-period"><span>조회기간</span><button onclick="setPerformancePeriod(15)" data-p="15">15일</button><button onclick="setPerformancePeriod(30)" data-p="30">30일</button><button onclick="setPerformancePeriod(60)" data-p="60">60일</button><button onclick="setPerformancePeriod(90)" data-p="90">90일</button><b id="p271PeriodText"></b></div><div class="p271-legend"><span>SCM 일별 실판매</span><span class="erp">ERP 일별 출고</span></div></div><div id="p271SalesGrid"></div><div class="p271-note"><b>기준:</b> 그래프 값은 Supabase 「판매실적일별」 테이블의 실제 저장값만 사용합니다. 데이터가 없으면 예시값을 생성하지 않습니다.</div></div>
+ </section>
+
+ <div class="p271-two-col">
+  <section class="p271-panel"><div class="p271-panel-head"><div><h3>3. 계획 대비 실제 실행</h3><p>출간 전에 등록한 일정과 실제 진행일을 비교합니다.</p></div><span class="p271-panel-tag">PLAN → EXECUTION</span></div>
+   <div class="p271-table-wrap"><table class="p271-table"><thead><tr><th>마케팅 활동</th><th>계획 일정</th><th>실제 일정</th><th>계획비</th><th>실제비</th><th>상태</th></tr></thead><tbody>
+   ${acts.map(a=>{const st=perfActivityStatus(a);return `<tr><td><strong>${esc(a.활동명||"활동")}</strong><br><span class="p271-placeholder">${esc(a.채널또는매체||detailGroupName(a.활동분류||""))}</span></td><td>${esc(a.시작일||"미정")}${a.종료일&&a.종료일!==a.시작일?`~${esc(a.종료일)}`:""}</td><td>${esc(a.실제시작일||"—")}${a.실제종료일&&a.실제종료일!==a.실제시작일?`~${esc(a.실제종료일)}`:""}</td><td>${detailMoney(a.비용)}</td><td>${a.실제비용!=null?detailMoney(a.실제비용):"—"}</td><td><span class="p271-status ${perfStatusClass(st)}">${esc(st)}</span></td></tr>`}).join("")||'<tr><td colspan="6">등록된 활동이 없습니다.</td></tr>'}
+   </tbody></table></div>
+  </section>
+  <section class="p271-panel"><div class="p271-panel-head"><div><h3>4. 예산 집행 현황</h3><p>계획비와 실제비용을 활동별로 합산합니다.</p></div><span class="p271-panel-tag">Supabase</span></div>
+   <div class="p271-budget"><div><span>계획 예산</span><strong>${perfMoneyWon(budget)}</strong></div><div><span>실제 집행</span><strong class="good">${actualBudget?perfMoneyWon(actualBudget):"—"}</strong></div><div><span>집행률</span><strong>${actualBudget&&budget?execRate.toFixed(1)+"%":"—"}</strong></div><div><span>잔여</span><strong>${actualBudget&&budget?perfMoneyWon(Math.max(0,budget-actualBudget)):"—"}</strong></div></div>
+  </section>
+ </div>
+
+ <div class="p271-two-col">
+  <section class="p271-panel"><div class="p271-panel-head"><div><h3>5. SNS·바이럴 콘텐츠 반응</h3><p>Supabase 「콘텐츠성과」의 콘텐츠별 반응 지표를 표시합니다.</p></div><span class="p271-panel-tag">${contents.length}건</span></div><div class="p271-digital-cards">${contentHtml}</div></section>
+  <section class="p271-panel"><div class="p271-panel-head"><div><h3>6. YES24 구매자 반응</h3><p>최근 기준일의 구매자 성별·연령 데이터를 표시합니다.</p></div><span class="p271-panel-tag">${buyer&&buyer.구매자반응ID?"실데이터":"데이터 없음"}</span></div><div class="p271-audience">${buyerHtml}</div></section>
+ </div>
+
+ <section class="p271-panel"><div class="p271-panel-head"><div><h3>7. PM 정성 평가 및 향후 대응</h3><p>이제 입력값을 로컬 브라우저가 아니라 Supabase 「마케팅성과평가」에 저장합니다.</p></div><span class="p271-panel-tag">${evaluation&&evaluation.평가기준일?`최근 평가 ${esc(evaluation.평가기준일)}`:"신규 평가"}</span></div>
+  <div class="p271-pm-grid">
+   <div class="p271-pm-card"><h4>지금까지의 평가</h4><textarea id="performancePmReview" placeholder="초기 판매 반응, 채널별 반응, 계획 대비 잘 된 점과 아쉬운 점을 기록합니다.">${esc(evaluation.성과코멘트||"")}</textarea><div class="foot">Supabase 자동 저장 대상</div></div>
+   <div class="p271-pm-card"><h4>향후 마케팅 계획</h4><textarea id="performancePmNext" placeholder="추가 집행 여부, 집중 채널, 콘텐츠 재활용, 종료 또는 확대 계획을 기록합니다.">${esc(evaluation.다음액션플랜||"")}</textarea><div class="foot">향후 채널·콘텐츠·예산 방향 기록</div></div>
+  </div>
+  <div class="p271-save-row"><button onclick="savePerformanceNotes()">PM 평가 Supabase 저장</button></div>
+ </section>`;
+ setPerformancePeriod(performancePeriod);
+}
+
+function setPerformancePeriod(n){
+ performancePeriod=n;
+ document.querySelectorAll(".p271-period button").forEach(b=>b.classList.toggle("active",Number(b.dataset.p)===n));
+ renderP271SalesGrid();
+}
+function performanceVisibleSeries(){return (currentPerformanceData?.__series||[]).slice(-performancePeriod)}
+function renderP271SalesGrid(){
+ const root=document.getElementById("p271SalesGrid");if(!root)return;
+ const rows=performanceVisibleSeries(),acts=sortDetailActivities(currentPerformanceData?.마케팅활동||[]);
+ if(!rows.length){root.innerHTML='<div class="perf-empty">Supabase 「판매실적일별」에 이 도서의 판매 데이터가 없습니다.</div>';const t=document.getElementById("p271PeriodText");if(t)t.textContent="";return}
+ const start=perfDate(rows[0].date),end=perfDate(rows.at(-1).date),span=Math.max(1,end-start),pct=d=>Math.max(0,Math.min(100,(perfDate(d)-start)/span*100));
+ const pub=currentPerformanceData?.기본정보?.출간일,pubPct=pub&&perfDate(pub)>=start&&perfDate(pub)<=end?pct(pub):null;
+ const max=Math.max(10,...rows.flatMap(x=>[x.scm,x.erp]))*1.12,W=1000,H=220,T=20,B=32,ph=H-T-B,x=i=>(i/(rows.length-1||1))*W,y=v=>T+ph-(v/max)*ph;
+ const grids=[.25,.5,.75,1].map(t=>`<line x1="0" y1="${T+ph*(1-t)}" x2="1000" y2="${T+ph*(1-t)}"/>`).join("");
+ const bw=Math.max(4,Math.min(14,780/rows.length)),bars=rows.map((r,i)=>`<rect x="${x(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${T+ph-y(r.erp)}" rx="2"/>`).join("");
+ const line=rows.map((r,i)=>`${x(i)},${y(r.scm)}`).join(" "),step=Math.max(1,Math.floor((rows.length-1)/6));
+ const ticks=rows.map((r,i)=>i%step===0||i===rows.length-1?`<span class="p271-tick" style="left:${(i/(rows.length-1||1))*100}%">${perfDateText(r.date)}</span>`:"").join("");
+ const visible=acts.filter(a=>{const ss=perfDate(a.실제시작일||a.시작일),ee=perfDate(a.실제종료일||a.종료일)||ss;return ss&&ee>=start&&ss<=end}).slice(0,8);
+ const labels=visible.map(a=>`<div class="p271-activity-label"><b>${esc(a.활동명||"활동")}</b><small>${esc(a.실제시작일||a.시작일||"")}${(a.실제종료일||a.종료일)&&((a.실제종료일||a.종료일)!==(a.실제시작일||a.시작일))?`~${esc(a.실제종료일||a.종료일)}`:""}</small></div>`).join("");
+ const tracks=visible.map(a=>{const s0=a.실제시작일||a.시작일,e0=a.실제종료일||a.종료일||s0,ss=perfDate(s0),ee=perfDate(e0),l=pct(ss<start?rows[0].date:s0),rr=pct(ee>end?rows.at(-1).date:e0),w=Math.max(1.8,rr-l),cl=(a.활동분류||"").includes("SNS")?"sns":(a.활동분류||"").includes("서점")?"store":"extra";return `<div class="p271-activity-track">${pubPct!==null?`<div class="p271-publine" style="left:${pubPct}%"></div>`:""}<div class="p271-actbar ${cl}" style="left:${l}%;width:${w}%">${esc(a.활동명||"")}</div></div>`}).join("");
+ root.innerHTML=`<div class="p271-sales-grid"><div class="p271-sales-left"><div class="p271-chart-label">일별 판매·출고</div>${labels||'<div class="p271-activity-label"><b>조회기간 활동 없음</b></div>'}</div><div class="p271-timeline-area"><div class="p271-chart"><svg viewBox="0 0 1000 220" preserveAspectRatio="none"><g stroke="#e9edf2">${grids}</g><g fill="#a2adbb" opacity=".78">${bars}</g><polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${line}"/></svg>${pubPct!==null?`<div class="p271-publine" style="left:${pubPct}%"></div><div class="p271-pubbadge" style="left:${pubPct}%">${perfDateText(pub)} 출간</div>`:""}</div><div class="p271-axis">${ticks}</div>${tracks}</div></div>`;
+ const t=document.getElementById("p271PeriodText");if(t)t.textContent=`${perfDateText(rows[0].date)}~${perfDateText(rows.at(-1).date)}`;
+}
+async function savePerformanceNotes(){
+ if(!currentPerformanceCode)return;
+ const payload={
+  review_date:new Date().toISOString().slice(0,10),
+  performance_comment:document.getElementById("performancePmReview")?.value||"",
+  next_action:document.getElementById("performancePmNext")?.value||""
+ };
+ const r=await pywebview.api.save_marketing_performance_evaluation(currentPerformanceCode,payload);
+ if(!r.ok){toast(r.message||"성과평가 저장에 실패했습니다.");return}
+ toast("PM 성과평가를 Supabase에 저장했습니다.");
+ await loadPerformanceDetail(currentPerformanceCode);
+}
+
+
+let tt;function toast(m){const e=document.getElementById("toast");e.textContent=m;e.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("show"),3500);}
+
+// v2.6.1 - 영업목표 그래프 분기 배치 보정
+function salesQuarterKey(dateValue){
+  if(!dateValue) return null;
+  const d = new Date(String(dateValue).slice(0,10) + "T00:00:00");
+  if(Number.isNaN(d.getTime())) return null;
+  return {year:d.getFullYear(), quarter:Math.floor(d.getMonth()/3)+1};
+}
+function addMonthsSafe(dateValue, months){
+  if(!dateValue) return null;
+  const d = new Date(String(dateValue).slice(0,10) + "T00:00:00");
+  if(Number.isNaN(d.getTime())) return null;
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + Number(months||0));
+  const last = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  d.setDate(Math.min(day, last));
+  return d;
+}
+function salesQuarterLabel(y,q){ const m={1:"1월",2:"3월",3:"6월",4:"9월"}; return `${String(y).slice(-2)}년 ${m[q]}`; }
+
+function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
+  const axis = [];
+  for(let y=2026;y<=2027;y++){
+    for(let q=1;q<=4;q++) axis.push({year:y,quarter:q,label:salesQuarterLabel(y,q)});
+  }
+  const idx = (y,q)=>axis.findIndex(x=>x.year===y&&x.quarter===q);
+
+  // 1) 수불 사업계획: 실제 매출월 기준 분기 합계 후 누적.
+  // 데이터가 없는 이전/이후 분기는 null. 절대로 0으로 채우지 않음.
+  const businessQuarterSum = new Map();
+  (businessMonthly||[]).forEach(r=>{
+    const k=salesQuarterKey(r.매출월 || r.month || r.월);
+    if(!k) return;
+    const key=`${k.year}-${k.quarter}`;
+    businessQuarterSum.set(key,(businessQuarterSum.get(key)||0)+Number(r.계획부수||r.units||0));
+  });
+  const business = Array(axis.length).fill(null);
+  let businessCum = 0;
+  let businessStarted = false;
+  axis.forEach((a,i)=>{
+    const key=`${a.year}-${a.quarter}`;
+    if(businessQuarterSum.has(key)){
+      businessStarted = true;
+      businessCum += businessQuarterSum.get(key);
+      business[i] = businessCum;
+    } else if(businessStarted){
+      // 실제 수불 데이터가 존재하는 연도 내부에서만 누적 유지.
+      // 단, 2027처럼 원천 데이터가 전혀 없는 연도는 선을 연장하지 않음.
+      const hasSameYearData = [...businessQuarterSum.keys()].some(k=>k.startsWith(`${a.year}-`));
+      if(hasSameYearData) business[i] = businessCum;
+    }
+  });
+
+  // 2) 마케팅 기획 목표: 출간일 실제 날짜 + 3/6/12개월로 달력 분기 계산.
+  const marketing = Array(axis.length).fill(null);
+  if(pubDate && marketingGoal){
+    const base = new Date(String(pubDate).slice(0,10)+"T00:00:00");
+    const milestones = [
+      {date:base, value:Number(marketingGoal.초도배본부수||0), label:"초도"},
+      {date:addMonthsSafe(pubDate,3), value:Number(marketingGoal.초도배본부수||0)+Number(marketingGoal.출간3개월부수||0), label:"3개월"},
+      {date:addMonthsSafe(pubDate,6), value:Number(marketingGoal.초도배본부수||0)+Number(marketingGoal.출간3개월부수||0)+Number(marketingGoal.출간6개월부수||0), label:"6개월"},
+      {date:addMonthsSafe(pubDate,12), value:Number(marketingGoal.초도배본부수||0)+Number(marketingGoal.출간3개월부수||0)+Number(marketingGoal.출간6개월부수||0)+Number(marketingGoal.출간12개월부수||0), label:"12개월"}
+    ];
+    milestones.forEach(m=>{
+      if(!m.date || !m.value) return;
+      const k={year:m.date.getFullYear(),quarter:Math.floor(m.date.getMonth()/3)+1};
+      const i=idx(k.year,k.quarter);
+      if(i>=0) marketing[i]=m.value;
+    });
+  }
+
+  return {axis,business,marketing};
+}
+
+</script>
+
+</body>
+</html>
