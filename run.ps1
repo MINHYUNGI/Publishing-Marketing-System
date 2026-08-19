@@ -51,6 +51,7 @@ $UiPatches = @(
     (Join-Path $ScriptDir "app\admin_runtime_patch.py"),
     (Join-Path $ScriptDir "app\erp_daily_ui_patch.py"),
     (Join-Path $ScriptDir "app\performance_period_patch.py"),
+    (Join-Path $ScriptDir "app\performance_timeline_ui_patch.py"),
     (Join-Path $ScriptDir "app\restart_ui_patch.py")
 )
 foreach ($UiPatch in $UiPatches) {
