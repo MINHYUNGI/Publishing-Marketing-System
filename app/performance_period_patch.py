@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 UI = ROOT / "ui" / "index.html"
-MARKER = "v287-performance-first-marketing-period"
+MARKER = "v289-performance-first-marketing-period-60-default"
 
 
 def apply_patch() -> None:
@@ -10,8 +10,12 @@ def apply_patch() -> None:
     if MARKER in text:
         return
 
+    # 기본 조회기간은 첫 마케팅일 기준 60일입니다.
+    text = text.replace("let performancePeriod=30;", "let performancePeriod=60;", 1)
+
     old = 'function performanceVisibleSeries(){return (currentPerformanceData?.__series||[]).slice(-performancePeriod)}'
-    new = r'''// v287-performance-first-marketing-period
+    if old in text:
+        new = r'''// v289-performance-first-marketing-period-60-default
 function performanceFirstMarketingDate(){
  const acts=currentPerformanceData?.마케팅활동||[];
  const dates=acts.map(a=>perfDate(a.시작일)).filter(Boolean).sort((a,b)=>a-b);
@@ -30,14 +34,14 @@ function performanceVisibleSeries(){
  }
  return rows;
 }'''
-    if old not in text:
-        raise RuntimeError("성과 조회기간 함수 기준점을 찾지 못했습니다.")
-    text = text.replace(old, new, 1)
+        text = text.replace(old, new, 1)
 
-    # 조회기간 설명을 첫 마케팅 시작일 기준으로 명확히 표시합니다.
     old_note = '<div class="p271-toolbar"><div class="p271-period"><span>조회기간</span>'
     new_note = '<div class="p271-toolbar"><div class="p271-period"><span>첫 마케팅일 기준</span>'
     text = text.replace(old_note, new_note, 1)
+
+    # 이전 패치가 이미 적용된 로컬 HTML에서도 기본값만 확실하게 60일로 보정합니다.
+    text = text.replace("let performancePeriod=30;", "let performancePeriod=60;")
 
     UI.write_text(text, encoding="utf-8")
 
