@@ -6,8 +6,10 @@ import sys
 import threading
 import time
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 from tkinter import messagebox
+from urllib.parse import urlparse
 import webview
 
 from .backend import Backend
@@ -22,6 +24,19 @@ from .logging_utils import configure_logging
 
 def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
     return choose_and_import_erp(self, product_code)
+
+
+def _open_external_url(self, url: str) -> dict:
+    try:
+        value = str(url or "").strip()
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("올바른 웹 링크가 아닙니다.")
+        opened = webbrowser.open(value, new=2)
+        return {"ok": bool(opened)}
+    except Exception as exc:
+        logging.exception("외부 링크 열기 실패")
+        return {"ok": False, "message": str(exc)}
 
 
 def _restart_latest_version(self) -> dict:
@@ -51,6 +66,7 @@ def _restart_latest_version(self) -> dict:
 
 Backend.import_erp_daily_excel = _import_erp_daily_excel
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
+Backend.open_external_url = _open_external_url
 Backend.restart_latest_version = _restart_latest_version
 # ERP → 실제 실행 → 실행 정렬 → SNS 콘텐츠 링크 순서로 결합합니다.
 # 외부 플랫폼 중 자동 지표 수집은 YouTube만 content_link_runtime에서 처리합니다.
