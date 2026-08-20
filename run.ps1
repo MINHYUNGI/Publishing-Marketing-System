@@ -10,6 +10,9 @@ if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
     $ErrorActionPreference = "Continue"
 
     & git config --global --add safe.directory "$SafeDir" 2>$null | Out-Null
+    $BeforeHead = (& git -C "$ScriptDir" rev-parse HEAD 2>$null | Select-Object -First 1)
+    if ($BeforeHead) { $BeforeHead = $BeforeHead.Trim() }
+
     $FetchOutput = & git -C "$ScriptDir" fetch origin main 2>&1
     $FetchCode = $LASTEXITCODE
 
@@ -17,7 +20,23 @@ if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
         $ResetOutput = & git -C "$ScriptDir" reset --hard origin/main 2>&1
         $ResetCode = $LASTEXITCODE
         if ($ResetCode -eq 0) {
+            $AfterHead = (& git -C "$ScriptDir" rev-parse HEAD 2>$null | Select-Object -First 1)
+            if ($AfterHead) { $AfterHead = $AfterHead.Trim() }
             Write-Host "GitHub 최신 버전 확인 완료." -ForegroundColor DarkGreen
+
+            # 실행 중인 run.ps1 자체가 GitHub 업데이트로 바뀌었다면,
+            # 현재 PowerShell은 이미 읽어 둔 구버전 스크립트를 계속 실행하게 됩니다.
+            # 이 경우 최신 run.ps1을 새 PowerShell에서 즉시 다시 실행하고 현재 프로세스는 종료합니다.
+            # 사용자는 버튼을 한 번만 누르면 되며, 내부적으로만 최신 런처로 인계됩니다.
+            if ($BeforeHead -and $AfterHead -and ($BeforeHead -ne $AfterHead) -and ($env:MIRAEN_UPDATE_REEXEC -ne "1")) {
+                Write-Host "업데이트가 감지되어 최신 실행기로 자동 전환합니다." -ForegroundColor DarkGreen
+                $env:MIRAEN_UPDATE_REEXEC = "1"
+                $RunScript = Join-Path $ScriptDir "run.ps1"
+                $ArgLine = '-NoProfile -ExecutionPolicy Bypass -File "' + $RunScript + '"'
+                Start-Process -FilePath "powershell.exe" -ArgumentList $ArgLine -WorkingDirectory $ScriptDir | Out-Null
+                $ErrorActionPreference = $OldPreference
+                exit 0
+            }
         } else {
             Write-Host "GitHub 업데이트 적용에 실패하여 현재 버전으로 실행합니다." -ForegroundColor Yellow
             if ($ResetOutput) { Write-Host ($ResetOutput | Out-String) -ForegroundColor DarkYellow }
@@ -28,6 +47,9 @@ if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
     }
     $ErrorActionPreference = $OldPreference
 }
+
+# 자식 프로세스까지 전달된 업데이트 인계 플래그는 이후 일반 실행에 영향을 주지 않도록 제거합니다.
+Remove-Item Env:MIRAEN_UPDATE_REEXEC -ErrorAction SilentlyContinue
 
 $AppHome = Join-Path $env:LOCALAPPDATA "MiraeN_Publishing_Marketing"
 $VenvDir = Join-Path $AppHome "venv_integrated_ai_v1"
