@@ -27,7 +27,6 @@ def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
 
 
 def _open_external_url(self, url: str) -> dict:
-    # 과거 호환용. SNS 콘텐츠는 pywebview 공식 target=_blank 외부 링크 기능을 사용합니다.
     value = str(url or "").strip()
     try:
         parsed = urlparse(value)
@@ -97,9 +96,6 @@ def main() -> None:
     configure_logging()
     for path in (DOCUMENT_ROOT, LOG_DIR, REPORT_DIR):
         path.mkdir(parents=True, exist_ok=True)
-
-    # pywebview 공식 설정: target="_blank" 링크를 앱 내부가 아니라 Windows 기본 브라우저에서 엽니다.
-    webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
 
     backend = Backend()
     webview.create_window(
