@@ -57,42 +57,30 @@ def _restart_latest_version(self) -> dict:
         if not run_script.exists():
             raise RuntimeError("run.ps1을 찾을 수 없습니다.")
         ready_file.unlink(missing_ok=True)
-
         env = os.environ.copy()
         env["MIRAEN_READY_FILE"] = str(ready_file)
         flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0) or getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         proc = subprocess.Popen(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-File", str(run_script),
-            ],
-            cwd=str(root),
-            env=env,
-            creationflags=flags,
+            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(run_script)],
+            cwd=str(root), env=env, creationflags=flags,
         )
         logging.info("최신 버전 새 실행 요청: pid=%s, ready=%s", proc.pid, ready_file)
-
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
             if ready_file.exists():
                 logging.info("새 프로그램 창 표시 확인 완료: %s", ready_file)
-
                 def close_old_app() -> None:
                     time.sleep(1.0)
                     try:
                         ready_file.unlink(missing_ok=True)
                     finally:
                         os._exit(0)
-
                 threading.Thread(target=close_old_app, daemon=True).start()
                 return {"ok": True, "message": "최신 버전 창을 열었습니다."}
             code = proc.poll()
             if code is not None:
                 raise RuntimeError(f"새 프로그램이 준비되기 전에 종료되었습니다. 종료 코드: {code}")
             time.sleep(0.4)
-
         raise TimeoutError("최신 버전 창이 120초 안에 열리지 않았습니다. 기존 프로그램은 그대로 유지됩니다.")
     except Exception as exc:
         logging.exception("최신 버전 재시작 실패")
@@ -113,19 +101,16 @@ install_content_link_runtime()
 
 def main() -> None:
     configure_logging()
-    project_root = Path(__file__).resolve().parent.parent
     for path in (DOCUMENT_ROOT, LOG_DIR, REPORT_DIR):
         path.mkdir(parents=True, exist_ok=True)
 
-    # file:// 대신 pywebview 내장 로컬 HTTP 서버로 UI를 제공합니다.
-    os.chdir(project_root)
-    if "OPEN_EXTERNAL_LINKS_IN_BROWSER" in webview.settings:
-        webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
+    if not UI_FILE.exists():
+        raise FileNotFoundError(f"UI 파일을 찾을 수 없습니다: {UI_FILE}")
 
     backend = Backend()
     window = webview.create_window(
         "출판 마케팅 운영 시스템",
-        url="ui/index.html",
+        url=UI_FILE.as_uri(),
         js_api=backend,
         width=1500,
         height=930,
@@ -143,10 +128,9 @@ def main() -> None:
                 logging.info("재시작 준비 신호 기록: %s", ready_path)
             except Exception:
                 logging.exception("재시작 준비 신호 기록 실패")
-
         window.events.shown += mark_ready
 
-    webview.start(debug=False, http_server=True)
+    webview.start(debug=False)
 
 
 if __name__ == "__main__":
