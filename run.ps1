@@ -10,11 +10,25 @@ try {
         $OldPreference = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
         & git config --global --add safe.directory "$SafeDir" 2>$null | Out-Null
+        $BeforeHead = (& git -C "$ScriptDir" rev-parse HEAD 2>$null | Select-Object -First 1)
+        if ($BeforeHead) { $BeforeHead = $BeforeHead.Trim() }
+
         & git -C "$ScriptDir" fetch origin main 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
             & git -C "$ScriptDir" reset --hard origin/main 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "GitHub 최신 버전 확인 완료." -ForegroundColor DarkGreen
+                $AfterHead = (& git -C "$ScriptDir" rev-parse HEAD 2>$null | Select-Object -First 1)
+                if ($AfterHead) { $AfterHead = $AfterHead.Trim() }
+
+                # run.ps1 자체가 갱신됐다면 최신 실행기를 한 번만 다시 시작합니다.
+                if ($BeforeHead -and $AfterHead -and ($BeforeHead -ne $AfterHead) -and ($env:MIRAEN_LAUNCHER_REEXEC -ne "1")) {
+                    Write-Host "실행기가 갱신되어 최신 실행기로 전환합니다." -ForegroundColor DarkGreen
+                    $env:MIRAEN_LAUNCHER_REEXEC = "1"
+                    $Args = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $ScriptDir "run.ps1") + '"'
+                    Start-Process -FilePath "powershell.exe" -ArgumentList $Args -WorkingDirectory $ScriptDir | Out-Null
+                    exit 0
+                }
             } else {
                 Write-Host "GitHub 최신 버전 적용에 실패하여 현재 파일로 실행합니다." -ForegroundColor Yellow
             }
@@ -23,6 +37,7 @@ try {
         }
         $ErrorActionPreference = $OldPreference
     }
+    Remove-Item Env:MIRAEN_LAUNCHER_REEXEC -ErrorAction SilentlyContinue
 
     $AppHome = Join-Path $env:LOCALAPPDATA "MiraeN_Publishing_Marketing"
     $VenvDir = Join-Path $AppHome "venv_integrated_ai_v1"
