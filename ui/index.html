@@ -158,6 +158,7 @@ td input,td select{width:100%;height:32px;border:1px solid #cbd4df;border-radius
 #performancePage .performance-note{padding:8px 11px;margin-bottom:12px;border-radius:8px}
 .p271-book-card{display:grid;grid-template-columns:92px minmax(0,1fr) 520px;gap:18px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 5px 18px rgba(31,41,55,.05)}
 .p271-cover{height:124px;border-radius:7px;background:linear-gradient(155deg,#11365f,#477da7 56%,#eef3f7 57%);color:#fff;padding:10px;position:relative;overflow:hidden;box-shadow:0 8px 20px rgba(30,55,80,.16)}.p271-cover:after{content:'BOOK';position:absolute;right:-7px;bottom:-8px;font-size:calc(var(--font-xl) * var(--font-scale));font-weight:700;color:rgba(255,255,255,.15)}.p271-cover small{font-size:calc(var(--font-sm) * var(--font-scale))}.p271-cover b{display:block;max-height:5.4em;overflow:hidden;font-size:calc(var(--font-md) * var(--font-scale));line-height:1.35;margin-top:14px;word-break:break-word;overflow-wrap:anywhere}.p271-book-info .eyebrow{font-size:calc(var(--font-sm) * var(--font-scale));color:#5c6c7f;font-weight:700;margin-bottom:5px}.p271-book-info h2{font-size:calc(var(--font-xl) * var(--font-scale));line-height:1.26;margin:0 0 8px;letter-spacing:0}.p271-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:calc(var(--font-sm) * var(--font-scale));color:#6f7b8a}.p271-summary{margin-top:9px;font-size:calc(var(--font-sm) * var(--font-scale));line-height:1.6;color:#405064}.p271-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.p271-kpi{border:1px solid #dbe3ec;border-radius:9px;padding:11px 12px;background:#fbfcfe}.p271-kpi span{font-size:calc(var(--font-sm) * var(--font-scale));color:#718096}.p271-kpi strong{display:block;font-size:calc(var(--font-lg) * var(--font-scale));margin-top:5px}.p271-kpi small{display:block;font-size:calc(var(--font-sm) * var(--font-scale));color:#8b97a5;margin-top:4px;line-height:1.35}.p271-kpi strong.up{color:#2f7a61}
+.p271-cover[role="button"]{width:100%;border:0;text-align:left;cursor:pointer;outline:none}.p271-cover[role="button"]:focus-visible{box-shadow:0 0 0 3px rgba(49,111,200,.28),0 8px 20px rgba(30,55,80,.16)}.p271-cover.has-image{padding:0;background:#eef3f7}.p271-cover.has-image:after{display:none}.p271-cover-image{width:100%;height:100%;display:block;object-fit:cover}.p271-cover-action{position:absolute;right:7px;bottom:7px;z-index:2;width:25px;height:25px;border-radius:6px;display:grid;place-items:center;background:rgba(17,31,48,.76);color:#fff;font-size:var(--font-button);font-weight:600;opacity:0;transition:opacity .15s}.p271-cover:hover .p271-cover-action,.p271-cover:focus-visible .p271-cover-action{opacity:1}.p271-cover-loading{position:absolute;inset:0;display:grid;place-items:center;background:#eef3f7;color:#667085;font-size:calc(var(--font-sm) * var(--font-scale))}
 .p271-flow{display:flex;gap:7px;margin:14px 0 12px;align-items:center;font-size:calc(var(--font-sm) * var(--font-scale));color:#718096}.p271-flow b{color:#405064}.p271-flow i{font-style:normal;color:#a0a9b5}
 .p271-panel{background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 5px 18px rgba(31,41,55,.05);margin-bottom:12px;overflow:hidden}.p271-panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--line)}.p271-panel-head h3{font-size:calc(var(--font-lg) * var(--font-scale));margin:0}.p271-panel-head p{font-size:calc(var(--font-sm) * var(--font-scale));color:var(--muted);margin:4px 0 0;line-height:1.45}.p271-panel-tag{font-size:calc(var(--font-sm) * var(--font-scale));font-weight:700;border:1px solid #d9e1e9;background:#f8fafc;border-radius:999px;padding:5px 8px;color:#637080;white-space:nowrap}
 .p271-summary-grid{display:grid;grid-template-columns:1.1fr 1fr .9fr;gap:10px;padding:14px 16px}.p271-summary-box{border:1px solid var(--line);border-radius:9px;padding:12px;background:#fff}.p271-summary-box span{font-size:calc(var(--font-sm) * var(--font-scale));color:var(--muted)}.p271-summary-box strong{display:block;font-size:calc(var(--font-md) * var(--font-scale));margin-top:5px}.p271-summary-box p{font-size:calc(var(--font-sm) * var(--font-scale));line-height:1.55;color:#536174;margin:7px 0 0}.p271-summary-box.good{background:#f5fbf8;border-color:#d6e9df}.p271-summary-box.warn{background:#fffaf0;border-color:#efe1bf}
@@ -1697,6 +1698,44 @@ async function loadPerformanceDetail(code){
  renderPerformancePage(currentPerformanceData);
 }
 
+function renderPerformanceCoverImage(thumbnail, fileName="도서 표지"){
+ const cover=document.getElementById("performanceBookCover");if(!cover||!thumbnail)return;
+ cover.classList.add("has-image");
+ cover.setAttribute("aria-label","표지 변경");
+ cover.title="표지 변경";
+ cover.replaceChildren();
+ const image=document.createElement("img");image.className="p271-cover-image";image.src=thumbnail;image.alt=fileName;
+ const action=document.createElement("span");action.className="p271-cover-action";action.textContent="↻";action.setAttribute("aria-hidden","true");
+ cover.append(image,action);
+}
+async function loadPerformanceCover(coverFile){
+ if(!coverFile?.파일ID)return;
+ try{
+  const r=await pywebview.api.get_reference_thumbnail(String(coverFile.파일ID));
+  if(r?.ok&&r.thumbnail)renderPerformanceCoverImage(r.thumbnail,coverFile.원본파일명||"도서 표지");
+ }catch(e){console.error("대표 표지 불러오기 실패",e)}
+}
+async function selectPerformanceCover(){
+ if(!currentPerformanceCode){toast("먼저 도서를 선택해 주세요.");return;}
+ const cover=document.getElementById("performanceBookCover");
+ if(cover?.dataset.busy==="1")return;
+ if(cover){cover.dataset.busy="1";cover.setAttribute("aria-busy","true")}
+ try{
+  const registrarId=document.getElementById("registrar")?.value||null;
+  const r=await pywebview.api.select_and_save_cover_image(currentPerformanceCode,registrarId);
+  if(!r?.ok){toast(r?.message||"표지 저장에 실패했습니다.");return;}
+  if(r.cancelled)return;
+  currentPerformanceData.대표표지=r.file||null;
+  if(r.thumbnail)renderPerformanceCoverImage(r.thumbnail,r.file?.원본파일명||"도서 표지");
+  toast("대표 표지를 등록했습니다. 참조 자료에도 함께 저장되었습니다.");
+ }catch(e){toast("표지 저장 실패: "+e);}
+ finally{if(cover){delete cover.dataset.busy;cover.removeAttribute("aria-busy")}}
+}
+function performanceCoverKeydown(event){
+ if(event.key!=="Enter"&&event.key!==" ")return;
+ event.preventDefault();selectPerformanceCover();
+}
+
 function renderPerformancePage(r){
  const b=r.기본정보||{},p=r.마케팅기획||{},acts=sortDetailActivities(r.마케팅활동||[]),sales=r.영업목표||{},bp=r.사업계획목표||{};
  const salesRows=r.판매실적일별||[],contents=r.콘텐츠성과||[],executionRows=r.마케팅실행활동||[],buyer=r.구매자반응||{},evaluation=r.마케팅성과평가||{};
@@ -1706,7 +1745,7 @@ function renderPerformancePage(r){
  const goalRate=goal12?cumulative/goal12*100:0,execRate=budget?actualBudget/budget*100:0;
  const done=acts.filter(a=>perfActivityStatus(a).includes("완료")).length,run=acts.filter(a=>perfActivityStatus(a).includes("진행")).length;
  const title=cleanProductName(b.도서명||currentPerformanceCode),planMessage=p.마케팅전략||p.마케팅문구||"등록된 마케팅 전략이 없습니다.";
- const price=perfNum(b.정가),cat=[b.대분류,b.중분류].filter(Boolean).join(" · ")||"마케팅 대상 도서";
+ const price=perfNum(b.정가),cat=[b.대분류,b.중분류].filter(Boolean).join(" · ")||"마케팅 대상 도서",coverFile=r.대표표지||null;
  currentPerformanceData.__series=series;
 
  const snsPlatformMeta=value=>{
@@ -1778,7 +1817,7 @@ function renderPerformancePage(r){
 
  performanceContent.innerHTML=`
  <section class="p271-book-card">
-  <div class="p271-cover"><small>${esc(b.중분류||"MIRAE N")}</small><b>${esc(title)}</b></div>
+  <div id="performanceBookCover" class="p271-cover${coverFile?' has-image':''}" role="button" tabindex="0" title="${coverFile?'표지 변경':'표지 등록'}" aria-label="${coverFile?'표지 변경':'표지 등록'}" onclick="selectPerformanceCover()" onkeydown="performanceCoverKeydown(event)">${coverFile?'<span class="p271-cover-loading">불러오는 중</span>':`<small>${esc(b.중분류||"MIRAE N")}</small><b>${esc(title)}</b>`}</div>
   <div class="p271-book-info"><div class="eyebrow">${esc(cat)} · 제품코드 ${esc(b.제품코드||currentPerformanceCode)}</div><h2>${esc(title)}</h2><div class="p271-meta"><span>출간일 ${esc(pub||"—")}</span><span>개발PM ${esc(b.개발PM||"—")}</span><span>마케팅PM ${esc(b.마케팅PM||"—")}</span>${price?`<span>정가 ${price.toLocaleString("ko-KR")}원</span>`:""}</div><div class="p271-summary">${esc(planMessage)}</div></div>
   <div class="p271-kpis">
    <div class="p271-kpi"><span>SCM 누적 실판매</span><strong>${series.length?cumulative.toLocaleString("ko-KR")+"부":"—"}</strong><small>${series.length?`환산매출 ${perfMoneyWon(scmAmount)}`:"판매실적 데이터 없음"}</small></div>
@@ -1819,6 +1858,7 @@ function renderPerformancePage(r){
   <div class="p271-save-row"><button onclick="savePerformanceNotes()">PM 평가 Supabase 저장</button></div>
  </section>`;
  setPerformancePeriod(performancePeriod);
+ if(coverFile)requestAnimationFrame(()=>loadPerformanceCover(coverFile));
 }
 
 function setPerformancePeriod(n){

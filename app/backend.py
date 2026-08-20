@@ -304,6 +304,54 @@ class Backend:
             logging.exception("참조파일 선택 실패")
             return {"ok": False, "message": str(exc)}
 
+    def select_and_save_cover_image(self, product_code: str, registrar_id: str | None = None) -> dict[str, Any]:
+        try:
+            if not product_code:
+                raise ValueError("제품코드가 없습니다.")
+            result = webview.windows[0].create_file_dialog(
+                webview.FileDialog.OPEN,
+                allow_multiple=False,
+                file_types=(
+                    "표지 이미지 (*.jpg;*.jpeg;*.png;*.webp)",
+                    "모든 파일 (*.*)",
+                ),
+            )
+            selected = list(result or [])
+            if not selected:
+                return {"ok": True, "cancelled": True}
+            source = Path(selected[0])
+            allowed = {".jpg", ".jpeg", ".png", ".webp"}
+            if not source.exists() or source.suffix.lower() not in allowed:
+                raise ValueError("JPG, JPEG, PNG, WebP 이미지만 표지로 등록할 수 있습니다.")
+            if source.stat().st_size > MAX_FILE_SIZE:
+                raise ValueError("파일 크기가 50MB를 초과합니다.")
+            saved = self.add_reference_files(
+                product_code,
+                [{
+                    "path": str(source),
+                    "name": source.name,
+                    "size": source.stat().st_size,
+                    "extension": source.suffix.lower().lstrip("."),
+                }],
+                "도서표지",
+                "출간 후 성과 대표 표지",
+                None,
+                registrar_id,
+            )
+            if not saved.get("ok"):
+                return saved
+            cover = (saved.get("files") or [None])[-1]
+            thumbnail = self.get_reference_thumbnail(str(cover.get("파일ID"))) if cover else {"thumbnail": None}
+            return {
+                "ok": True,
+                "cancelled": False,
+                "file": cover,
+                "thumbnail": thumbnail.get("thumbnail"),
+            }
+        except Exception as exc:
+            logging.exception("대표 표지 등록 실패")
+            return {"ok": False, "message": str(exc)}
+
     def get_reference_files(self, product_code: str) -> dict[str, Any]:
         try:
             if not self.db:
@@ -358,6 +406,12 @@ class Backend:
                         "설명": description or None,
                         "등록자ID": registrar_id or None,
                     })
+                    if file_category == "도서표지":
+                        try:
+                            self.db.mark_reference_as_cover(product_code, str(row.get("파일ID")))
+                        except Exception:
+                            self.db.delete_reference_file(str(row.get("파일ID")))
+                            raise
                     registered.append(row)
                 except Exception:
                     try:

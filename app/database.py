@@ -457,6 +457,7 @@ class Database:
             "콘텐츠성과": content_rows,
             "구매자반응": buyer_rows[0] if buyer_rows else None,
             "마케팅성과평가": evaluation_rows[0] if evaluation_rows else None,
+            "대표표지": self.fetch_cover_reference(product_code),
         }
 
     def upsert_marketing_performance_evaluation(self, product_code: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -637,6 +638,35 @@ class Database:
             .execute()
         )
         return response.data[0] if response.data else None
+
+    def fetch_cover_reference(self, product_code: str) -> dict[str, Any] | None:
+        response = (
+            self.client.table("마케팅참조파일")
+            .select("파일ID,제품코드,활동ID,파일분류,원본파일명,저장파일명,파일경로,파일형식,파일크기,설명,등록자ID,생성일시,수정일시")
+            .eq("제품코드", product_code)
+            .eq("파일분류", "도서표지")
+            .order("생성일시", desc=True)
+            .limit(1)
+            .execute()
+        )
+        return response.data[0] if response.data else None
+
+    def mark_reference_as_cover(self, product_code: str, file_id: str) -> None:
+        now = datetime.now().isoformat()
+        (
+            self.client.table("마케팅참조파일")
+            .update({"파일분류": "참조이미지", "수정일시": now})
+            .eq("제품코드", product_code)
+            .eq("파일분류", "도서표지")
+            .neq("파일ID", file_id)
+            .execute()
+        )
+        (
+            self.client.table("마케팅참조파일")
+            .update({"파일분류": "도서표지", "수정일시": now})
+            .eq("파일ID", file_id)
+            .execute()
+        )
 
     def create_reference_file(self, row: dict[str, Any]) -> dict[str, Any]:
         response = self.client.table("마케팅참조파일").insert(row).execute()
