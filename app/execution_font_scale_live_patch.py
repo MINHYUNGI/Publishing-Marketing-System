@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 UI = ROOT / "ui" / "index.html"
-MARKER = "v307-execution-live-font-scale"
+MARKER = "v311-execution-live-font-scale"
 
 
 def apply_patch() -> None:
@@ -11,15 +11,16 @@ def apply_patch() -> None:
         return
     script = r'''
 <script>
-// v307-execution-live-font-scale
+// v311-execution-live-font-scale
 (function(){
  const rules=[
    [".exec-group-title b",13,800],
    [".exec-group-title span",10,400],
    [".exec-table th",10,700],
    [".exec-table td",11,400],
-   [".exec-table td strong",11,800],
-   [".exec-table td .p271-placeholder",10,600],
+   [".exec-activity-name strong",11,800],
+   [".exec-activity-channel",10,500],
+   [".exec-table td .p271-placeholder",10,500],
    [".exec-badge",9,900]
  ];
  function scale(){
