@@ -24,10 +24,6 @@ if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
             if ($AfterHead) { $AfterHead = $AfterHead.Trim() }
             Write-Host "GitHub 최신 버전 확인 완료." -ForegroundColor DarkGreen
 
-            # 실행 중인 run.ps1 자체가 GitHub 업데이트로 바뀌었다면,
-            # 현재 PowerShell은 이미 읽어 둔 구버전 스크립트를 계속 실행하게 됩니다.
-            # 이 경우 최신 run.ps1을 새 PowerShell에서 즉시 다시 실행하고 현재 프로세스는 종료합니다.
-            # 사용자는 버튼을 한 번만 누르면 되며, 내부적으로만 최신 런처로 인계됩니다.
             if ($BeforeHead -and $AfterHead -and ($BeforeHead -ne $AfterHead) -and ($env:MIRAEN_UPDATE_REEXEC -ne "1")) {
                 Write-Host "업데이트가 감지되어 최신 실행기로 자동 전환합니다." -ForegroundColor DarkGreen
                 $env:MIRAEN_UPDATE_REEXEC = "1"
@@ -48,7 +44,6 @@ if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
     $ErrorActionPreference = $OldPreference
 }
 
-# 자식 프로세스까지 전달된 업데이트 인계 플래그는 이후 일반 실행에 영향을 주지 않도록 제거합니다.
 Remove-Item Env:MIRAEN_UPDATE_REEXEC -ErrorAction SilentlyContinue
 
 $AppHome = Join-Path $env:LOCALAPPDATA "MiraeN_Publishing_Marketing"
@@ -87,6 +82,7 @@ $UiPatches = @(
     (Join-Path $ScriptDir "app\execution_reorder_ui_patch.py"),
     (Join-Path $ScriptDir "app\execution_drag_reorder_patch.py"),
     (Join-Path $ScriptDir "app\performance_timeline_resize_patch.py"),
+    (Join-Path $ScriptDir "app\execution_text_hierarchy_patch.py"),
     (Join-Path $ScriptDir "app\restart_ui_patch.py")
 )
 foreach ($UiPatch in $UiPatches) {
