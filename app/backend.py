@@ -312,7 +312,7 @@ class Backend:
                 webview.FileDialog.OPEN,
                 allow_multiple=False,
                 file_types=(
-                    "표지 이미지 (*.jpg;*.jpeg;*.png;*.webp)",
+                    "표지 이미지 (*.jpg;*.jpeg;*.jfif;*.png;*.webp)",
                     "모든 파일 (*.*)",
                 ),
             )
@@ -320,9 +320,9 @@ class Backend:
             if not selected:
                 return {"ok": True, "cancelled": True}
             source = Path(selected[0])
-            allowed = {".jpg", ".jpeg", ".png", ".webp"}
+            allowed = {".jpg", ".jpeg", ".jfif", ".png", ".webp"}
             if not source.exists() or source.suffix.lower() not in allowed:
-                raise ValueError("JPG, JPEG, PNG, WebP 이미지만 표지로 등록할 수 있습니다.")
+                raise ValueError("JPG, JPEG, JFIF, PNG, WebP 이미지만 표지로 등록할 수 있습니다.")
             if source.stat().st_size > MAX_FILE_SIZE:
                 raise ValueError("파일 크기가 50MB를 초과합니다.")
             saved = self.add_reference_files(
