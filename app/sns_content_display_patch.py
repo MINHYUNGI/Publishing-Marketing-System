@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent.parent
 UI=ROOT/"ui"/"index.html"
-MARKER="v330-sns-content-target-blank"
+MARKER="v331-sns-content-target-blank-tolerant"
 
 def apply_patch():
     text=UI.read_text(encoding="utf-8")
@@ -11,35 +11,19 @@ def apply_patch():
 
     css=r'''
 <style>
-/* v330-sns-content-target-blank */
-.content-link-item{grid-template-columns:34px minmax(150px,.8fr) minmax(260px,1.4fr) repeat(3,minmax(76px,90px))!important}
-.content-link-channel{min-width:0}.content-link-channel small,.content-link-content small{display:block;font-size:11px;color:#8a95a3;margin-bottom:2px}.content-link-channel b,.content-link-content b{display:block;font-size:13px;color:#344054;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* v331-sns-content-target-blank-tolerant */
 .content-link-content a{color:#2864bd;text-decoration:underline;text-underline-offset:2px;font-weight:800;cursor:pointer;pointer-events:auto!important}
 .content-link-content a:hover{color:#1c4d96}
 .content-link-open,.p271-native-link-btn{display:none!important}
-.content-link-platform{width:24px!important;height:24px!important;min-width:24px!important;border-radius:7px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;background:#eef3f8!important;color:#41566d!important;font-size:0!important;font-weight:900!important;line-height:1!important;position:relative!important;overflow:hidden!important}
+.content-link-platform{width:24px!important;height:24px!important;min-width:24px!important;border-radius:7px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;font-size:0!important;font-weight:900!important;line-height:1!important;position:relative!important;overflow:hidden!important}
 .content-link-platform::before{content:'W';font-size:11px!important}
-.content-link-platform[data-platform="YouTube"]{background:#fff1f1!important;color:#b42318!important}.content-link-platform[data-platform="YouTube"]::before{content:'Y'}
-.content-link-platform[data-platform="X"]{background:#f1f2f4!important;color:#111827!important}.content-link-platform[data-platform="X"]::before{content:'X'}
-.content-link-platform[data-platform="Instagram"]{background:#f8eef7!important;color:#8b3a7b!important}.content-link-platform[data-platform="Instagram"]::before{content:'I'}
-.content-link-platform[data-platform="Naver Blog"],.content-link-platform[data-platform="네이버 블로그"]{background:#edf8f1!important;color:#178a4b!important}.content-link-platform[data-platform="Naver Blog"]::before,.content-link-platform[data-platform="네이버 블로그"]::before{content:'B'}
-.content-link-platform[data-platform="Naver Cafe"],.content-link-platform[data-platform="네이버 카페"]{background:#edf8f1!important;color:#178a4b!important}.content-link-platform[data-platform="Naver Cafe"]::before,.content-link-platform[data-platform="네이버 카페"]::before{content:'C'}
-@media(max-width:1350px){.content-link-item{grid-template-columns:32px minmax(130px,.75fr) minmax(220px,1.3fr) repeat(2,minmax(68px,80px))!important}}
+.content-link-platform[data-platform="YouTube"]::before{content:'Y'}.content-link-platform[data-platform="X"]::before{content:'X'}.content-link-platform[data-platform="Instagram"]::before{content:'I'}
 </style>
 '''
-
-    # 현재 하이퍼링크 렌더링을 pywebview 공식 외부 링크 방식(target=_blank)으로 변경합니다.
-    old='''<div class="content-link-platform" data-platform="${esc(r.플랫폼||"웹")}" title="${esc(r.플랫폼||"웹")}">${esc(r.플랫폼||"웹")}</div><div class="content-link-channel"><small>채널명</small><b>${esc(r.채널명||"—")}</b></div><div class="content-link-content"><small>콘텐츠 이름</small><b>${r.URL?`<a href="${esc(r.URL)}" title="원문 열기">${esc(r.콘텐츠명||"콘텐츠")}</a>`:esc(r.콘텐츠명||"콘텐츠")}</b></div>'''
-    new='''<div class="content-link-platform" data-platform="${esc(r.플랫폼||"웹")}" title="${esc(r.플랫폼||"웹")}">${esc(r.플랫폼||"웹")}</div><div class="content-link-channel"><small>채널명</small><b>${esc(r.채널명||"—")}</b></div><div class="content-link-content"><small>콘텐츠 이름</small><b>${r.URL?`<a href="${esc(r.URL)}" target="_blank" rel="noopener noreferrer" title="원문 열기">${esc(r.콘텐츠명||"콘텐츠")}</a>`:esc(r.콘텐츠명||"콘텐츠")}</b></div>'''
-    if old not in text:
-        # 아직 버튼형 렌더링이면 바로 target=_blank 링크로 교체합니다.
-        old2='''<div class="content-link-platform" data-platform="${esc(r.플랫폼||"웹")}" title="${esc(r.플랫폼||"웹")}">${esc(r.플랫폼||"웹")}</div><div class="content-link-channel"><small>채널명</small><b>${esc(r.채널명||"—")}</b></div><div class="content-link-content"><small>콘텐츠 이름</small><b>${esc(r.콘텐츠명||"콘텐츠")}</b></div><div class="content-link-open"><button type="button" data-url="${esc(r.URL||'')}" onclick="return window.openContentLinkDirect(this)" title="원문 열기" aria-label="원문 열기">↗</button></div>'''
-        if old2 not in text:
-            raise RuntimeError("SNS 콘텐츠 하이퍼링크 렌더링 기준점을 찾지 못했습니다.")
-        text=text.replace(old2,new,1)
-    else:
-        text=text.replace(old,new,1)
-
+    # 현재 UI는 이전 패치가 누적될 수 있으므로 특정 과거 문자열을 필수로 요구하지 않습니다.
+    # 이미 콘텐츠 제목 링크가 있으면 target=_blank만 보강합니다.
+    text=text.replace('<a href="${esc(r.URL)}" title="원문 열기">','<a href="${esc(r.URL)}" target="_blank" rel="noopener noreferrer" title="원문 열기">')
+    text=text.replace('<a href="${esc(r.URL)}" target="_blank" rel="noopener noreferrer" title="${esc(r.URL)}">','<a href="${esc(r.URL)}" target="_blank" rel="noopener noreferrer" title="${esc(r.URL)}">')
     text=text.replace('</head>',css+f'\n<script>/* {MARKER} */</script>\n</head>',1)
     UI.write_text(text,encoding="utf-8")
 
