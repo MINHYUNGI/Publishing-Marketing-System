@@ -1,15 +1,19 @@
 from __future__ import annotations
+
 import logging
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import tkinter as tk
+import uuid
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox
 from urllib.parse import urlparse
+
 import webview
 
 from .backend import Backend
@@ -27,15 +31,17 @@ def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
 
 
 def _open_external_url(self, url: str) -> dict:
+    """등록된 콘텐츠 URL을 Windows 기본 브라우저에서 엽니다."""
     value = str(url or "").strip()
     try:
         parsed = urlparse(value)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("올바른 웹 링크가 아닙니다.")
+        logging.info("외부 링크 열기 요청: %s", value)
         if os.name == "nt":
             os.startfile(value)  # type: ignore[attr-defined]
-        else:
-            webbrowser.open(value, new=2, autoraise=True)
+        elif not webbrowser.open(value, new=2, autoraise=True):
+            raise RuntimeError("기본 브라우저를 열 수 없습니다.")
         return {"ok": True}
     except Exception as exc:
         logging.exception("외부 링크 열기 실패")
@@ -43,42 +49,54 @@ def _open_external_url(self, url: str) -> dict:
 
 
 def _restart_latest_version(self) -> dict:
-    """최신본 적용과 새 실행이 확인된 뒤에만 현재 앱을 종료합니다."""
+    """새 창이 실제로 표시된 뒤에만 현재 프로그램을 종료합니다."""
+    ready_file = Path(tempfile.gettempdir()) / f"MiraeN_Publishing_Marketing_{uuid.uuid4().hex}.ready"
     try:
         root = Path(__file__).resolve().parent.parent
-        helper = root / "restart_latest.ps1"
-        if not helper.exists():
-            raise RuntimeError("restart_latest.ps1을 찾을 수 없습니다.")
+        run_script = root / "run.ps1"
+        if not run_script.exists():
+            raise RuntimeError("run.ps1을 찾을 수 없습니다.")
+        ready_file.unlink(missing_ok=True)
 
-        flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        env = os.environ.copy()
+        env["MIRAEN_READY_FILE"] = str(ready_file)
+        flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0) or getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         proc = subprocess.Popen(
             [
                 "powershell.exe",
                 "-NoProfile",
                 "-ExecutionPolicy", "Bypass",
-                "-File", str(helper),
-                "-ProjectDir", str(root),
+                "-File", str(run_script),
             ],
             cwd=str(root),
+            env=env,
             creationflags=flags,
         )
-        logging.info("최신 버전 재시작 도우미 실행: pid=%s", proc.pid)
+        logging.info("최신 버전 새 실행 요청: pid=%s, ready=%s", proc.pid, ready_file)
 
-        def wait_and_exit() -> None:
-            try:
-                code = proc.wait()
-                if code == 0:
-                    logging.info("새 프로그램 실행 확인 완료. 현재 프로그램을 종료합니다.")
-                    time.sleep(0.5)
-                    os._exit(0)
-                logging.error("재시작 도우미 실패. 현재 프로그램 유지. 종료코드=%s", code)
-            except Exception:
-                logging.exception("재시작 도우미 대기 실패. 현재 프로그램을 유지합니다.")
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            if ready_file.exists():
+                logging.info("새 프로그램 창 표시 확인 완료: %s", ready_file)
 
-        threading.Thread(target=wait_and_exit, daemon=True).start()
-        return {"ok": True, "message": "최신 버전을 준비한 뒤 자동으로 다시 시작합니다."}
+                def close_old_app() -> None:
+                    time.sleep(1.0)
+                    try:
+                        ready_file.unlink(missing_ok=True)
+                    finally:
+                        os._exit(0)
+
+                threading.Thread(target=close_old_app, daemon=True).start()
+                return {"ok": True, "message": "최신 버전 창을 열었습니다."}
+            code = proc.poll()
+            if code is not None:
+                raise RuntimeError(f"새 프로그램이 준비되기 전에 종료되었습니다. 종료 코드: {code}")
+            time.sleep(0.4)
+
+        raise TimeoutError("최신 버전 창이 120초 안에 열리지 않았습니다. 기존 프로그램은 그대로 유지됩니다.")
     except Exception as exc:
         logging.exception("최신 버전 재시작 실패")
+        ready_file.unlink(missing_ok=True)
         return {"ok": False, "message": str(exc)}
 
 
@@ -86,6 +104,7 @@ Backend.import_erp_daily_excel = _import_erp_daily_excel
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
 Backend.open_external_url = _open_external_url
 Backend.restart_latest_version = _restart_latest_version
+
 apply_erp_performance_patch()
 install_execution_runtime()
 install_execution_sort_runtime()
@@ -94,19 +113,40 @@ install_content_link_runtime()
 
 def main() -> None:
     configure_logging()
+    project_root = Path(__file__).resolve().parent.parent
     for path in (DOCUMENT_ROOT, LOG_DIR, REPORT_DIR):
         path.mkdir(parents=True, exist_ok=True)
 
+    # file:// 대신 pywebview 내장 로컬 HTTP 서버로 UI를 제공합니다.
+    os.chdir(project_root)
+    if "OPEN_EXTERNAL_LINKS_IN_BROWSER" in webview.settings:
+        webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
+
     backend = Backend()
-    webview.create_window(
+    window = webview.create_window(
         "출판 마케팅 운영 시스템",
-        url=UI_FILE.as_uri(),
+        url="ui/index.html",
         js_api=backend,
         width=1500,
         height=930,
         min_size=(1100, 720),
     )
-    webview.start(debug=False)
+
+    ready_path = os.environ.get("MIRAEN_READY_FILE")
+    if ready_path:
+        def mark_ready(*_args) -> None:
+            try:
+                Path(ready_path).write_text(
+                    f"pid={os.getpid()}\nshown={time.time()}\n",
+                    encoding="utf-8",
+                )
+                logging.info("재시작 준비 신호 기록: %s", ready_path)
+            except Exception:
+                logging.exception("재시작 준비 신호 기록 실패")
+
+        window.events.shown += mark_ready
+
+    webview.start(debug=False, http_server=True)
 
 
 if __name__ == "__main__":
