@@ -57,6 +57,7 @@ $UiPatches = @(
     (Join-Path $ScriptDir "app\global_font_scale_patch.py"),
     (Join-Path $ScriptDir "app\performance_font_scale_patch.py"),
     (Join-Path $ScriptDir "app\execution_ui_patch.py"),
+    (Join-Path $ScriptDir "app\execution_ui_activation_patch.py"),
     (Join-Path $ScriptDir "app\restart_ui_patch.py")
 )
 foreach ($UiPatch in $UiPatches) {
