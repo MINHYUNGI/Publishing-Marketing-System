@@ -4,11 +4,9 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 import tkinter as tk
-import uuid
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox
@@ -50,41 +48,34 @@ def _open_external_url(self, url: str) -> dict:
 
 def _restart_latest_version(self) -> dict:
     """새 창이 실제로 표시된 뒤에만 현재 프로그램을 종료합니다."""
-    ready_file = Path(tempfile.gettempdir()) / f"MiraeN_Publishing_Marketing_{uuid.uuid4().hex}.ready"
     try:
         root = Path(__file__).resolve().parent.parent
-        run_script = root / "run.ps1"
-        if not run_script.exists():
-            raise RuntimeError("run.ps1을 찾을 수 없습니다.")
-        ready_file.unlink(missing_ok=True)
-        env = os.environ.copy()
-        env["MIRAEN_READY_FILE"] = str(ready_file)
-        flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0) or getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        restart_script = root / "restart_latest.ps1"
+        if not restart_script.exists():
+            raise RuntimeError("restart_latest.ps1을 찾을 수 없습니다.")
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         proc = subprocess.Popen(
-            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(run_script)],
-            cwd=str(root), env=env, creationflags=flags,
+            [
+                "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", str(restart_script), "-ProjectDir", str(root),
+            ],
+            cwd=str(root),
+            creationflags=flags,
         )
-        logging.info("최신 버전 새 실행 요청: pid=%s, ready=%s", proc.pid, ready_file)
-        deadline = time.monotonic() + 120
-        while time.monotonic() < deadline:
-            if ready_file.exists():
-                logging.info("새 프로그램 창 표시 확인 완료: %s", ready_file)
-                def close_old_app() -> None:
-                    time.sleep(1.0)
-                    try:
-                        ready_file.unlink(missing_ok=True)
-                    finally:
-                        os._exit(0)
-                threading.Thread(target=close_old_app, daemon=True).start()
-                return {"ok": True, "message": "최신 버전 창을 열었습니다."}
-            code = proc.poll()
-            if code is not None:
-                raise RuntimeError(f"새 프로그램이 준비되기 전에 종료되었습니다. 종료 코드: {code}")
-            time.sleep(0.4)
-        raise TimeoutError("최신 버전 창이 120초 안에 열리지 않았습니다. 기존 프로그램은 그대로 유지됩니다.")
+        logging.info("최신 버전 재시작 helper 실행: pid=%s", proc.pid)
+
+        def finish_restart() -> None:
+            code = proc.wait()
+            if code == 0:
+                logging.info("새 프로그램 창 표시 확인 완료. 기존 프로그램을 종료합니다.")
+                time.sleep(1.0)
+                os._exit(0)
+            logging.error("최신 버전 재시작 helper 실패: exit=%s. 기존 프로그램을 유지합니다.", code)
+
+        threading.Thread(target=finish_restart, daemon=True).start()
+        return {"ok": True, "message": "최신 버전을 확인하고 다시 시작하고 있습니다."}
     except Exception as exc:
         logging.exception("최신 버전 재시작 실패")
-        ready_file.unlink(missing_ok=True)
         return {"ok": False, "message": str(exc)}
 
 

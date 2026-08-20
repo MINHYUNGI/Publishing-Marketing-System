@@ -1,5 +1,8 @@
 param([string]$ProjectDir)
 $ErrorActionPreference = "Stop"
+$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+$PSDefaultParameterValues['Add-Content:Encoding'] = 'utf8'
 if (-not $ProjectDir) { $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
 Set-Location -LiteralPath $ProjectDir
 
@@ -24,8 +27,10 @@ try {
     if (-not (Test-Path -LiteralPath $run)) { throw "run.ps1 was not found." }
 
     $env:MIRAEN_READY_FILE = $ready
+    $env:MIRAEN_SKIP_UPDATE = "1"
+    $env:MIRAEN_LAUNCHER_REEXEC = "1"
     $args = '-NoProfile -ExecutionPolicy Bypass -File "' + $run + '"'
-    $p = Start-Process -FilePath "powershell.exe" -ArgumentList $args -WorkingDirectory $ProjectDir -PassThru
+    $p = Start-Process -FilePath "powershell.exe" -ArgumentList $args -WorkingDirectory $ProjectDir -WindowStyle Hidden -PassThru
     Add-Content -LiteralPath $log -Value "$(Get-Date -Format s) new run.ps1 started pid=$($p.Id), ready=$ready"
 
     $deadline = (Get-Date).AddSeconds(120)

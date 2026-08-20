@@ -5,7 +5,7 @@ try {
     Set-Location -LiteralPath $ScriptDir
 
     $Git = Get-Command git -ErrorAction SilentlyContinue
-    if ($Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
+    if ($env:MIRAEN_SKIP_UPDATE -ne "1" -and $Git -and (Test-Path -LiteralPath (Join-Path $ScriptDir ".git"))) {
         $SafeDir = $ScriptDir -replace '\\','/'
         $OldPreference = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
@@ -38,6 +38,7 @@ try {
         $ErrorActionPreference = $OldPreference
     }
     Remove-Item Env:MIRAEN_LAUNCHER_REEXEC -ErrorAction SilentlyContinue
+    Remove-Item Env:MIRAEN_SKIP_UPDATE -ErrorAction SilentlyContinue
 
     $AppHome = Join-Path $env:LOCALAPPDATA "MiraeN_Publishing_Marketing"
     $VenvDir = Join-Path $AppHome "venv_integrated_ai_v1"
@@ -55,45 +56,6 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "pip 업데이트에 실패했습니다." }
         & $PythonExe -m pip install -r $Requirements
         if ($LASTEXITCODE -ne 0) { throw "필수 Python 패키지 설치에 실패했습니다." }
-    }
-
-    $UiPatches = @(
-        (Join-Path $ScriptDir "app\ui_runtime_patch.py"),
-        (Join-Path $ScriptDir "app\admin_runtime_patch.py"),
-        (Join-Path $ScriptDir "app\erp_daily_ui_patch.py"),
-        (Join-Path $ScriptDir "app\performance_period_patch.py"),
-        (Join-Path $ScriptDir "app\performance_timeline_ui_patch.py"),
-        (Join-Path $ScriptDir "app\performance_timeline_group_patch.py"),
-        (Join-Path $ScriptDir "app\performance_timeline_all_activities_patch.py"),
-        (Join-Path $ScriptDir "app\global_font_scale_patch.py"),
-        (Join-Path $ScriptDir "app\performance_font_scale_patch.py"),
-        (Join-Path $ScriptDir "app\performance_header_layout_patch.py"),
-        (Join-Path $ScriptDir "app\execution_ui_patch.py"),
-        (Join-Path $ScriptDir "app\execution_ui_activation_patch.py"),
-        (Join-Path $ScriptDir "app\execution_edit_button_font_patch.py"),
-        (Join-Path $ScriptDir "app\execution_layout_drag_patch.py"),
-        (Join-Path $ScriptDir "app\execution_reorder_ui_patch.py"),
-        (Join-Path $ScriptDir "app\execution_drag_reorder_patch.py"),
-        (Join-Path $ScriptDir "app\performance_timeline_execution_order_patch.py"),
-        (Join-Path $ScriptDir "app\performance_timeline_resize_patch.py"),
-        (Join-Path $ScriptDir "app\execution_text_hierarchy_patch.py"),
-        (Join-Path $ScriptDir "app\sns_content_link_ui_patch.py"),
-        (Join-Path $ScriptDir "app\execution_font_scale_live_patch.py"),
-        (Join-Path $ScriptDir "app\execution_compact_row_patch.py"),
-        (Join-Path $ScriptDir "app\execution_resizable_and_link_row_patch.py"),
-        (Join-Path $ScriptDir "app\sns_link_save_fix_patch.py"),
-        (Join-Path $ScriptDir "app\performance_stability_cleanup_patch.py"),
-        (Join-Path $ScriptDir "app\sns_content_consolidated_patch.py"),
-        (Join-Path $ScriptDir "app\restart_ui_patch.py")
-    )
-
-    foreach ($Patch in $UiPatches) {
-        if (Test-Path -LiteralPath $Patch) {
-            & $PythonExe $Patch
-            if ($LASTEXITCODE -ne 0) {
-                throw "UI 패치 적용 실패: $Patch"
-            }
-        }
     }
 
     Write-Host "출판 마케팅 운영 시스템을 시작합니다..." -ForegroundColor Cyan
