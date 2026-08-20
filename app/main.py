@@ -14,6 +14,7 @@ from .backend import Backend
 from .config import UI_FILE, DOCUMENT_ROOT, LOG_DIR, REPORT_DIR
 from .erp_import import choose_and_import_erp
 from .erp_performance_patch import apply_erp_performance_patch
+from .execution_runtime import install_execution_runtime
 from .logging_utils import configure_logging
 
 
@@ -46,14 +47,12 @@ def _restart_latest_version(self) -> dict:
         return {"ok": False, "message": str(exc)}
 
 
-# pywebview JS API에 ERP 일별 업로드 기능을 노출합니다.
-# 제품코드를 넘기지 않으면 엑셀 내부 제품코드를 자동 감지합니다.
 Backend.import_erp_daily_excel = _import_erp_daily_excel
-# 하위 호환용 이름도 동일한 자동 감지 로직으로 연결합니다.
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
 Backend.restart_latest_version = _restart_latest_version
-# 출간 후 성과 조회에 ERP 일별 판매실적을 결합합니다.
+# ERP 일별 실적을 먼저 결합한 뒤 실제 실행 데이터 레이어를 마지막에 결합합니다.
 apply_erp_performance_patch()
+install_execution_runtime()
 
 
 def main() -> None:
