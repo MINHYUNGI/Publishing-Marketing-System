@@ -4,7 +4,7 @@ import keyring
 import tkinter as tk
 from tkinter import simpledialog
 
-from .config import SUPABASE_KEYRING_CANDIDATES, OPENAI_KEYRING, YOUTUBE_API_KEYRING
+from .config import SUPABASE_KEYRING_CANDIDATES, OPENAI_KEYRING, YOUTUBE_API_KEYRING, X_BEARER_TOKEN_KEYRING
 
 def _ask_secret(title: str, message: str) -> str:
     root = tk.Tk()
@@ -69,6 +69,24 @@ def get_youtube_api_key(prompt_if_missing: bool = True) -> str | None:
     )
     if len(value) < 20:
         raise ValueError("YouTube Data API Key 형식이 올바르지 않습니다.")
+    keyring.set_password(service, account, value)
+    return value
+
+def get_x_bearer_token(prompt_if_missing: bool = True) -> str | None:
+    service, account = X_BEARER_TOKEN_KEYRING
+    value = keyring.get_password(service, account)
+    if value:
+        return value.strip()
+    if not prompt_if_missing:
+        return None
+
+    value = _ask_secret(
+        "X API Bearer Token",
+        "X Developer Console의 Keys and tokens에서 발급한 Bearer Token을 입력해 주세요.\n"
+        "공개 게시물 조회에만 사용하며 Windows 자격 증명 관리자에 안전하게 저장됩니다.",
+    )
+    if len(value) < 20:
+        raise ValueError("X API Bearer Token 형식이 올바르지 않습니다.")
     keyring.set_password(service, account, value)
     return value
 
