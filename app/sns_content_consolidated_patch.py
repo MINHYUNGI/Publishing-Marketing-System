@@ -3,7 +3,7 @@ import re
 
 ROOT = Path(__file__).resolve().parent.parent
 UI = ROOT / "ui" / "index.html"
-MARKER = "v334-sns-content-consolidated"
+MARKER = "v335-sns-content-consolidated"
 
 
 def apply_patch() -> None:
@@ -13,7 +13,7 @@ def apply_patch() -> None:
 
     css = r'''
 <style>
-/* v334-sns-content-consolidated */
+/* v335-sns-content-consolidated */
 .sns-content-list{padding:15px 20px 20px;display:flex;flex-direction:column;gap:10px}
 .sns-content-row{display:grid;grid-template-columns:32px minmax(145px,.78fr) minmax(260px,1.45fr) auto;gap:12px;align-items:center;padding:12px 13px;border:1px solid #e1e7ee;border-radius:9px;background:#fff;min-width:0}
 .sns-content-row.link-only{grid-template-columns:32px minmax(145px,.78fr) minmax(260px,1.45fr)}
@@ -44,7 +44,7 @@ def apply_patch() -> None:
  const contentRows=[...contents].filter(c=>String(c.URL||"").trim()).sort((a,b)=>Number(a.링크순서??999999)-Number(b.링크순서??999999));
  const contentHtml=contentRows.length?contentRows.map(c=>{
    const meta=snsPlatformMeta(c.플랫폼),title=c.콘텐츠명||"콘텐츠",channel=c.채널명||"—";
-   const titleHtml=`<a href="${esc(c.URL)}" target="_blank" rel="noopener noreferrer" title="원문 열기">${esc(title)}</a>`;
+   const titleHtml=`<a href="${esc(c.URL)}" target="_blank" rel="noopener noreferrer" title="원문 열기" onclick="if(window.pywebview&&window.pywebview.api&&window.pywebview.api.open_external_url){event.preventDefault();window.pywebview.api.open_external_url(this.href);}">${esc(title)}</a>`;
    const metrics=meta.youtube?`<div class="sns-content-metrics"><div class="sns-content-metric"><small>조회</small><b>${snsMetric(c.조회수)}</b></div><div class="sns-content-metric"><small>좋아요</small><b>${snsMetric(c.좋아요수)}</b></div><div class="sns-content-metric"><small>댓글</small><b>${snsMetric(c.댓글수)}</b></div></div>`:"";
    return `<div class="sns-content-row ${meta.youtube?"youtube":"link-only"}"><div class="sns-platform-badge sns-${meta.key}" title="${esc(meta.label)}">${meta.letter}</div><div class="sns-content-channel"><small>채널명</small><b>${esc(channel)}</b>${c.게시일?`<span>${esc(c.게시일)}</span>`:""}</div><div class="sns-content-main"><small>콘텐츠 이름</small>${titleHtml}</div>${metrics}</div>`;
  }).join(""):`<div class="perf-empty">등록된 SNS·바이럴 콘텐츠 링크가 없습니다.</div>`;
