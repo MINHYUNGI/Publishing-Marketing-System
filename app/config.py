@@ -28,3 +28,8 @@ OPENAI_KEYRING = (
     "미래엔_출판마케팅_운영시스템",
     "OPENAI_API_KEY",
 )
+
+YOUTUBE_API_KEYRING = (
+    "미래엔_출판마케팅_운영시스템",
+    "YOUTUBE_DATA_API_KEY",
+)
