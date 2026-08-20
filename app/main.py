@@ -27,36 +27,40 @@ def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
 
 
 def _open_external_url(self, url: str) -> dict:
+    """등록된 콘텐츠 URL을 Windows 기본 브라우저에서 확실하게 엽니다."""
     try:
         value = str(url or "").strip()
         parsed = urlparse(value)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("올바른 웹 링크가 아닙니다.")
-        opened = webbrowser.open(value, new=2)
-        return {"ok": bool(opened)}
+        opened = False
+        if os.name == "nt":
+            try:
+                os.startfile(value)  # type: ignore[attr-defined]
+                opened = True
+            except Exception:
+                opened = False
+        if not opened:
+            opened = bool(webbrowser.open(value, new=2, autoraise=True))
+        if not opened:
+            raise RuntimeError("기본 브라우저를 열 수 없습니다.")
+        return {"ok": True}
     except Exception as exc:
         logging.exception("외부 링크 열기 실패")
         return {"ok": False, "message": str(exc)}
 
 
 def _restart_latest_version(self) -> dict:
-    """현재 앱을 종료하고 run.ps1을 새 프로세스로 실행해 GitHub 최신본으로 재시작합니다."""
     try:
         root = Path(__file__).resolve().parent.parent
         run_script = root / "run.ps1"
         if not run_script.exists():
             raise RuntimeError("run.ps1을 찾을 수 없습니다.")
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        subprocess.Popen(
-            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(run_script)],
-            cwd=str(root),
-            creationflags=flags,
-        )
-
+        subprocess.Popen(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(run_script)], cwd=str(root), creationflags=flags)
         def exit_current() -> None:
             time.sleep(0.7)
             os._exit(0)
-
         threading.Thread(target=exit_current, daemon=True).start()
         return {"ok": True}
     except Exception as exc:
@@ -68,8 +72,6 @@ Backend.import_erp_daily_excel = _import_erp_daily_excel
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
 Backend.open_external_url = _open_external_url
 Backend.restart_latest_version = _restart_latest_version
-# ERP → 실제 실행 → 실행 정렬 → SNS 콘텐츠 링크 순서로 결합합니다.
-# 외부 플랫폼 중 자동 지표 수집은 YouTube만 content_link_runtime에서 처리합니다.
 apply_erp_performance_patch()
 install_execution_runtime()
 install_execution_sort_runtime()
@@ -80,16 +82,8 @@ def main() -> None:
     configure_logging()
     for path in (DOCUMENT_ROOT, LOG_DIR, REPORT_DIR):
         path.mkdir(parents=True, exist_ok=True)
-
     backend = Backend()
-    webview.create_window(
-        "출판 마케팅 운영 시스템",
-        url=UI_FILE.as_uri(),
-        js_api=backend,
-        width=1500,
-        height=930,
-        min_size=(1100, 720),
-    )
+    webview.create_window("출판 마케팅 운영 시스템", url=UI_FILE.as_uri(), js_api=backend, width=1500, height=930, min_size=(1100, 720))
     webview.start(debug=False)
 
 
@@ -98,8 +92,4 @@ if __name__ == "__main__":
         main()
     except Exception as exc:
         logging.exception("치명적 오류")
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showerror("실행 실패", str(exc), parent=root)
-        root.destroy()
-        sys.exit(1)
+        root = tk.Tk(); root.withdraw(); messagebox.showerror("실행 실패", str(exc), parent=root); root.destroy(); sys.exit(1)
