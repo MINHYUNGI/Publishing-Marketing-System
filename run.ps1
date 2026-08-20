@@ -62,6 +62,7 @@ $UiPatches = @(
     (Join-Path $ScriptDir "app\fixed_button_font_patch.py"),
     (Join-Path $ScriptDir "app\execution_layout_drag_patch.py"),
     (Join-Path $ScriptDir "app\control_font_scale_exclusion_patch.py"),
+    (Join-Path $ScriptDir "app\execution_reorder_ui_patch.py"),
     (Join-Path $ScriptDir "app\performance_timeline_resize_patch.py"),
     (Join-Path $ScriptDir "app\restart_ui_patch.py")
 )
