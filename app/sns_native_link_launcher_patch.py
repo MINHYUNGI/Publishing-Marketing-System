@@ -2,30 +2,74 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent.parent
 UI=ROOT/"ui"/"index.html"
-MARKER="v324-sns-native-link-launcher"
+MARKER="v325-sns-native-link-launcher-robust"
 
 def apply_patch():
     text=UI.read_text(encoding="utf-8")
     if MARKER in text:
         return
 
-    old='''<section class="p271-panel"><div class="p271-panel-head"><div><h3>5. SNS·바이럴 콘텐츠 반응</h3><p>Supabase 「콘텐츠성과」의 콘텐츠별 반응 지표를 표시합니다.</p></div><span class="p271-panel-tag">${contents.length}건</span></div><div class="p271-digital-cards">${contentHtml}</div></section>'''
-    new='''<section class="p271-panel"><div class="p271-panel-head"><div><h3>5. SNS·바이럴 콘텐츠 반응</h3><p>Supabase 「콘텐츠성과」의 콘텐츠별 반응 지표를 표시합니다.</p></div><div class="p271-content-head-actions"><button type="button" class="p271-native-link-btn" onclick="pywebview.api.open_content_links_native(currentPerformanceCode)">콘텐츠 링크 열기</button><span class="p271-panel-tag">${contents.length}건</span></div></div><div class="p271-digital-cards">${contentHtml}</div></section>'''
-    if old not in text:
-        raise RuntimeError("SNS 콘텐츠 섹션 헤더 기준점을 찾지 못했습니다.")
-    text=text.replace(old,new,1)
-
     css=r'''
 <style>
-/* v324-sns-native-link-launcher */
-.p271-content-head-actions{display:flex;align-items:center;gap:8px}
-.p271-native-link-btn{height:30px;padding:0 11px;border:1px solid #b8c7d9;border-radius:7px;background:#fff;color:#344054;font-size:11px!important;font-weight:800!important;cursor:pointer;white-space:nowrap}
-.p271-native-link-btn:hover{background:#f6f8fb;border-color:#8ea7c2}
-/* 기존 행 단위 링크 버튼은 혼선을 막기 위해 숨깁니다. */
+/* v325-sns-native-link-launcher-robust */
+.p271-content-head-actions{display:flex!important;align-items:center!important;gap:8px!important}
+.p271-native-link-btn{height:32px!important;padding:0 12px!important;border:1px solid #9fb2c8!important;border-radius:7px!important;background:#fff!important;color:#24415f!important;font-size:11px!important;font-weight:800!important;cursor:pointer!important;white-space:nowrap!important}
+.p271-native-link-btn:hover{background:#f2f6fa!important;border-color:#6f8fad!important}
 .content-link-open{display:none!important}
+/* 플랫폼 표시는 원문 텍스트를 숨기고 한 글자만 안정적으로 표시 */
+.content-link-platform{width:24px!important;min-width:24px!important;height:24px!important;padding:0!important;overflow:hidden!important;font-size:0!important;position:relative!important;border-radius:6px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.content-link-platform::after{font-size:11px!important;font-weight:900!important;line-height:1!important;color:#344054!important}
+.content-link-platform[data-platform="YouTube"]::after{content:"Y"!important;color:#b42318!important}
+.content-link-platform[data-platform="X"]::after{content:"X"!important;color:#111827!important}
+.content-link-platform[data-platform="Instagram"]::after{content:"I"!important;color:#8b3a7b!important}
+.content-link-platform[data-platform="Naver Blog"]::after,.content-link-platform[data-platform="네이버 블로그"]::after{content:"B"!important;color:#178a4b!important}
+.content-link-platform[data-platform="Naver Cafe"]::after,.content-link-platform[data-platform="네이버 카페"]::after{content:"C"!important;color:#178a4b!important}
 </style>
 '''
-    text=text.replace('</head>',css+f'\n<script>/* {MARKER} */</script>\n</head>',1)
+
+    script=r'''
+<script>
+// v325-sns-native-link-launcher-robust
+(function(){
+  function findSNSPanel(){
+    const heads=[...document.querySelectorAll('.p271-panel-head')];
+    return heads.find(h=>h.querySelector('h3')?.textContent?.includes('5. SNS·바이럴 콘텐츠 반응'))||null;
+  }
+  function installNativeLauncher(){
+    const head=findSNSPanel();
+    if(!head)return;
+    let actions=head.querySelector('.p271-content-head-actions');
+    const tag=head.querySelector('.p271-panel-tag');
+    if(!actions){
+      actions=document.createElement('div');
+      actions.className='p271-content-head-actions';
+      if(tag){ head.insertBefore(actions,tag); actions.appendChild(tag); }
+      else head.appendChild(actions);
+    }
+    if(!actions.querySelector('.p271-native-link-btn')){
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='p271-native-link-btn';
+      btn.textContent='콘텐츠 링크 열기';
+      btn.onclick=async function(){
+        try{
+          const code=String(window.currentPerformanceCode||currentPerformanceCode||'').trim();
+          if(!code){ if(window.toast)toast('도서 제품코드를 확인할 수 없습니다.'); return; }
+          if(!window.pywebview?.api?.open_content_links_native){ if(window.toast)toast('링크 열기 기능 연결을 확인할 수 없습니다.'); return; }
+          await window.pywebview.api.open_content_links_native(code);
+        }catch(e){ if(window.toast)toast('콘텐츠 링크 창 오류: '+e); }
+      };
+      actions.insertBefore(btn,actions.firstChild);
+    }
+  }
+  const obs=new MutationObserver(()=>installNativeLauncher());
+  document.addEventListener('DOMContentLoaded',()=>{installNativeLauncher();obs.observe(document.body,{childList:true,subtree:true});});
+  setTimeout(()=>{installNativeLauncher();if(document.body)obs.observe(document.body,{childList:true,subtree:true});},500);
+})();
+</script>
+'''
+    text=text.replace('</head>',css+'\n</head>',1)
+    text=text.replace('</body>',script+f'\n<script>/* {MARKER} */</script>\n</body>',1)
     UI.write_text(text,encoding='utf-8')
 
 if __name__=='__main__':
