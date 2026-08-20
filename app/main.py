@@ -16,6 +16,7 @@ from .erp_import import choose_and_import_erp
 from .erp_performance_patch import apply_erp_performance_patch
 from .execution_runtime import install_execution_runtime
 from .execution_sort_runtime import install_execution_sort_runtime
+from .content_link_runtime import install_content_link_runtime
 from .logging_utils import configure_logging
 
 
@@ -51,10 +52,11 @@ def _restart_latest_version(self) -> dict:
 Backend.import_erp_daily_excel = _import_erp_daily_excel
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
 Backend.restart_latest_version = _restart_latest_version
-# ERP 일별 실적을 먼저 결합한 뒤 실제 실행 데이터 레이어를 마지막에 결합합니다.
+# ERP → 실제 실행 → 실행 정렬 → SNS 콘텐츠 링크 순서로 결합합니다.
 apply_erp_performance_patch()
 install_execution_runtime()
 install_execution_sort_runtime()
+install_content_link_runtime()
 
 
 def main() -> None:
