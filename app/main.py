@@ -44,18 +44,40 @@ def _open_external_url(self, url: str) -> dict:
 
 
 def _restart_latest_version(self) -> dict:
+    """최신본 적용과 새 실행이 확인된 뒤에만 현재 앱을 종료합니다."""
     try:
         root = Path(__file__).resolve().parent.parent
-        run_script = root / "run.ps1"
-        if not run_script.exists():
-            raise RuntimeError("run.ps1을 찾을 수 없습니다.")
+        helper = root / "restart_latest.ps1"
+        if not helper.exists():
+            raise RuntimeError("restart_latest.ps1을 찾을 수 없습니다.")
+
         flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        subprocess.Popen(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(run_script)], cwd=str(root), creationflags=flags)
-        def exit_current() -> None:
-            time.sleep(0.7)
-            os._exit(0)
-        threading.Thread(target=exit_current, daemon=True).start()
-        return {"ok": True}
+        proc = subprocess.Popen(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", str(helper),
+                "-ProjectDir", str(root),
+            ],
+            cwd=str(root),
+            creationflags=flags,
+        )
+        logging.info("최신 버전 재시작 도우미 실행: pid=%s", proc.pid)
+
+        def wait_and_exit() -> None:
+            try:
+                code = proc.wait()
+                if code == 0:
+                    logging.info("새 프로그램 실행 확인 완료. 현재 프로그램을 종료합니다.")
+                    time.sleep(0.5)
+                    os._exit(0)
+                logging.error("재시작 도우미 실패. 현재 프로그램 유지. 종료코드=%s", code)
+            except Exception:
+                logging.exception("재시작 도우미 대기 실패. 현재 프로그램을 유지합니다.")
+
+        threading.Thread(target=wait_and_exit, daemon=True).start()
+        return {"ok": True, "message": "최신 버전을 준비한 뒤 자동으로 다시 시작합니다."}
     except Exception as exc:
         logging.exception("최신 버전 재시작 실패")
         return {"ok": False, "message": str(exc)}
