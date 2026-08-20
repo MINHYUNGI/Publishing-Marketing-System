@@ -27,29 +27,124 @@ def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
 
 
 def _open_external_url(self, url: str) -> dict:
-    """등록된 콘텐츠 URL을 Windows 기본 브라우저에서 확실하게 엽니다."""
     value = str(url or "").strip()
     logging.info("외부 링크 열기 요청: %s", value)
     try:
         parsed = urlparse(value)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("올바른 웹 링크가 아닙니다.")
-        opened = False
         if os.name == "nt":
             try:
                 os.startfile(value)  # type: ignore[attr-defined]
-                opened = True
+                logging.info("외부 링크 열기 성공(os.startfile): %s", value)
+                return {"ok": True}
             except Exception:
                 logging.exception("os.startfile 외부 링크 실행 실패")
-                opened = False
-        if not opened:
-            opened = bool(webbrowser.open(value, new=2, autoraise=True))
+        opened = bool(webbrowser.open(value, new=2, autoraise=True))
         if not opened:
             raise RuntimeError("기본 브라우저를 열 수 없습니다.")
-        logging.info("외부 링크 열기 성공: %s", value)
+        logging.info("외부 링크 열기 성공(webbrowser): %s", value)
         return {"ok": True}
     except Exception as exc:
         logging.exception("외부 링크 열기 실패")
+        return {"ok": False, "message": str(exc)}
+
+
+def _open_content_links_native(self, product_code: str | None = None) -> dict:
+    """HTML 동적 링크 버튼을 우회해 Windows 네이티브 선택창에서 콘텐츠 링크를 엽니다."""
+    try:
+        if not self.db:
+            raise RuntimeError("Supabase가 연결되지 않았습니다.")
+        code = str(product_code or "").strip()
+        if not code:
+            raise RuntimeError("조회 중인 도서의 제품코드를 확인할 수 없습니다.")
+
+        rows = (
+            self.db.client.table("콘텐츠성과")
+            .select("플랫폼,채널명,콘텐츠명,URL,게시일,링크순서")
+            .eq("제품코드", code)
+            .not_.is_("URL", "null")
+            .order("링크순서")
+            .execute()
+        ).data or []
+        rows = [r for r in rows if str(r.get("URL") or "").strip()]
+        logging.info("네이티브 콘텐츠 링크 창 요청: 제품=%s, 링크=%s건", code, len(rows))
+        if not rows:
+            raise RuntimeError("이 도서에 등록된 콘텐츠 링크가 없습니다.")
+
+        root = tk.Tk()
+        root.title("콘텐츠 링크 열기")
+        root.geometry("820x430")
+        root.minsize(650, 320)
+        root.attributes("-topmost", True)
+
+        title = tk.Label(root, text="열 콘텐츠를 선택하세요", font=("Segoe UI", 14, "bold"), anchor="w")
+        title.pack(fill="x", padx=18, pady=(16, 4))
+        guide = tk.Label(root, text=f"제품코드 {code} · 등록 링크 {len(rows)}건", font=("Segoe UI", 10), fg="#667085", anchor="w")
+        guide.pack(fill="x", padx=18, pady=(0, 10))
+
+        frame = tk.Frame(root)
+        frame.pack(fill="both", expand=True, padx=18)
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side="right", fill="y")
+        listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 10), activestyle="none", selectmode="browse")
+        listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=listbox.yview)
+
+        for r in rows:
+            platform = str(r.get("플랫폼") or "웹").strip()
+            channel = str(r.get("채널명") or "").strip()
+            content = str(r.get("콘텐츠명") or "콘텐츠").strip().replace("\n", " ")
+            if len(content) > 78:
+                content = content[:77] + "…"
+            date_text = str(r.get("게시일") or "").strip()
+            parts = [platform]
+            if channel:
+                parts.append(channel)
+            parts.append(content)
+            if date_text:
+                parts.append(date_text)
+            listbox.insert("end", "  |  ".join(parts))
+        listbox.selection_set(0)
+        listbox.activate(0)
+
+        status = tk.Label(root, text="항목을 더블클릭하거나 [브라우저에서 열기]를 누르세요.", font=("Segoe UI", 9), fg="#667085", anchor="w")
+        status.pack(fill="x", padx=18, pady=(8, 6))
+
+        buttons = tk.Frame(root)
+        buttons.pack(fill="x", padx=18, pady=(0, 16))
+
+        def open_selected(event=None):
+            selection = listbox.curselection()
+            if not selection:
+                messagebox.showinfo("콘텐츠 링크", "열 콘텐츠를 선택해 주세요.", parent=root)
+                return
+            idx = int(selection[0])
+            url = str(rows[idx].get("URL") or "").strip()
+            result = _open_external_url(self, url)
+            if not result.get("ok"):
+                messagebox.showerror("링크 열기 실패", result.get("message") or "링크를 열 수 없습니다.", parent=root)
+            else:
+                status.config(text="브라우저에서 링크를 열었습니다.")
+
+        open_btn = tk.Button(buttons, text="브라우저에서 열기", command=open_selected, width=18)
+        open_btn.pack(side="right", padx=(8, 0))
+        close_btn = tk.Button(buttons, text="닫기", command=root.destroy, width=10)
+        close_btn.pack(side="right")
+        listbox.bind("<Double-Button-1>", open_selected)
+        root.bind("<Return>", open_selected)
+        root.bind("<Escape>", lambda e: root.destroy())
+        root.focus_force()
+        root.mainloop()
+        return {"ok": True, "count": len(rows)}
+    except Exception as exc:
+        logging.exception("네이티브 콘텐츠 링크 창 실패")
+        try:
+            root = tk.Tk(); root.withdraw(); root.attributes("-topmost", True)
+            messagebox.showerror("콘텐츠 링크", str(exc), parent=root)
+            root.destroy()
+        except Exception:
+            pass
         return {"ok": False, "message": str(exc)}
 
 
@@ -74,6 +169,7 @@ def _restart_latest_version(self) -> dict:
 Backend.import_erp_daily_excel = _import_erp_daily_excel
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
 Backend.open_external_url = _open_external_url
+Backend.open_content_links_native = _open_content_links_native
 Backend.restart_latest_version = _restart_latest_version
 apply_erp_performance_patch()
 install_execution_runtime()
