@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import Any
-from datetime import datetime
+from datetime import date, datetime
 from supabase import create_client, Client
+
+from .content_metrics import platform_from_url, youtube_statistics
 
 class Database:
     def __init__(self, project_url: str, secret_key: str) -> None:
@@ -411,49 +413,393 @@ class Database:
 
 
 
+    @staticmethod
+    def _execution_db_category(value: str | None) -> str:
+        if value == "추가 마케팅":
+            return "기타 추가 마케팅"
+        return value or "기타 추가 마케팅"
+
+    @staticmethod
+    def _execution_ui_category(value: str | None) -> str:
+        if value == "기타 추가 마케팅":
+            return "추가 마케팅"
+        return value or "추가 마케팅"
+
+    def fetch_execution_rows(self, product_code: str) -> list[dict[str, Any]]:
+        return (
+            self.client.table("마케팅실행활동")
+            .select("*")
+            .eq("제품코드", product_code)
+            .order("생성일시")
+            .execute()
+        ).data or []
+
+    def _find_execution_id(
+        self,
+        product_code: str,
+        activity_category: str,
+        item: dict[str, Any],
+    ) -> str | None:
+        if item.get("execution_activity_id"):
+            return str(item["execution_activity_id"])
+        original_id = item.get("original_activity_id")
+        if original_id:
+            rows = (
+                self.client.table("마케팅실행활동")
+                .select("실행활동ID")
+                .eq("제품코드", product_code)
+                .eq("원본활동ID", original_id)
+                .limit(1)
+                .execute()
+            ).data or []
+            return str(rows[0]["실행활동ID"]) if rows else None
+        rows = (
+            self.client.table("마케팅실행활동")
+            .select("실행활동ID")
+            .eq("제품코드", product_code)
+            .eq("활동분류", self._execution_db_category(activity_category))
+            .eq("활동명", str(item.get("activity_name") or "").strip())
+            .is_("원본활동ID", "null")
+            .order("생성일시", desc=True)
+            .limit(1)
+            .execute()
+        ).data or []
+        return str(rows[0]["실행활동ID"]) if rows else None
+
+    def _save_execution_order(
+        self,
+        product_code: str,
+        activity_category: str,
+        items: list[dict[str, Any]],
+    ) -> None:
+        db_category = self._execution_db_category(activity_category)
+        for index, item in enumerate(items or [], start=1):
+            if item.get("delete_added"):
+                continue
+            order = int(item.get("sort_order") or index * 10)
+            execution_id = item.get("execution_activity_id") or None
+            original_id = item.get("original_activity_id") or None
+            query = self.client.table("마케팅실행활동").update({"정렬순서": order}).eq("제품코드", product_code)
+            if original_id:
+                query.eq("원본활동ID", original_id).execute()
+            elif execution_id:
+                query.eq("실행활동ID", execution_id).execute()
+            else:
+                rows = (
+                    self.client.table("마케팅실행활동")
+                    .select("실행활동ID")
+                    .eq("제품코드", product_code)
+                    .eq("활동분류", db_category)
+                    .eq("활동명", str(item.get("activity_name") or "").strip())
+                    .is_("원본활동ID", "null")
+                    .order("생성일시", desc=True)
+                    .limit(1)
+                    .execute()
+                ).data or []
+                if rows:
+                    (
+                        self.client.table("마케팅실행활동")
+                        .update({"정렬순서": order})
+                        .eq("실행활동ID", rows[0]["실행활동ID"])
+                        .execute()
+                    )
+
+    def _save_execution_links(
+        self,
+        product_code: str,
+        activity_category: str,
+        items: list[dict[str, Any]],
+    ) -> tuple[int, int]:
+        if "SNS" not in activity_category and "바이럴" not in activity_category:
+            return 0, 0
+        youtube_prompted = False
+        youtube_collected = 0
+        youtube_failed = 0
+        for item in items or []:
+            if item.get("delete_added"):
+                continue
+            original_id = item.get("original_activity_id") or None
+            execution_id = self._find_execution_id(product_code, activity_category, item)
+            delete_query = (
+                self.client.table("콘텐츠성과")
+                .delete()
+                .eq("제품코드", product_code)
+                .eq("원천구분", "실행링크")
+            )
+            if original_id:
+                delete_query.eq("활동ID", original_id).execute()
+            elif execution_id:
+                delete_query.eq("실행활동ID", execution_id).execute()
+            else:
+                continue
+            if item.get("execution_type") == "활동취소":
+                continue
+            for index, raw_url in enumerate(item.get("links") or [], start=1):
+                url = str(raw_url or "").strip()
+                if not url:
+                    continue
+                if not url.lower().startswith(("http://", "https://")):
+                    url = "https://" + url
+                platform = platform_from_url(url)
+                row = {
+                    "제품코드": product_code,
+                    "활동ID": original_id,
+                    "실행활동ID": execution_id,
+                    "플랫폼": platform,
+                    "채널명": item.get("channel_or_media") or None,
+                    "콘텐츠명": str(item.get("activity_name") or "SNS·바이럴 콘텐츠").strip(),
+                    "게시일": item.get("actual_start_date") or None,
+                    "URL": url,
+                    "지표수집일": date.today().isoformat(),
+                    "원천구분": "실행링크",
+                    "링크순서": index * 10,
+                }
+                if platform == "YouTube":
+                    try:
+                        metrics = youtube_statistics(url, prompt_if_missing=not youtube_prompted)
+                        youtube_prompted = True
+                        if metrics:
+                            row.update({key: value for key, value in metrics.items() if value is not None})
+                            youtube_collected += 1
+                        else:
+                            youtube_failed += 1
+                    except Exception as exc:
+                        youtube_prompted = True
+                        youtube_failed += 1
+                        row["비고"] = f"YouTube 지표 수집 실패: {exc}"
+                self.client.table("콘텐츠성과").insert(row).execute()
+        return youtube_collected, youtube_failed
+
+    def save_execution_group(
+        self,
+        product_code: str,
+        activity_category: str,
+        items: list[dict[str, Any]],
+        registrar_id: str | None = None,
+    ) -> dict[str, int]:
+        if not product_code:
+            raise ValueError("제품코드가 없습니다.")
+        db_category = self._execution_db_category(activity_category)
+        saved = added = cancelled = deleted = 0
+        for item in items or []:
+            execution_id = item.get("execution_activity_id") or None
+            original_id = item.get("original_activity_id") or None
+            if item.get("delete_added") and execution_id and not original_id:
+                (
+                    self.client.table("마케팅실행활동")
+                    .delete()
+                    .eq("실행활동ID", execution_id)
+                    .eq("제품코드", product_code)
+                    .execute()
+                )
+                deleted += 1
+                continue
+            name = str(item.get("activity_name") or "").strip()
+            if not name:
+                raise ValueError("활동명을 입력해 주세요.")
+            execution_type = item.get("execution_type") or ("활동추가" if not original_id else "실행확인")
+            if execution_type not in {"실행확인", "활동추가", "활동취소"}:
+                execution_type = "실행확인"
+            row = {
+                "제품코드": product_code,
+                "원본활동ID": original_id,
+                "활동분류": db_category,
+                "채널또는매체": item.get("channel_or_media") or None,
+                "활동명": name,
+                "실제시작일": item.get("actual_start_date") or None,
+                "실제종료일": item.get("actual_end_date") or None,
+                "실제비용": int(item.get("actual_cost") or 0),
+                "실행구분": execution_type,
+                "실행내용": item.get("execution_note") or None,
+                "등록자ID": registrar_id or None,
+                "수정일시": datetime.now().isoformat(),
+            }
+            if original_id:
+                response = self.client.table("마케팅실행활동").upsert(row, on_conflict="원본활동ID").execute()
+            elif execution_id:
+                response = (
+                    self.client.table("마케팅실행활동")
+                    .update(row)
+                    .eq("실행활동ID", execution_id)
+                    .eq("제품코드", product_code)
+                    .execute()
+                )
+            else:
+                response = self.client.table("마케팅실행활동").insert(row).execute()
+                added += 1
+            if not (response.data or []):
+                raise RuntimeError("실제 실행 데이터 저장에 실패했습니다.")
+            saved += 1
+            if execution_type == "활동취소":
+                cancelled += 1
+        self._save_execution_order(product_code, activity_category, items)
+        youtube_collected, youtube_failed = self._save_execution_links(product_code, activity_category, items)
+        return {
+            "saved": saved,
+            "added": added,
+            "cancelled": cancelled,
+            "deleted": deleted,
+            "youtube_collected": youtube_collected,
+            "youtube_failed": youtube_failed,
+        }
+
+    def _merge_execution_rows(
+        self,
+        detail: dict[str, Any],
+        product_code: str,
+        execution_rows: list[dict[str, Any]],
+    ) -> None:
+        by_original = {str(row.get("원본활동ID")): row for row in execution_rows if row.get("원본활동ID")}
+        merged: list[dict[str, Any]] = []
+        for plan in detail.get("마케팅활동") or []:
+            item = dict(plan)
+            execution = by_original.get(str(plan.get("활동ID")))
+            item["계획시작일"] = plan.get("시작일")
+            item["계획종료일"] = plan.get("종료일")
+            item["계획비용"] = plan.get("비용")
+            if execution:
+                item.update({
+                    "실행활동ID": execution.get("실행활동ID"),
+                    "실제시작일": execution.get("실제시작일"),
+                    "실제종료일": execution.get("실제종료일"),
+                    "실제비용": execution.get("실제비용"),
+                    "실행구분": execution.get("실행구분") or "실행확인",
+                    "실행내용": execution.get("실행내용"),
+                    "실행확인여부": True,
+                })
+            else:
+                item.update({
+                    "실제시작일": plan.get("시작일"),
+                    "실제종료일": plan.get("종료일"),
+                    "실제비용": plan.get("비용"),
+                    "실행구분": "미확인",
+                    "실행확인여부": False,
+                })
+            merged.append(item)
+        for execution in execution_rows:
+            if execution.get("원본활동ID"):
+                continue
+            merged.append({
+                "활동ID": None,
+                "실행활동ID": execution.get("실행활동ID"),
+                "제품코드": product_code,
+                "활동분류": self._execution_ui_category(execution.get("활동분류")),
+                "채널또는매체": execution.get("채널또는매체"),
+                "활동명": execution.get("활동명"),
+                "시작일": execution.get("실제시작일"),
+                "종료일": execution.get("실제종료일"),
+                "비용": 0,
+                "계획시작일": None,
+                "계획종료일": None,
+                "계획비용": 0,
+                "실제시작일": execution.get("실제시작일"),
+                "실제종료일": execution.get("실제종료일"),
+                "실제비용": execution.get("실제비용"),
+                "실행구분": "활동추가",
+                "실행내용": execution.get("실행내용"),
+                "실행확인여부": True,
+                "계획실행구분": "실행",
+            })
+        by_execution = {str(row.get("실행활동ID")): row for row in execution_rows if row.get("실행활동ID")}
+        for index, item in enumerate(merged, start=1):
+            execution = None
+            if item.get("활동ID"):
+                execution = by_original.get(str(item.get("활동ID")))
+            if not execution and item.get("실행활동ID"):
+                execution = by_execution.get(str(item.get("실행활동ID")))
+            item["실행정렬순서"] = int((execution or {}).get("정렬순서") or item.get("정렬순서") or index * 10)
+        detail["마케팅활동"] = merged
+        detail["마케팅실행활동"] = execution_rows
+
+    def _refresh_youtube_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        from .security import get_youtube_api_key
+
+        if not get_youtube_api_key(prompt_if_missing=False):
+            return rows
+        for row in rows:
+            if row.get("원천구분") != "실행링크" or row.get("플랫폼") != "YouTube" or not row.get("URL"):
+                continue
+            try:
+                metrics = youtube_statistics(str(row["URL"]), prompt_if_missing=False)
+                if not metrics:
+                    continue
+                updates = {key: value for key, value in metrics.items() if value is not None}
+                changed = any(row.get(key) != value for key, value in updates.items())
+                row.update(updates)
+                row["지표수집일"] = date.today().isoformat()
+                if changed or not row.get("조회수"):
+                    (
+                        self.client.table("콘텐츠성과")
+                        .update({**updates, "지표수집일": date.today().isoformat(), "비고": None})
+                        .eq("콘텐츠성과ID", row["콘텐츠성과ID"])
+                        .execute()
+                    )
+            except Exception:
+                continue
+        return rows
+
+    def _attach_content_links(self, detail: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+        by_plan: dict[str, list[dict[str, Any]]] = {}
+        by_execution: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            if row.get("원천구분") != "실행링크":
+                continue
+            if row.get("활동ID"):
+                by_plan.setdefault(str(row["활동ID"]), []).append(row)
+            if row.get("실행활동ID"):
+                by_execution.setdefault(str(row["실행활동ID"]), []).append(row)
+        for item in detail.get("마케팅활동") or []:
+            links = by_plan.get(str(item.get("활동ID")), []) if item.get("활동ID") else []
+            if not links and item.get("실행활동ID"):
+                links = by_execution.get(str(item["실행활동ID"]), [])
+            item["콘텐츠링크"] = links
+
     def fetch_post_launch_performance(self, product_code: str) -> dict[str, Any] | None:
-        """출간 후 성과 화면용 실제 Supabase 데이터를 통합 반환합니다."""
+        """출간 후 성과 화면에 필요한 계획, 실행, 콘텐츠, ERP 데이터를 반환합니다."""
         detail = self.fetch_marketing_plan_detail(product_code)
         if not detail:
             return None
-
-        sales_rows = (
-            self.client.table("판매실적일별")
-            .select("*")
-            .eq("제품코드", product_code)
-            .order("판매일")
-            .execute()
+        buyer_rows = (
+            self.client.table("구매자반응").select("*").eq("제품코드", product_code)
+            .order("기준일", desc=True).limit(1).execute()
         ).data or []
-
+        evaluation_rows = (
+            self.client.table("마케팅성과평가").select("*").eq("제품코드", product_code)
+            .order("평가기준일", desc=True).limit(1).execute()
+        ).data or []
+        erp_rows = (
+            self.client.table("ERP일별판매실적")
+            .select("제품코드,제품명,매출일자,매출부수,매출금액,출고부수,출고금액,반품부수,반품금액,원본파일명")
+            .eq("제품코드", product_code).order("매출일자").execute()
+        ).data or []
+        sales_rows = [
+            {
+                "제품코드": product_code,
+                "판매일": row.get("매출일자"),
+                "SCM실판매부수": 0,
+                "SCM환산매출액": 0,
+                "ERP출고부수": row.get("매출부수") or 0,
+                "ERP매출액": row.get("매출금액") or 0,
+                "ERP원출고부수": row.get("출고부수") or 0,
+                "ERP원출고금액": row.get("출고금액") or 0,
+                "ERP반품부수": row.get("반품부수") or 0,
+                "ERP반품금액": row.get("반품금액") or 0,
+            }
+            for row in erp_rows
+        ]
+        execution_rows = self.fetch_execution_rows(product_code)
+        self._merge_execution_rows(detail, product_code, execution_rows)
         content_rows = (
             self.client.table("콘텐츠성과")
-            .select("*")
-            .eq("제품코드", product_code)
-            .order("게시일")
-            .execute()
+            .select("콘텐츠성과ID,제품코드,활동ID,실행활동ID,플랫폼,채널명,콘텐츠명,게시일,URL,조회수,좋아요수,댓글수,공유수,저장수,클릭수,지표수집일,원천구분,비고,링크순서")
+            .eq("제품코드", product_code).order("링크순서").order("생성일시").execute()
         ).data or []
-
-        buyer_rows = (
-            self.client.table("구매자반응")
-            .select("*")
-            .eq("제품코드", product_code)
-            .order("기준일", desc=True)
-            .limit(1)
-            .execute()
-        ).data or []
-
-        evaluation_rows = (
-            self.client.table("마케팅성과평가")
-            .select("*")
-            .eq("제품코드", product_code)
-            .order("평가기준일", desc=True)
-            .limit(1)
-            .execute()
-        ).data or []
-
+        content_rows = self._refresh_youtube_rows(content_rows)
+        self._attach_content_links(detail, content_rows)
         return {
             **detail,
             "판매실적일별": sales_rows,
+            "ERP일별판매실적": erp_rows,
             "콘텐츠성과": content_rows,
             "구매자반응": buyer_rows[0] if buyer_rows else None,
             "마케팅성과평가": evaluation_rows[0] if evaluation_rows else None,

@@ -5,14 +5,19 @@ import mimetypes
 import os
 import subprocess
 import sys
+import threading
+import time
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 import webview
 
 from .analyzer import analyze_document
 from .config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE, PROJECT_URL, ATTACHMENT_ROOT
 from .database import Database
+from .erp_import import choose_and_import_erp
 from .file_store import copy_document, copy_reference_file, save_reference_bytes
 from .security import get_openai_api_key, get_supabase_secret_key, sha256_file
 
@@ -21,6 +26,82 @@ class Backend:
         self.db: Database | None = None
         self.users: list[dict[str, Any]] = []
         self.product_index: list[dict[str, Any]] = []
+
+    def import_erp_daily_excel(self, product_code: str | None = None) -> dict[str, Any]:
+        return choose_and_import_erp(self, product_code)
+
+    def import_erp_monthly_excel(self) -> dict[str, Any]:
+        return choose_and_import_erp(self, None)
+
+    def open_external_url(self, url: str) -> dict[str, Any]:
+        """등록된 콘텐츠 URL을 운영체제의 기본 브라우저에서 엽니다."""
+        value = str(url or "").strip()
+        try:
+            parsed = urlparse(value)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError("올바른 웹 링크가 아닙니다.")
+            logging.info("외부 링크 열기 요청: %s", value)
+            if os.name == "nt":
+                os.startfile(value)  # type: ignore[attr-defined]
+            elif not webbrowser.open(value, new=2, autoraise=True):
+                raise RuntimeError("기본 브라우저를 열 수 없습니다.")
+            return {"ok": True}
+        except Exception as exc:
+            logging.exception("외부 링크 열기 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def restart_latest_version(self) -> dict[str, Any]:
+        """새 창이 실제로 표시된 뒤에만 현재 프로그램을 종료합니다."""
+        try:
+            root = Path(__file__).resolve().parent.parent
+            restart_script = root / "restart_latest.ps1"
+            if not restart_script.exists():
+                raise RuntimeError("restart_latest.ps1을 찾을 수 없습니다.")
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            process = subprocess.Popen(
+                [
+                    "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                    "-File", str(restart_script), "-ProjectDir", str(root),
+                ],
+                cwd=str(root),
+                creationflags=flags,
+            )
+            logging.info("최신 버전 재시작 helper 실행: pid=%s", process.pid)
+
+            def finish_restart() -> None:
+                code = process.wait()
+                if code == 0:
+                    logging.info("새 프로그램 창 표시 확인 완료. 기존 프로그램을 종료합니다.")
+                    time.sleep(1.0)
+                    os._exit(0)
+                logging.error("최신 버전 재시작 helper 실패: exit=%s. 기존 프로그램을 유지합니다.", code)
+
+            threading.Thread(target=finish_restart, daemon=True).start()
+            return {"ok": True, "message": "최신 버전을 확인하고 다시 시작하고 있습니다."}
+        except Exception as exc:
+            logging.exception("최신 버전 재시작 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def save_marketing_execution_group(
+        self,
+        product_code: str,
+        activity_category: str,
+        items: list[dict[str, Any]],
+        registrar_id: str | None = None,
+    ) -> dict[str, Any]:
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            result = self.db.save_execution_group(
+                product_code,
+                activity_category,
+                items or [],
+                registrar_id,
+            )
+            return {"ok": True, **result}
+        except Exception as exc:
+            logging.exception("마케팅 실행활동 저장 실패")
+            return {"ok": False, "message": str(exc)}
 
     def initialize(self) -> dict[str, Any]:
         try:
