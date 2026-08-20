@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 from .database import Database
+from .security import get_youtube_api_key
 
 
 def _platform_from_url(url: str) -> str:
@@ -26,6 +29,48 @@ def _platform_from_url(url: str) -> str:
     if "facebook.com" in host:
         return "Facebook"
     return host or "웹"
+
+
+def _youtube_video_id(url: str) -> str | None:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower().replace("www.", "")
+    if host == "youtu.be":
+        value = parsed.path.strip("/").split("/")[0]
+        return value or None
+    if "youtube.com" not in host:
+        return None
+    if parsed.path == "/watch":
+        value = (parse_qs(parsed.query).get("v") or [None])[0]
+        return str(value) if value else None
+    parts = [p for p in parsed.path.split("/") if p]
+    if len(parts) >= 2 and parts[0] in {"shorts", "embed", "live"}:
+        return parts[1]
+    return None
+
+
+def _youtube_statistics(url: str, prompt_if_missing: bool = False) -> dict[str, int] | None:
+    video_id = _youtube_video_id(url)
+    if not video_id:
+        return None
+    key = get_youtube_api_key(prompt_if_missing=prompt_if_missing)
+    if not key:
+        return None
+    query = urlencode({"part": "statistics", "id": video_id, "key": key})
+    req = Request(
+        "https://www.googleapis.com/youtube/v3/videos?" + query,
+        headers={"User-Agent": "MiraeN-Publishing-Marketing-System/1.0"},
+    )
+    with urlopen(req, timeout=12) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    items = payload.get("items") or []
+    if not items:
+        return None
+    stats = items[0].get("statistics") or {}
+    return {
+        "조회수": int(stats["viewCount"]) if stats.get("viewCount") is not None else None,
+        "좋아요수": int(stats["likeCount"]) if stats.get("likeCount") is not None else None,
+        "댓글수": int(stats["commentCount"]) if stats.get("commentCount") is not None else None,
+    }
 
 
 def install_content_link_runtime() -> None:
@@ -64,13 +109,16 @@ def install_content_link_runtime() -> None:
         if "SNS" not in activity_category and "바이럴" not in activity_category:
             return result
 
+        youtube_prompted = False
+        youtube_collected = 0
+        youtube_failed = 0
+
         for item in items or []:
             if item.get("delete_added"):
                 continue
             original_id = item.get("original_activity_id") or None
             execution_id = _find_execution_id(self, product_code, activity_category, item)
 
-            # 실행 링크는 현재 편집값을 원본으로 삼습니다. 기존 지표 데이터는 건드리지 않습니다.
             delete_q = (self.client.table("콘텐츠성과").delete()
                         .eq("제품코드", product_code)
                         .eq("원천구분", "실행링크"))
@@ -92,11 +140,12 @@ def install_content_link_runtime() -> None:
                     continue
                 if not url.lower().startswith(("http://", "https://")):
                     url = "https://" + url
+                platform = _platform_from_url(url)
                 row = {
                     "제품코드": product_code,
                     "활동ID": original_id,
                     "실행활동ID": execution_id,
-                    "플랫폼": _platform_from_url(url),
+                    "플랫폼": platform,
                     "채널명": item.get("channel_or_media") or None,
                     "콘텐츠명": str(item.get("activity_name") or "SNS·바이럴 콘텐츠").strip(),
                     "게시일": item.get("actual_start_date") or None,
@@ -105,8 +154,49 @@ def install_content_link_runtime() -> None:
                     "원천구분": "실행링크",
                     "링크순서": idx * 10,
                 }
+                if platform == "YouTube":
+                    try:
+                        metrics = _youtube_statistics(url, prompt_if_missing=not youtube_prompted)
+                        youtube_prompted = True
+                        if metrics:
+                            row.update(metrics)
+                            youtube_collected += 1
+                        else:
+                            youtube_failed += 1
+                    except Exception as exc:
+                        youtube_prompted = True
+                        youtube_failed += 1
+                        row["비고"] = f"YouTube 지표 수집 실패: {exc}"
                 self.client.table("콘텐츠성과").insert(row).execute()
+
+        if isinstance(result, dict):
+            result["youtube_collected"] = youtube_collected
+            result["youtube_failed"] = youtube_failed
         return result
+
+    def _refresh_youtube_rows(self: Database, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        key = get_youtube_api_key(prompt_if_missing=False)
+        if not key:
+            return rows
+        for row in rows:
+            if row.get("원천구분") != "실행링크" or row.get("플랫폼") != "YouTube" or not row.get("URL"):
+                continue
+            try:
+                metrics = _youtube_statistics(str(row["URL"]), prompt_if_missing=False)
+                if not metrics:
+                    continue
+                changed = any(row.get(k) != v for k, v in metrics.items())
+                row.update(metrics)
+                row["지표수집일"] = date.today().isoformat()
+                if changed or not row.get("조회수"):
+                    self.client.table("콘텐츠성과").update({
+                        **metrics,
+                        "지표수집일": date.today().isoformat(),
+                        "비고": None,
+                    }).eq("콘텐츠성과ID", row["콘텐츠성과ID"]).execute()
+            except Exception:
+                continue
+        return rows
 
     def fetch_with_links(self: Database, product_code: str):
         detail = original_fetch(self, product_code)
@@ -118,6 +208,7 @@ def install_content_link_runtime() -> None:
                 .order("링크순서")
                 .order("생성일시")
                 .execute()).data or []
+        rows = _refresh_youtube_rows(self, rows)
         detail["콘텐츠성과"] = rows
 
         by_plan: dict[str, list[dict[str, Any]]] = {}
