@@ -758,6 +758,17 @@ body.p299-resizing-timeline *{
 .app.sidebar-collapsed .restart-latest-btn{justify-content:center;padding:0;font-size:0}.app.sidebar-collapsed .restart-latest-btn b{display:none}
 </style>
 
+<style>
+/* Performance detail tooltip and activity dialog */
+.performance-hover-tip{position:fixed;display:none;z-index:12000;max-width:min(380px,calc(100vw - 24px));padding:9px 11px;border-radius:7px;background:#1f2937;color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.22);font-size:calc(11px * var(--font-scale));line-height:1.55;white-space:pre-line;pointer-events:none}
+.performance-hover-tip.show{display:block}.p-detail-sales-bar{cursor:help}.p271-actbar[data-performance-activity]{cursor:help}
+.exec-detail-row{cursor:pointer;transition:background-color .12s ease}.exec-detail-row:hover,.exec-detail-row:focus-visible{background:#f2f6fb;outline:2px solid #8eb1db;outline-offset:-2px}
+.performance-detail-backdrop{position:fixed;inset:0;z-index:12010;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.44)}.performance-detail-backdrop.show{display:flex}
+.performance-detail-dialog{width:min(560px,calc(100vw - 32px));max-height:min(720px,calc(100vh - 40px));overflow:auto;background:#fff;border:1px solid #d7dee7;border-radius:8px;box-shadow:0 22px 60px rgba(15,23,42,.3)}
+.performance-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line)}.performance-detail-head h3{margin:0;font-size:calc(15px * var(--font-scale))}.performance-detail-close{width:32px;height:32px;border:0;border-radius:7px;background:#f1f4f7;color:#445164;font-size:calc(18px * var(--font-scale));cursor:pointer}
+.performance-detail-body{padding:16px 18px}.performance-detail-list{display:grid;grid-template-columns:112px minmax(0,1fr);margin:0}.performance-detail-list dt,.performance-detail-list dd{margin:0;padding:9px 0;border-bottom:1px solid #edf0f3;font-size:calc(11px * var(--font-scale));line-height:1.55}.performance-detail-list dt{color:#718096;font-weight:800}.performance-detail-list dd{color:#344054;white-space:pre-wrap;overflow-wrap:anywhere}
+.performance-detail-links{padding-top:15px}.performance-detail-links b{display:block;margin-bottom:8px;font-size:calc(11px * var(--font-scale));color:#566474}.performance-detail-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border-top:1px solid #edf0f3;color:var(--primary);font-size:calc(11px * var(--font-scale));font-weight:800;text-decoration:none}.performance-detail-link:hover{text-decoration:underline}.performance-detail-foot{display:flex;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line)}.performance-detail-foot button{height:34px;padding:0 14px;border:1px solid #cbd4df;border-radius:7px;background:#fff;color:#344054;font-size:calc(11px * var(--font-scale));font-weight:800;cursor:pointer}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1811,16 +1822,12 @@ function renderPerformancePage(r){
   <div class="p281-exec-body">${executionTableHtml}</div>
  </section>
 
- <section class="p271-panel"><div class="p271-panel-head"><div><h3>4. 예산 집행 현황</h3><p>계획비와 실제비용을 활동별로 합산합니다.</p></div><span class="p271-panel-tag">Supabase</span></div>
-  <div class="p271-budget"><div><span>계획 예산</span><strong>${perfMoneyWon(budget)}</strong></div><div><span>실제 집행</span><strong class="good">${actualBudget?perfMoneyWon(actualBudget):"—"}</strong></div><div><span>집행률</span><strong>${actualBudget&&budget?execRate.toFixed(1)+"%":"—"}</strong></div><div><span>잔여</span><strong>${actualBudget&&budget?perfMoneyWon(Math.max(0,budget-actualBudget)):"—"}</strong></div></div>
- </section>
-
  <div class="p271-two-col">
-  <section class="p271-panel"><div class="p271-panel-head"><div><h3>5. SNS·바이럴 콘텐츠 반응</h3><p>Supabase 「콘텐츠성과」의 콘텐츠별 반응 지표를 표시합니다.</p></div><span class="p271-panel-tag">${contentRows.length}건</span></div><div class="sns-content-list">${contentHtml}</div></section>
-  <section class="p271-panel"><div class="p271-panel-head"><div><h3>6. YES24 구매자 반응</h3><p>최근 기준일의 구매자 성별·연령 데이터를 표시합니다.</p></div><span class="p271-panel-tag">${buyer&&buyer.구매자반응ID?"실데이터":"데이터 없음"}</span></div><div class="p271-audience">${buyerHtml}</div></section>
+  <section class="p271-panel"><div class="p271-panel-head"><div><h3>4. SNS·바이럴 콘텐츠 반응</h3><p>Supabase 「콘텐츠성과」의 콘텐츠별 반응 지표를 표시합니다.</p></div><span class="p271-panel-tag">${contentRows.length}건</span></div><div class="sns-content-list">${contentHtml}</div></section>
+  <section class="p271-panel"><div class="p271-panel-head"><div><h3>5. YES24 구매자 반응</h3><p>최근 기준일의 구매자 성별·연령 데이터를 표시합니다.</p></div><span class="p271-panel-tag">${buyer&&buyer.구매자반응ID?"실데이터":"데이터 없음"}</span></div><div class="p271-audience">${buyerHtml}</div></section>
  </div>
 
- <section class="p271-panel"><div class="p271-panel-head"><div><h3>7. PM 정성 평가 및 향후 대응</h3><p>이제 입력값을 로컬 브라우저가 아니라 Supabase 「마케팅성과평가」에 저장합니다.</p></div><span class="p271-panel-tag">${evaluation&&evaluation.평가기준일?`최근 평가 ${esc(evaluation.평가기준일)}`:"신규 평가"}</span></div>
+ <section class="p271-panel"><div class="p271-panel-head"><div><h3>6. PM 정성 평가 및 향후 대응</h3><p>이제 입력값을 로컬 브라우저가 아니라 Supabase 「마케팅성과평가」에 저장합니다.</p></div><span class="p271-panel-tag">${evaluation&&evaluation.평가기준일?`최근 평가 ${esc(evaluation.평가기준일)}`:"신규 평가"}</span></div>
   <div class="p271-pm-grid">
    <div class="p271-pm-card"><h4>지금까지의 평가</h4><textarea id="performancePmReview" placeholder="초기 판매 반응, 채널별 반응, 계획 대비 잘 된 점과 아쉬운 점을 기록합니다.">${esc(evaluation.성과코멘트||"")}</textarea><div class="foot">Supabase 자동 저장 대상</div></div>
    <div class="p271-pm-card"><h4>향후 마케팅 계획</h4><textarea id="performancePmNext" placeholder="추가 집행 여부, 집중 채널, 콘텐츠 재활용, 종료 또는 확대 계획을 기록합니다.">${esc(evaluation.다음액션플랜||"")}</textarea><div class="foot">향후 채널·콘텐츠·예산 방향 기록</div></div>
@@ -2190,7 +2197,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
    const H=220,T=20,B=34,ph=H-T-B,y=v=>T+ph-(perfNum(v)/max)*ph;
    const grids=[.25,.5,.75,1].map(t=>`<line x1="0" y1="${T+ph*(1-t)}" x2="1000" y2="${T+ph*(1-t)}"/>`).join("");
    const bw=Math.max(4,Math.min(16,760/n));
-   const bars=rows.map((r,i)=>`<rect x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
+   const bars=rows.map((r,i)=>`<rect class="p-detail-sales-bar" data-sales-date="${esc(r.date||"")}" data-sales-units="${perfNum(r.erp)}" x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
    const hasScm=rows.some(r=>perfNum(r.scm)!==0);
    const scmLine=hasScm?`<polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${rows.map((r,i)=>`${centerX(i)},${y(r.scm)}`).join(" ")}"/>`:"";
 
@@ -2278,7 +2285,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
    const H=220,T=20,B=34,ph=H-T-B,y=v=>T+ph-(perfNum(v)/max)*ph;
    const grids=[.25,.5,.75,1].map(t=>`<line x1="0" y1="${T+ph*(1-t)}" x2="1000" y2="${T+ph*(1-t)}"/>`).join("");
    const bw=Math.max(4,Math.min(16,760/n));
-   const bars=rows.map((r,i)=>`<rect x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
+   const bars=rows.map((r,i)=>`<rect class="p-detail-sales-bar" data-sales-date="${esc(r.date||"")}" data-sales-units="${perfNum(r.erp)}" x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
    const hasScm=rows.some(r=>perfNum(r.scm)!==0);
    const scmLine=hasScm?`<polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${rows.map((r,i)=>`${centerX(i)},${y(r.scm)}`).join(" ")}"/>`:"";
 
@@ -2309,7 +2316,8 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
        const eIdx=Math.max(0,Math.min(n-1,Math.round((clippedEnd-startDate)/dayMs)));
        const left=sIdx*cellPct,width=Math.max(cellPct,(eIdx-sIdx+1)*cellPct);
        const before=ss<startDate,after=ee>endDate;
-       rightParts.push(`<div class="p271-activity-track"><div class="p271-actbar ${g.key} ${before?'p291-clip-before':''} ${after?'p291-clip-after':''}" style="left:${left}%;width:${Math.min(100-left,width)}%">${esc(a.활동명||"")}</div></div>`);
+       const activityKey=window.registerPerformanceActivityDetail?window.registerPerformanceActivityDetail(a):"";
+       rightParts.push(`<div class="p271-activity-track"><div class="p271-actbar ${g.key} ${before?'p291-clip-before':''} ${after?'p291-clip-after':''}" data-performance-activity="${esc(activityKey)}" style="left:${left}%;width:${Math.min(100-left,width)}%">${esc(a.활동명||"")}</div></div>`);
      });
    });
 
@@ -2400,7 +2408,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
       const planBudget=g.items.filter(a=>a.실행구분!=="활동추가").reduce((s,a)=>s+Number(a.계획비용??a.비용??0),0);
       const actual=confirmedCost(g.items),rate=planBudget?actual/planBudget*100:0;
       return `<div class="exec-group"><div class="exec-group-head ${g.key}"><div class="exec-group-title"><b>${g.label}</b><span>${g.items.length}건 · 계획 예산 ${money(planBudget)} · 예산 집행률 ${actual?rate.toFixed(1)+"%":"0.0%"}</span></div><button class="exec-edit-btn" onclick="openExecutionEditor('${g.key}')">수정</button></div>
-      <div style="overflow:auto"><table class="exec-table"><thead><tr><th>마케팅 활동</th><th>실제 시작일</th><th>실제 종료일</th><th class="money">집행 비용</th><th class="money">계획 당시 예산</th><th>예산 집행률</th></tr></thead><tbody>${g.items.map(a=>`<tr class="${a.실행구분==='활동취소'?'exec-cancel-row':''}"><td><strong>${esc(a.활동명||"활동")}</strong>${execBadge(a)}<br><span class="p271-placeholder">${esc(a.채널또는매체||"")}</span></td><td>${esc(a.실제시작일||a.계획시작일||a.시작일||"—")}</td><td>${esc(a.실제종료일||a.계획종료일||a.종료일||"—")}</td><td class="money">${money(a.실제비용)}</td><td class="money">${a.실행구분==='활동추가'?"—":money(a.계획비용??a.비용)}</td><td>${a.실행구분==='활동취소'?"—":actualRate(a)}</td></tr>`).join("")}</tbody></table></div></div>`;
+      <div style="overflow:auto"><table class="exec-table"><thead><tr><th>마케팅 활동</th><th>실제 시작일</th><th>실제 종료일</th><th class="money">집행 비용</th><th class="money">계획 당시 예산</th><th>예산 집행률</th></tr></thead><tbody>${g.items.map(a=>{const activityKey=window.registerPerformanceActivityDetail?window.registerPerformanceActivityDetail(a):"";return `<tr class="exec-detail-row ${a.실행구분==='활동취소'?'exec-cancel-row':''}" data-performance-activity="${esc(activityKey)}" tabindex="0"><td><strong>${esc(a.활동명||"활동")}</strong>${execBadge(a)}<br><span class="p271-placeholder">${esc(a.채널또는매체||"")}</span></td><td>${esc(a.실제시작일||a.계획시작일||a.시작일||"—")}</td><td>${esc(a.실제종료일||a.계획종료일||a.종료일||"—")}</td><td class="money">${money(a.실제비용)}</td><td class="money">${a.실행구분==='활동추가'?"—":money(a.계획비용??a.비용)}</td><td>${a.실행구분==='활동취소'?"—":actualRate(a)}</td></tr>`}).join("")}</tbody></table></div></div>`;
    }).join("")||'<div class="perf-empty">등록된 마케팅 활동이 없습니다.</div>'}</div>`;
    if(window.applyGlobalFontScale) setTimeout(()=>window.applyGlobalFontScale(),0);
  }
@@ -2863,5 +2871,97 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
 })();
 </script>
 
+<script>
+// Shared performance activity details for timeline hover and execution-row dialog.
+(function(){
+ const activityStore=new Map();
+ let activitySequence=0;
+
+ function hasValue(value){return value!==null&&value!==undefined&&String(value).trim()!==""}
+ function money(value){const n=Number(value);return Number.isFinite(n)?`${n.toLocaleString("ko-KR")}원`:""}
+ function activityRows(activity){
+   const start=activity?.실제시작일||"",end=activity?.실제종료일||"";
+   const period=start?(end&&end!==start?`${start} ~ ${end}`:start):(end||"");
+   const note=activity?.실행내용||activity?.비고||activity?.실행비고||"";
+   return [
+     ["마케팅 분류",activity?.활동분류],
+     ["채널/매체",activity?.채널또는매체],
+     ["활동명",activity?.활동명],
+     ["실제 실행일",period],
+     ["집행비용",hasValue(activity?.실제비용)?money(activity.실제비용):""],
+     ["실행 내용/비고",note]
+   ].filter(([,value])=>hasValue(value));
+ }
+ function activityLinks(activity){
+   const found=[];
+   (activity?.콘텐츠링크||[]).forEach(link=>found.push({url:link?.URL||link?.url||link,label:link?.콘텐츠명||"콘텐츠 원문"}));
+   const contents=currentPerformanceData?.콘텐츠성과||[];
+   contents.forEach(content=>{
+     const executionMatch=activity?.실행활동ID&&String(content?.실행활동ID||"")===String(activity.실행활동ID);
+     const planMatch=activity?.활동ID&&String(content?.활동ID||"")===String(activity.활동ID);
+     if(executionMatch||planMatch)found.push({url:content?.URL,label:content?.콘텐츠명||"콘텐츠 원문"});
+   });
+   const seen=new Set();
+   return found.filter(link=>{const url=String(link.url||"").trim();if(!url||seen.has(url))return false;seen.add(url);link.url=url;return true});
+ }
+ function activityTooltip(activity){return activityRows(activity).map(([label,value])=>`${label}: ${value}`).join("\n")}
+
+ window.registerPerformanceActivityDetail=function(activity){
+   const stable=activity?.실행활동ID||activity?.활동ID;
+   const key=stable?`activity-${stable}`:`activity-local-${++activitySequence}`;
+   activityStore.set(String(key),activity);
+   return key;
+ };
+
+ function ensureTooltip(){
+   let tip=document.getElementById("performanceHoverTip");
+   if(!tip){tip=document.createElement("div");tip.id="performanceHoverTip";tip.className="performance-hover-tip";document.body.appendChild(tip)}
+   return tip;
+ }
+ function moveTooltip(event){
+   const tip=ensureTooltip(),gap=14,pad=10;
+   let left=event.clientX+gap,top=event.clientY+gap;
+   const rect=tip.getBoundingClientRect();
+   if(left+rect.width>window.innerWidth-pad)left=Math.max(pad,event.clientX-rect.width-gap);
+   if(top+rect.height>window.innerHeight-pad)top=Math.max(pad,event.clientY-rect.height-gap);
+   tip.style.left=`${left}px`;tip.style.top=`${top}px`;
+ }
+ function showTooltip(target,event){
+   const tip=ensureTooltip();let text="";
+   if(target.matches(".p-detail-sales-bar"))text=`${target.dataset.salesDate} · ${Number(target.dataset.salesUnits||0).toLocaleString("ko-KR")}부`;
+   else text=activityTooltip(activityStore.get(target.dataset.performanceActivity));
+   if(!text)return;tip.textContent=text;tip.classList.add("show");moveTooltip(event);
+ }
+ function hideTooltip(){ensureTooltip().classList.remove("show")}
+
+ function ensureDialog(){
+   let backdrop=document.getElementById("performanceDetailBackdrop");
+   if(backdrop)return backdrop;
+   backdrop=document.createElement("div");backdrop.id="performanceDetailBackdrop";backdrop.className="performance-detail-backdrop";
+   backdrop.innerHTML='<div class="performance-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="performanceDetailTitle"><div class="performance-detail-head"><h3 id="performanceDetailTitle">마케팅 활동 상세</h3><button class="performance-detail-close" type="button" aria-label="닫기">×</button></div><div class="performance-detail-body"></div><div class="performance-detail-foot"><button type="button">닫기</button></div></div>';
+   backdrop.querySelector(".performance-detail-close").addEventListener("click",closeDialog);
+   backdrop.querySelector(".performance-detail-foot button").addEventListener("click",closeDialog);
+   backdrop.addEventListener("click",event=>{if(event.target===backdrop)closeDialog()});
+   document.body.appendChild(backdrop);return backdrop;
+ }
+ function closeDialog(){document.getElementById("performanceDetailBackdrop")?.classList.remove("show")}
+ window.closePerformanceActivityDetail=closeDialog;
+ window.openPerformanceActivityDetail=function(key){
+   const activity=activityStore.get(String(key||""));if(!activity)return;
+   hideTooltip();const backdrop=ensureDialog(),body=backdrop.querySelector(".performance-detail-body");body.replaceChildren();
+   const list=document.createElement("dl");list.className="performance-detail-list";
+   activityRows(activity).forEach(([label,value])=>{const dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=label;dd.textContent=String(value);list.append(dt,dd)});body.appendChild(list);
+   const links=activityLinks(activity);
+   if(links.length){const box=document.createElement("div");box.className="performance-detail-links";const heading=document.createElement("b");heading.textContent="콘텐츠 원문";box.appendChild(heading);links.forEach(link=>{const anchor=document.createElement("a");anchor.className="performance-detail-link";anchor.href=link.url;anchor.textContent=link.label;anchor.addEventListener("click",event=>openSnsContent(event,link.url));box.appendChild(anchor)});body.appendChild(box)}
+   backdrop.classList.add("show");backdrop.querySelector(".performance-detail-close").focus();
+ };
+
+ document.addEventListener("pointerover",event=>{const target=event.target.closest?.(".p-detail-sales-bar,.p271-actbar[data-performance-activity]");if(target)showTooltip(target,event)});
+ document.addEventListener("pointermove",event=>{if(document.getElementById("performanceHoverTip")?.classList.contains("show"))moveTooltip(event)});
+ document.addEventListener("pointerout",event=>{const target=event.target.closest?.(".p-detail-sales-bar,.p271-actbar[data-performance-activity]");if(target&&!target.contains(event.relatedTarget))hideTooltip()});
+ document.addEventListener("click",event=>{const row=event.target.closest?.(".exec-detail-row[data-performance-activity]");if(row)openPerformanceActivityDetail(row.dataset.performanceActivity)});
+ document.addEventListener("keydown",event=>{if(event.key==="Escape")closeDialog();const row=event.target.closest?.(".exec-detail-row[data-performance-activity]");if(row&&(event.key==="Enter"||event.key===" ")){event.preventDefault();openPerformanceActivityDetail(row.dataset.performanceActivity)}});
+})();
+</script>
 </body>
 </html>
