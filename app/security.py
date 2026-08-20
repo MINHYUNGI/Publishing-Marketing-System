@@ -4,7 +4,7 @@ import keyring
 import tkinter as tk
 from tkinter import simpledialog
 
-from .config import SUPABASE_KEYRING_CANDIDATES, OPENAI_KEYRING
+from .config import SUPABASE_KEYRING_CANDIDATES, OPENAI_KEYRING, YOUTUBE_API_KEYRING
 
 def _ask_secret(title: str, message: str) -> str:
     root = tk.Tk()
@@ -51,6 +51,24 @@ def get_openai_api_key() -> str:
     )
     if not value.startswith("sk-"):
         raise ValueError("OpenAI API Key 형식이 올바르지 않습니다.")
+    keyring.set_password(service, account, value)
+    return value
+
+def get_youtube_api_key(prompt_if_missing: bool = True) -> str | None:
+    service, account = YOUTUBE_API_KEYRING
+    value = keyring.get_password(service, account)
+    if value:
+        return value.strip()
+    if not prompt_if_missing:
+        return None
+
+    value = _ask_secret(
+        "YouTube Data API Key",
+        "Google Cloud에서 YouTube Data API v3를 사용 설정한 뒤 생성한 API Key를 입력해 주세요.\n"
+        "한 번 입력하면 Windows 자격 증명 관리자에 안전하게 저장됩니다.",
+    )
+    if len(value) < 20:
+        raise ValueError("YouTube Data API Key 형식이 올바르지 않습니다.")
     keyring.set_password(service, account, value)
     return value
 
