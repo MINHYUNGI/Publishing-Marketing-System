@@ -17,10 +17,17 @@ try {
     if ($git -and (Test-Path -LiteralPath (Join-Path $ProjectDir ".git"))) {
         $safe = $ProjectDir -replace '\\','/'
         & git config --global --add safe.directory "$safe" 2>$null | Out-Null
+        $oldPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
         & git -C "$ProjectDir" fetch origin main 2>&1 | Add-Content -LiteralPath $log
-        if ($LASTEXITCODE -ne 0) { throw "Git fetch failed." }
-        & git -C "$ProjectDir" reset --hard origin/main 2>&1 | Add-Content -LiteralPath $log
-        if ($LASTEXITCODE -ne 0) { throw "Git reset failed." }
+        $fetchExitCode = $LASTEXITCODE
+        if ($fetchExitCode -eq 0) {
+            & git -C "$ProjectDir" reset --hard origin/main 2>&1 | Add-Content -LiteralPath $log
+            $resetExitCode = $LASTEXITCODE
+        }
+        $ErrorActionPreference = $oldPreference
+        if ($fetchExitCode -ne 0) { throw "Git fetch failed. Exit code: $fetchExitCode" }
+        if ($resetExitCode -ne 0) { throw "Git reset failed. Exit code: $resetExitCode" }
     }
 
     $run = Join-Path $ProjectDir "run.ps1"
