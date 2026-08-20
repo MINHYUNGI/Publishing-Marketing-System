@@ -26,68 +26,21 @@ def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
     return choose_and_import_erp(self, product_code)
 
 
-def _browser_candidates() -> list[tuple[str, Path]]:
-    """Windows에서 Chrome을 우선하고 Edge를 보조로 찾습니다."""
-    candidates: list[tuple[str, Path]] = []
-    local = os.environ.get("LOCALAPPDATA")
-    pf = os.environ.get("PROGRAMFILES")
-    pfx86 = os.environ.get("PROGRAMFILES(X86)")
-    if local:
-        candidates.append(("Chrome", Path(local) / "Google" / "Chrome" / "Application" / "chrome.exe"))
-    if pf:
-        candidates.append(("Chrome", Path(pf) / "Google" / "Chrome" / "Application" / "chrome.exe"))
-    if pfx86:
-        candidates.append(("Chrome", Path(pfx86) / "Google" / "Chrome" / "Application" / "chrome.exe"))
-    if pf:
-        candidates.append(("Edge", Path(pf) / "Microsoft" / "Edge" / "Application" / "msedge.exe"))
-    if pfx86:
-        candidates.append(("Edge", Path(pfx86) / "Microsoft" / "Edge" / "Application" / "msedge.exe"))
-    return candidates
-
-
-def _launch_external_browser(url: str) -> tuple[bool, str]:
+def _open_external_url(self, url: str) -> dict:
+    # 과거 호환용. SNS 콘텐츠는 pywebview 공식 target=_blank 외부 링크 기능을 사용합니다.
     value = str(url or "").strip()
-    parsed = urlparse(value)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        return False, "올바른 웹 링크가 아닙니다."
-
-    for name, exe in _browser_candidates():
-        if exe.exists():
-            try:
-                subprocess.Popen([str(exe), "--new-window", value], close_fds=True)
-                logging.info("외부 링크 %s 새 창 실행: %s", name, value)
-                return True, name
-            except Exception:
-                logging.exception("%s 새 창 실행 실패: %s", name, value)
-
     try:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("올바른 웹 링크가 아닙니다.")
         if os.name == "nt":
             os.startfile(value)  # type: ignore[attr-defined]
-            logging.info("외부 링크 Windows 기본 브라우저 실행: %s", value)
-            return True, "기본 브라우저"
-    except Exception:
-        logging.exception("Windows 기본 브라우저 실행 실패: %s", value)
-
-    try:
-        if webbrowser.open(value, new=2, autoraise=True):
-            logging.info("외부 링크 webbrowser 실행: %s", value)
-            return True, "기본 브라우저"
-    except Exception:
-        logging.exception("webbrowser 실행 실패: %s", value)
-    return False, "브라우저를 실행할 수 없습니다."
-
-
-def _open_external_url(self, url: str) -> dict:
-    """기존 JS API 호출 경로도 Chrome 우선 실행 방식으로 통일합니다."""
-    value = str(url or "").strip()
-    logging.info("외부 링크 열기 요청: %s", value)
-    ok, detail = _launch_external_browser(value)
-    return {"ok": ok, "message": "" if ok else detail, "browser": detail if ok else ""}
-
-
-def _open_content_links_native(self, product_code: str | None = None) -> dict:
-    # 과거 호환용. 새 UI에서는 사용하지 않습니다.
-    return {"ok": False, "message": "콘텐츠 제목의 하이퍼링크를 사용해 주세요."}
+        else:
+            webbrowser.open(value, new=2, autoraise=True)
+        return {"ok": True}
+    except Exception as exc:
+        logging.exception("외부 링크 열기 실패")
+        return {"ok": False, "message": str(exc)}
 
 
 def _restart_latest_version(self) -> dict:
@@ -111,7 +64,6 @@ def _restart_latest_version(self) -> dict:
 Backend.import_erp_daily_excel = _import_erp_daily_excel
 Backend.import_erp_monthly_excel = lambda self: choose_and_import_erp(self, None)
 Backend.open_external_url = _open_external_url
-Backend.open_content_links_native = _open_content_links_native
 Backend.restart_latest_version = _restart_latest_version
 apply_erp_performance_patch()
 install_execution_runtime()
@@ -124,48 +76,18 @@ def main() -> None:
     for path in (DOCUMENT_ROOT, LOG_DIR, REPORT_DIR):
         path.mkdir(parents=True, exist_ok=True)
 
+    # pywebview 공식 설정: target="_blank" 링크를 앱 내부가 아니라 Windows 기본 브라우저에서 엽니다.
+    webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
+
     backend = Backend()
-    home_url = UI_FILE.as_uri()
-    window = webview.create_window(
+    webview.create_window(
         "출판 마케팅 운영 시스템",
-        url=home_url,
+        url=UI_FILE.as_uri(),
         js_api=backend,
         width=1500,
         height=930,
         min_size=(1100, 720),
     )
-
-    # 일반 HTML 하이퍼링크가 현재 pywebview를 외부 사이트로 이동시키면,
-    # JS 이벤트를 사용하지 않고 Python이 실제 이동된 URL을 감지해 Chrome 새 창으로 넘깁니다.
-    navigation_guard = {"handling": False}
-
-    def on_loaded() -> None:
-        if navigation_guard["handling"]:
-            return
-        try:
-            current = str(window.get_current_url() or "")
-            parsed = urlparse(current)
-            if parsed.scheme not in {"http", "https"}:
-                return
-            navigation_guard["handling"] = True
-            logging.info("웹뷰 외부 이동 감지: %s", current)
-            ok, browser = _launch_external_browser(current)
-            if not ok:
-                logging.error("웹뷰 외부 이동 브라우저 실행 실패: %s", current)
-            else:
-                logging.info("웹뷰 외부 이동 → %s 새 창 전환 완료", browser)
-            # 외부 페이지를 앱 내부에 남겨두지 않고 즉시 앱 화면으로 복귀합니다.
-            window.load_url(home_url)
-        except Exception:
-            logging.exception("웹뷰 외부 이동 처리 실패")
-        finally:
-            # load_url(home_url)의 loaded 이벤트가 뒤이어 오므로 약간 늦게 해제합니다.
-            def release_guard():
-                time.sleep(0.8)
-                navigation_guard["handling"] = False
-            threading.Thread(target=release_guard, daemon=True).start()
-
-    window.events.loaded += on_loaded
     webview.start(debug=False)
 
 
