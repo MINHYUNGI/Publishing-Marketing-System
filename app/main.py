@@ -28,8 +28,9 @@ def _import_erp_daily_excel(self, product_code: str | None = None) -> dict:
 
 def _open_external_url(self, url: str) -> dict:
     """등록된 콘텐츠 URL을 Windows 기본 브라우저에서 확실하게 엽니다."""
+    value = str(url or "").strip()
+    logging.info("외부 링크 열기 요청: %s", value)
     try:
-        value = str(url or "").strip()
         parsed = urlparse(value)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("올바른 웹 링크가 아닙니다.")
@@ -39,11 +40,13 @@ def _open_external_url(self, url: str) -> dict:
                 os.startfile(value)  # type: ignore[attr-defined]
                 opened = True
             except Exception:
+                logging.exception("os.startfile 외부 링크 실행 실패")
                 opened = False
         if not opened:
             opened = bool(webbrowser.open(value, new=2, autoraise=True))
         if not opened:
             raise RuntimeError("기본 브라우저를 열 수 없습니다.")
+        logging.info("외부 링크 열기 성공: %s", value)
         return {"ok": True}
     except Exception as exc:
         logging.exception("외부 링크 열기 실패")
