@@ -48,14 +48,14 @@ def _youtube_video_id(url: str) -> str | None:
     return None
 
 
-def _youtube_statistics(url: str, prompt_if_missing: bool = False) -> dict[str, int] | None:
+def _youtube_statistics(url: str, prompt_if_missing: bool = False) -> dict[str, Any] | None:
     video_id = _youtube_video_id(url)
     if not video_id:
         return None
     key = get_youtube_api_key(prompt_if_missing=prompt_if_missing)
     if not key:
         return None
-    query = urlencode({"part": "statistics", "id": video_id, "key": key})
+    query = urlencode({"part": "statistics,snippet", "id": video_id, "key": key})
     req = Request(
         "https://www.googleapis.com/youtube/v3/videos?" + query,
         headers={"User-Agent": "MiraeN-Publishing-Marketing-System/1.0"},
@@ -65,11 +65,15 @@ def _youtube_statistics(url: str, prompt_if_missing: bool = False) -> dict[str, 
     items = payload.get("items") or []
     if not items:
         return None
-    stats = items[0].get("statistics") or {}
+    video = items[0]
+    stats = video.get("statistics") or {}
+    snippet = video.get("snippet") or {}
     return {
         "조회수": int(stats["viewCount"]) if stats.get("viewCount") is not None else None,
         "좋아요수": int(stats["likeCount"]) if stats.get("likeCount") is not None else None,
         "댓글수": int(stats["commentCount"]) if stats.get("commentCount") is not None else None,
+        "채널명": str(snippet.get("channelTitle") or "").strip() or None,
+        "콘텐츠명": str(snippet.get("title") or "").strip() or None,
     }
 
 
@@ -159,7 +163,7 @@ def install_content_link_runtime() -> None:
                         metrics = _youtube_statistics(url, prompt_if_missing=not youtube_prompted)
                         youtube_prompted = True
                         if metrics:
-                            row.update(metrics)
+                            row.update({k: v for k, v in metrics.items() if v is not None})
                             youtube_collected += 1
                         else:
                             youtube_failed += 1
@@ -185,12 +189,13 @@ def install_content_link_runtime() -> None:
                 metrics = _youtube_statistics(str(row["URL"]), prompt_if_missing=False)
                 if not metrics:
                     continue
-                changed = any(row.get(k) != v for k, v in metrics.items())
-                row.update(metrics)
+                updates = {k: v for k, v in metrics.items() if v is not None}
+                changed = any(row.get(k) != v for k, v in updates.items())
+                row.update(updates)
                 row["지표수집일"] = date.today().isoformat()
                 if changed or not row.get("조회수"):
                     self.client.table("콘텐츠성과").update({
-                        **metrics,
+                        **updates,
                         "지표수집일": date.today().isoformat(),
                         "비고": None,
                     }).eq("콘텐츠성과ID", row["콘텐츠성과ID"]).execute()
