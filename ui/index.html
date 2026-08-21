@@ -2970,7 +2970,8 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
     page.appendChild(panel);
     panel.querySelector(".head small").textContent="사용자가 지정한 기간을 하루씩 순차 조회하고 마지막 수집 결과로 교체합니다.";
     panel.querySelector(".admin-data-info span").textContent="시작일·종료일 기본값은 모두 어제입니다. YES24 판매와 성별·연령·지역도 함께 저장합니다.";
-    document.getElementById("scmCollectBtn").onclick=openScmCollectionDialog;document.getElementById("scmPlanBtn").onclick=previewScmCollection;document.getElementById("scmRecollectBtn").onclick=()=>startScmCollection(true);document.getElementById("scmPreviewBtn").onclick=previewScmDailySales;document.getElementById("scmSyncBtn").onclick=syncScmDailySales;
+    const dateDetails=panel.querySelector("details");const dateControls=dateDetails.querySelector("div");const dateSection=document.createElement("div");dateSection.style.cssText="margin-top:14px;padding:14px 16px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc";dateSection.innerHTML='<b style="display:block;margin-bottom:10px">수집 기간과 거래처</b>';dateSection.appendChild(dateControls);dateDetails.replaceWith(dateSection);const localDate=new Date();localDate.setDate(localDate.getDate()-1);const defaultDate=`${localDate.getFullYear()}-${String(localDate.getMonth()+1).padStart(2,"0")}-${String(localDate.getDate()).padStart(2,"0")}`;document.getElementById("scmDateFrom").value=defaultDate;document.getElementById("scmDateTo").value=defaultDate;
+    document.getElementById("scmCollectBtn").onclick=()=>startScmCollection(false);document.getElementById("scmPlanBtn").onclick=previewScmCollection;document.getElementById("scmRecollectBtn").onclick=()=>startScmCollection(true);document.getElementById("scmPreviewBtn").onclick=previewScmDailySales;document.getElementById("scmSyncBtn").onclick=syncScmDailySales;
    }
    loadScmSyncStatus();previewScmCollection();
   };

@@ -65,8 +65,20 @@ class ScmCollectionTests(unittest.TestCase):
         backend = type("BackendStub", (), {"db": database})()
         plan = plan_scm_collection(backend, {"clients": ["KYOBO", "YES24"]})
         self.assertEqual(plan["mode"], "selected")
+        self.assertEqual(plan["clients"], ["YES24", "KYOBO"])
         self.assertEqual(plan["targets"]["KYOBO"], [yesterday])
         self.assertEqual(plan["targets"]["YES24"], [yesterday])
+
+    def test_collection_order_starts_with_yes24_for_phone_authentication(self):
+        database = database_with({"SCM\uc77c\ubcc4\uc2e4\ud310\ub9e4": []})
+        backend = type("BackendStub", (), {"db": database})()
+
+        plan = plan_scm_collection(
+            backend,
+            {"clients": ["ALADIN", "YPBOOKS", "KYOBO", "YES24"]},
+        )
+
+        self.assertEqual(plan["clients"], ["YES24", "KYOBO", "YPBOOKS", "ALADIN"])
 
     def test_recollection_is_bounded_and_client_selective(self):
         database = database_with({"SCM\uc77c\ubcc4\uc2e4\ud310\ub9e4": []})

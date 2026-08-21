@@ -19,11 +19,12 @@ from .scm_collectors.workbook_parser import parse_date_workbooks
 
 
 CLIENTS = {
+    "YES24": {"name": "YES24", "runner": "run_yes24_batch"},
     "KYOBO": {"name": "교보문고", "runner": "run_kyobo_batch"},
     "YPBOOKS": {"name": "영풍문고", "runner": "run_ypscm_batch"},
-    "YES24": {"name": "YES24", "runner": "run_yes24_batch"},
     "ALADIN": {"name": "알라딘", "runner": "run_aladin_batch"},
 }
+COLLECTION_ORDER = ("YES24", "KYOBO", "YPBOOKS", "ALADIN")
 SCM_ROOT = Path(r"Y:\출판사업본부\05. 영업 실적")
 SCM_INPUT_DIR = SCM_ROOT / "01. 실판매"
 SCM_MASTER_DIR = SCM_ROOT / "80. Master Data"
@@ -101,7 +102,8 @@ def _latest_dates(backend: Any, client_codes: list[str]) -> dict[str, str | None
 def plan_scm_collection(backend: Any, options: dict[str, Any] | None = None) -> dict[str, Any]:
     options = options or {}
     requested = options.get("clients") or list(CLIENTS)
-    client_codes = [str(code).upper() for code in requested if str(code).upper() in CLIENTS]
+    requested_codes = {str(code).upper() for code in requested}
+    client_codes = [code for code in COLLECTION_ORDER if code in requested_codes]
     if not client_codes:
         raise ValueError("수집할 거래처가 선택되지 않았습니다.")
     latest = _latest_dates(backend, client_codes)
