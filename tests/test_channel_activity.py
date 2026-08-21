@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from app.channel_activity import build_bookstore_timeline_rows, classify_bookstore, classify_product_category
+from app.backend import Backend
 
 
 class ChannelActivityTests(unittest.TestCase):
@@ -23,3 +24,25 @@ class ChannelActivityTests(unittest.TestCase):
         rows = build_bookstore_timeline_rows(activities, products, marketing)["교보문고"]
         self.assertEqual([row["제품코드"] for row in rows], ["C", "C", "A", "B"])
         self.assertEqual(classify_product_category("03. 단행본", "경제"), "단행본")
+
+    def test_backend_adds_store_specific_scm_units_for_activity_period(self):
+        class FakeDatabase:
+            def fetch_channel_marketing_activities(self):
+                return (
+                    [{"활동ID":"1","제품코드":"A","채널또는매체":"YES24","활동명":"광고","시작일":"2026-08-01","종료일":"2026-08-03"}],
+                    {"A":{"출간일":"2026-07-30"}},
+                    [
+                        {"제품코드":"A","판매일":"2026-08-01","거래처코드":"YES24","판매수량":3},
+                        {"제품코드":"A","판매일":"2026-08-02","거래처코드":"YES24","판매수량":5},
+                        {"제품코드":"A","판매일":"2026-08-02","거래처코드":"KYOBO","판매수량":100},
+                        {"제품코드":"A","판매일":"2026-08-04","거래처코드":"YES24","판매수량":200},
+                    ],
+                )
+
+        backend = Backend()
+        backend.db = FakeDatabase()
+        backend.product_index = [{"제품코드":"A","제품명":"테스트 도서","최종대분류":"03. 단행본","최종중분류":"경제"}]
+        result = backend.get_major_bookstore_marketing_activities()
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["bookstores"]["YES24"][0]["실판매부수"], 8)
+        self.assertEqual(result["products"], [{"제품코드":"A","제품명":"테스트 도서"}])

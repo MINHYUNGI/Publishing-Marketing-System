@@ -55,8 +55,8 @@ class Database:
         ).data or []
         return {r["제품코드"] for r in rows if r.get("제품코드")}
 
-    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
-        """Fetch activity rows and publication metadata without per-row queries."""
+    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]]]:
+        """Fetch activities, product metadata, and related SCM facts without per-row queries."""
         rows: list[dict[str, Any]] = []
         page_size = 1000
         for start in range(0, 1000000, page_size):
@@ -81,7 +81,24 @@ class Database:
                 .execute()
             ).data or []
             marketing_products.update({str(row["제품코드"]): row for row in batch})
-        return rows, marketing_products
+        scm_rows: list[dict[str, Any]] = []
+        for offset in range(0, len(codes), 200):
+            code_batch = codes[offset:offset + 200]
+            start = 0
+            while code_batch:
+                batch = (
+                    self.client.table("SCM일별실판매")
+                    .select("제품코드,판매일,거래처코드,판매수량")
+                    .in_("제품코드", code_batch)
+                    .order("판매일")
+                    .range(start, start + 999)
+                    .execute()
+                ).data or []
+                scm_rows.extend(batch)
+                if len(batch) < 1000:
+                    break
+                start += 1000
+        return rows, marketing_products, scm_rows
 
     def ensure_marketing_product(self, product_code: str) -> None:
         existing = (

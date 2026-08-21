@@ -114,11 +114,29 @@ class Backend:
         try:
             if not self.db:
                 raise RuntimeError("Supabase가 연결되지 않았습니다.")
-            activities, marketing_products = self.db.fetch_channel_marketing_activities()
+            activities, marketing_products, scm_rows = self.db.fetch_channel_marketing_activities()
             product_map = {str(row.get("제품코드") or ""): row for row in self.product_index}
             bookstores = build_bookstore_timeline_rows(activities, product_map, marketing_products)
+            client_store = {"KYOBO": "교보문고", "YPBOOKS": "영풍문고", "YES24": "YES24", "ALADIN": "알라딘"}
+            sales_by_key: dict[tuple[str, str], list[tuple[str, int]]] = {}
+            for sale in scm_rows:
+                key = (str(sale.get("제품코드") or ""), client_store.get(str(sale.get("거래처코드") or ""), ""))
+                if key[0] and key[1]:
+                    sales_by_key.setdefault(key, []).append((str(sale.get("판매일") or ""), int(sale.get("판매수량") or 0)))
+            for store, rows in bookstores.items():
+                for row in rows:
+                    start = str(row.get("시작일") or row.get("종료일") or "")
+                    end = str(row.get("종료일") or row.get("시작일") or "")
+                    row["실판매부수"] = sum(
+                        quantity for sale_date, quantity in sales_by_key.get((str(row.get("제품코드") or ""), store), [])
+                        if start and end and start <= sale_date <= end
+                    )
             dates = sorted({str(row.get(key)) for rows in bookstores.values() for row in rows for key in ("시작일", "종료일") if row.get(key)})
-            return {"ok": True, "bookstores": bookstores, "date_from": dates[0] if dates else None, "date_to": dates[-1] if dates else None}
+            products = sorted(
+                ({"제품코드": code, "제품명": row.get("제품명") or code} for code, row in product_map.items() if any(str(item.get("제품코드") or "") == code for items in bookstores.values() for item in items)),
+                key=lambda row: str(row["제품명"]),
+            )
+            return {"ok": True, "bookstores": bookstores, "products": products, "date_from": dates[0] if dates else None, "date_to": dates[-1] if dates else None}
         except Exception as exc:
             logging.exception("주요 4개 서점 마케팅 활동 조회 실패")
             return {"ok": False, "message": str(exc)}
