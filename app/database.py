@@ -1067,6 +1067,23 @@ class Database:
         data = response.data or []
         if not data:
             raise RuntimeError("수정할 마케팅 활동을 찾지 못했습니다.")
+        if "actual_cost" in payload:
+            execution = {
+                "제품코드": current.get("제품코드"),
+                "원본활동ID": activity_id,
+                "활동분류": new_category,
+                "채널또는매체": row.get("채널또는매체"),
+                "활동명": row.get("활동명"),
+                "실제시작일": row.get("시작일"),
+                "실제종료일": row.get("종료일"),
+                "실제비용": int(payload.get("actual_cost") or 0),
+                "실행구분": "실행확인",
+                "수정일시": datetime.now().isoformat(),
+            }
+            self.client.table("마케팅실행활동").upsert(
+                execution, on_conflict="원본활동ID"
+            ).execute()
+            data[0]["실제비용"] = execution["실제비용"]
         return data[0]
 
     def create_marketing_activity(self, product_code: str, payload: dict[str, Any]) -> dict[str, Any]:

@@ -4,6 +4,7 @@ import unittest
 
 from app.channel_activity import build_bookstore_timeline_rows, classify_bookstore, classify_product_category
 from app.backend import Backend
+from tests.fakes import database_with
 
 
 class ChannelActivityTests(unittest.TestCase):
@@ -48,3 +49,20 @@ class ChannelActivityTests(unittest.TestCase):
         self.assertEqual(result["bookstores"]["YES24"][0]["실판매부수"], 8)
         self.assertEqual(result["bookstores"]["YES24"][0]["실제집행비용"], 350000)
         self.assertEqual(result["products"], [{"제품코드":"A","제품명":"테스트 도서"}])
+
+    def test_activity_update_keeps_one_source_row_and_upserts_actual_cost(self):
+        db = database_with({"마케팅활동":[{
+            "활동ID":"activity-1","제품코드":"A","활동분류":"서점 마케팅","채널또는매체":"YES24",
+            "활동명":"강연","시작일":"2026-08-20","종료일":"2026-08-20","비용":100000,"정렬순서":10,
+        }],"마케팅실행활동":[]})
+        client = db.client
+        payload = {"activity_category":"서점 마케팅","channel_or_media":"YES24","activity_name":"ZOOM 강연","start_date":"2026-08-21","end_date":"2026-08-21","cost":100000,"actual_cost":3850000,"schedule_note":"저녁 7시","note":"온라인 강연"}
+        db.update_marketing_activity("activity-1", payload)
+        payload["actual_cost"] = 3840000
+        db.update_marketing_activity("activity-1", payload)
+        self.assertEqual(len(client.tables["마케팅활동"]), 1)
+        self.assertEqual(client.tables["마케팅활동"][0]["활동ID"], "activity-1")
+        self.assertEqual(client.tables["마케팅활동"][0]["활동명"], "ZOOM 강연")
+        self.assertEqual(len(client.tables["마케팅실행활동"]), 1)
+        self.assertEqual(client.tables["마케팅실행활동"][0]["원본활동ID"], "activity-1")
+        self.assertEqual(client.tables["마케팅실행활동"][0]["실제비용"], 3840000)

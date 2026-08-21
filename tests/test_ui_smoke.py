@@ -36,6 +36,11 @@ class UiSmokeTests(unittest.TestCase):
             "bookstore-weekend",
             "bookstore-resizer",
             "실판매부수",
+            "openSharedActivityEditor",
+            "openBookstoreActivityEditor",
+            'ondblclick="openBookstoreActivityEditor',
+            "실제 집행 비용",
+            'Math.round(Number(value||0)/100000)/10',
             "function openSnsContent",
             "function loadMarketingPlanDetail",
             "function loadPerformanceDetail",
@@ -50,6 +55,24 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("실행활동ID", self.html)
         self.assertIn("ERP일별판매실적", self.html)
         self.assertIn('role="dialog"', self.html)
+
+    def test_bookstore_hover_and_million_won_contract(self):
+        tooltips = re.findall(r"function tooltip\(row\)\{[^\r\n]+", self.html)
+        self.assertTrue(tooltips)
+        active_tooltip = tooltips[-1]
+        self.assertIn("일정 비고", active_tooltip)
+        self.assertIn("마케팅 세부 내용 / 비고", active_tooltip)
+        for removed in ("해당 서점 실판매", "실제 집행비용", "채널·매체"):
+            self.assertNotIn(removed, active_tooltip)
+        formatter = re.search(r"function bookstoreMillionWon\(value\)\{.*?\}", self.html)
+        self.assertIsNotNone(formatter)
+        node = shutil.which("node")
+        if not node:
+            return
+        source = formatter.group(0) + "\nconsole.log([3850000,3840000,1000000,550000,0].map(bookstoreMillionWon).join('|'));"
+        result = subprocess.run([node, "-e", source], capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "3.9백만원|3.8백만원|1.0백만원|0.6백만원|0.0백만원")
 
     def test_inline_javascript_has_valid_syntax(self):
         node = shutil.which("node")
