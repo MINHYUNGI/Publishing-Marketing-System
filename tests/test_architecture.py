@@ -10,6 +10,21 @@ APP = ROOT / "app"
 
 
 class ArchitectureTests(unittest.TestCase):
+
+    def test_launchers_never_discard_uncommitted_work(self):
+        root = Path(__file__).resolve().parents[1]
+        for name in ("run.ps1", "restart_latest.ps1"):
+            source = (root / name).read_text(encoding="utf-8-sig")
+            self.assertNotIn("reset --hard", source)
+            self.assertIn("merge --ff-only", source)
+
+    def test_security_cleanup_is_non_destructive(self):
+        root = Path(__file__).resolve().parents[1]
+        sql = (root / "migrations" / "20260822_system_architecture_security_cleanup.sql").read_text(encoding="utf-8")
+        lowered = sql.lower()
+        self.assertNotIn("drop table", lowered)
+        self.assertNotIn("drop column", lowered)
+        self.assertIn("enable row level security", lowered)
     def test_no_runtime_patch_modules_remain(self):
         leftovers = sorted(
             path.name

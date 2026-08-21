@@ -15,8 +15,15 @@ try {
 
         & git -C "$ScriptDir" fetch origin main 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            & git -C "$ScriptDir" reset --hard origin/main 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) {
+            $Dirty = (& git -C "$ScriptDir" status --porcelain --untracked-files=no 2>$null)
+            if ($Dirty) {
+                Write-Host "미커밋 변경을 보호하기 위해 GitHub 자동 업데이트를 건너뜁니다." -ForegroundColor Yellow
+                $MergeExitCode = 0
+            } else {
+                & git -C "$ScriptDir" merge --ff-only origin/main 2>&1 | Out-Null
+                $MergeExitCode = $LASTEXITCODE
+            }
+            if ($MergeExitCode -eq 0) {
                 Write-Host "GitHub 최신 버전 확인 완료." -ForegroundColor DarkGreen
                 $AfterHead = (& git -C "$ScriptDir" rev-parse HEAD 2>$null | Select-Object -First 1)
                 if ($AfterHead) { $AfterHead = $AfterHead.Trim() }

@@ -22,12 +22,14 @@ try {
         & git -C "$ProjectDir" fetch origin main 2>&1 | Add-Content -LiteralPath $log
         $fetchExitCode = $LASTEXITCODE
         if ($fetchExitCode -eq 0) {
-            & git -C "$ProjectDir" reset --hard origin/main 2>&1 | Add-Content -LiteralPath $log
-            $resetExitCode = $LASTEXITCODE
+            $dirty = (& git -C "$ProjectDir" status --porcelain --untracked-files=no 2>$null)
+            if ($dirty) { throw "Uncommitted tracked files exist. Commit or discard them before restarting to the latest version." }
+            & git -C "$ProjectDir" merge --ff-only origin/main 2>&1 | Add-Content -LiteralPath $log
+            $mergeExitCode = $LASTEXITCODE
         }
         $ErrorActionPreference = $oldPreference
         if ($fetchExitCode -ne 0) { throw "Git fetch failed. Exit code: $fetchExitCode" }
-        if ($resetExitCode -ne 0) { throw "Git reset failed. Exit code: $resetExitCode" }
+        if ($mergeExitCode -ne 0) { throw "Git fast-forward failed. Exit code: $mergeExitCode" }
     }
 
     $run = Join-Path $ProjectDir "run.ps1"

@@ -1,6 +1,5 @@
 from __future__ import annotations
 import shutil
-import base64
 from datetime import datetime
 from pathlib import Path
 from .config import DOCUMENT_ROOT, ATTACHMENT_ROOT
