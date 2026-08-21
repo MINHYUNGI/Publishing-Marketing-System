@@ -37,6 +37,7 @@ class ChannelActivityTests(unittest.TestCase):
                         {"제품코드":"A","판매일":"2026-08-02","거래처코드":"KYOBO","판매수량":100},
                         {"제품코드":"A","판매일":"2026-08-04","거래처코드":"YES24","판매수량":200},
                     ],
+                    [{"원본활동ID":"1","제품코드":"A","실제비용":350000}],
                 )
 
         backend = Backend()
@@ -45,4 +46,5 @@ class ChannelActivityTests(unittest.TestCase):
         result = backend.get_major_bookstore_marketing_activities()
         self.assertTrue(result["ok"])
         self.assertEqual(result["bookstores"]["YES24"][0]["실판매부수"], 8)
+        self.assertEqual(result["bookstores"]["YES24"][0]["실제집행비용"], 350000)
         self.assertEqual(result["products"], [{"제품코드":"A","제품명":"테스트 도서"}])

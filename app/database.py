@@ -55,8 +55,8 @@ class Database:
         ).data or []
         return {r["제품코드"] for r in rows if r.get("제품코드")}
 
-    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]]]:
-        """Fetch activities, product metadata, and related SCM facts without per-row queries."""
+    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Fetch activities, product metadata, SCM facts, and actual executions in batches."""
         rows: list[dict[str, Any]] = []
         page_size = 1000
         for start in range(0, 1000000, page_size):
@@ -98,7 +98,15 @@ class Database:
                 if len(batch) < 1000:
                     break
                 start += 1000
-        return rows, marketing_products, scm_rows
+        execution_rows: list[dict[str, Any]] = []
+        for offset in range(0, len(codes), 200):
+            execution_rows.extend((
+                self.client.table("마케팅실행활동")
+                .select("원본활동ID,제품코드,실제비용")
+                .in_("제품코드", codes[offset:offset + 200])
+                .execute()
+            ).data or [])
+        return rows, marketing_products, scm_rows, execution_rows
 
     def ensure_marketing_product(self, product_code: str) -> None:
         existing = (

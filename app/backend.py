@@ -114,7 +114,7 @@ class Backend:
         try:
             if not self.db:
                 raise RuntimeError("Supabase가 연결되지 않았습니다.")
-            activities, marketing_products, scm_rows = self.db.fetch_channel_marketing_activities()
+            activities, marketing_products, scm_rows, execution_rows = self.db.fetch_channel_marketing_activities()
             product_map = {str(row.get("제품코드") or ""): row for row in self.product_index}
             bookstores = build_bookstore_timeline_rows(activities, product_map, marketing_products)
             client_store = {"KYOBO": "교보문고", "YPBOOKS": "영풍문고", "YES24": "YES24", "ALADIN": "알라딘"}
@@ -131,6 +131,13 @@ class Backend:
                         quantity for sale_date, quantity in sales_by_key.get((str(row.get("제품코드") or ""), store), [])
                         if start and end and start <= sale_date <= end
                     )
+            actual_cost_by_activity = {
+                str(row.get("원본활동ID")): int(row.get("실제비용") or 0)
+                for row in execution_rows if row.get("원본활동ID")
+            }
+            for rows in bookstores.values():
+                for row in rows:
+                    row["실제집행비용"] = actual_cost_by_activity.get(str(row.get("활동ID") or ""), 0)
             dates = sorted({str(row.get(key)) for rows in bookstores.values() for row in rows for key in ("시작일", "종료일") if row.get(key)})
             products = sorted(
                 ({"제품코드": code, "제품명": row.get("제품명") or code} for code, row in product_map.items() if any(str(item.get("제품코드") or "") == code for items in bookstores.values() for item in items)),
