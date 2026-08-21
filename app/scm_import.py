@@ -221,11 +221,24 @@ def sync_scm_dataset(
     yes24: Yes24Demographics,
     source_file: str,
     source_hash: str,
+    replace_scopes: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """정규화된 증분 범위를 스테이징한 뒤 DB 함수로 원자적으로 확정합니다."""
     if not backend.db:
         raise RuntimeError("Supabase가 연결되지 않았습니다.")
     client = backend.db.client
+    sale_date_key = "\ud310\ub9e4\uc77c"
+    client_code_key = "\uac70\ub798\ucc98\ucf54\ub4dc"
+    replace_scopes = replace_scopes or [
+        {sale_date_key: row[sale_date_key], client_code_key: row[client_code_key]}
+        for row in ledger.rows
+    ]
+    replace_scopes = list({
+        (scope[sale_date_key], scope[client_code_key]): dict(scope)
+        for scope in replace_scopes
+    }.values())
+    if not replace_scopes:
+        raise RuntimeError("\uad50\uccb4\ud560 SCM \ub0a0\uc9dc/\uac70\ub798\ucc98 \ubc94\uc704\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.")
     isbn_values = sorted({row["ISBN13"] for row in ledger.rows})
     mapping_by_isbn: dict[str, str] = {}
     for isbn_batch in (isbn_values[start : start + 200] for start in range(0, len(isbn_values), 200)):
@@ -298,6 +311,13 @@ def sync_scm_dataset(
     sync_id = created[0]["동기화ID"]
 
     try:
+        scope_rows = [{"\ub3d9\uae30\ud654ID": sync_id, **scope} for scope in replace_scopes]
+        for batch in _chunks(scope_rows):
+            client.table("SCM\ub3d9\uae30\ud654\ubc94\uc704").upsert(
+                batch,
+                on_conflict="\ub3d9\uae30\ud654ID,\ud310\ub9e4\uc77c,\uac70\ub798\ucc98\ucf54\ub4dc",
+            ).execute()
+
         staging_rows = [{"동기화ID": sync_id, **row} for row in ledger.rows]
         for batch in _chunks(staging_rows):
             client.table("SCM동기화스테이징").upsert(

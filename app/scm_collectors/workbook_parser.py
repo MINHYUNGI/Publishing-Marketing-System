@@ -166,16 +166,18 @@ def _parse_sheet(
     return parsed
 
 
-def parse_date_workbooks(paths: Iterable[Path]) -> ScmLedger:
+def parse_date_workbooks(paths: Iterable[Path], allow_empty: bool = False) -> ScmLedger:
     """선택 날짜 작업파일만 읽어 기존 DB Grain으로 정규화합니다."""
     normalized: dict[tuple[str, str, str], dict[str, Any]] = {}
     source_count = skipped = 0
+    workbook_dates: list[str] = []
     for path in sorted(Path(value) for value in paths):
         if not path.exists():
             raise FileNotFoundError(f"SCM 날짜 작업파일을 찾을 수 없습니다: {path}")
         if not re.fullmatch(r"\d{8}", path.stem):
             raise RuntimeError(f"SCM 날짜 작업파일명이 YYYYMMDD 형식이 아닙니다: {path.name}")
         sale_date = datetime.strptime(path.stem, "%Y%m%d").date().isoformat()
+        workbook_dates.append(sale_date)
         workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
         try:
             for worksheet in workbook.worksheets:
@@ -191,7 +193,7 @@ def parse_date_workbooks(paths: Iterable[Path]) -> ScmLedger:
             workbook.close()
 
     rows = [normalized[key] for key in sorted(normalized)]
-    if not rows:
+    if not rows and not allow_empty:
         raise RuntimeError("수집된 작업파일에서 유효한 SCM 실판매를 찾지 못했습니다.")
     summary: dict[str, dict[str, int]] = defaultdict(lambda: {"rows": 0, "quantity": 0, "unmatched": 0})
     for row in rows:
@@ -204,8 +206,8 @@ def parse_date_workbooks(paths: Iterable[Path]) -> ScmLedger:
         source_count=source_count,
         collapsed_count=source_count - len(rows),
         skipped_count=skipped,
-        date_from=rows[0]["판매일"],
-        date_to=rows[-1]["판매일"],
+        date_from=rows[0]["판매일"] if rows else min(workbook_dates),
+        date_to=rows[-1]["판매일"] if rows else max(workbook_dates),
         total_quantity=sum(row["판매수량"] for row in rows),
         client_summary=dict(summary),
         product_codes=set(),

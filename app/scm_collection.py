@@ -118,13 +118,11 @@ def plan_scm_collection(backend: Any, options: dict[str, Any] | None = None) -> 
         if len(dates) > MAX_RECOLLECT_DAYS:
             raise ValueError(f"한 번에 재수집할 수 있는 기간은 {MAX_RECOLLECT_DAYS}일입니다.")
         targets = {code: dates for code in client_codes}
-        mode = "recollect"
+        mode = "selected"
     else:
-        today = date.today()
-        for code in client_codes:
-            start = _parse_date(latest[code]) + timedelta(days=1) if latest[code] else today
-            targets[code] = _date_range(start, today)
-        mode = "incremental"
+        yesterday = date.today() - timedelta(days=1)
+        targets = {code: [yesterday.isoformat()] for code in client_codes}
+        mode = "selected"
     return {"mode": mode, "latest": latest, "targets": targets, "clients": client_codes}
 
 
@@ -273,6 +271,36 @@ def _filter_ledger(ledger: ScmLedger, client_code: str, requested_dates: list[st
     )
 
 
+def _filter_selected_scope(ledger: ScmLedger, client_code: str, requested_dates: list[str]) -> ScmLedger:
+    """선택 범위를 보존하며 판매 0건 날짜도 정상적인 교체 범위로 반환합니다."""
+    sale_date_key = "\ud310\ub9e4\uc77c"
+    client_code_key = "\uac70\ub798\ucc98\ucf54\ub4dc"
+    product_code_key = "\uc81c\ud488\ucf54\ub4dc"
+    quantity_key = "\ud310\ub9e4\uc218\ub7c9"
+    rows = [
+        row for row in ledger.rows
+        if row[client_code_key] == client_code and row[sale_date_key] in requested_dates
+    ]
+    summary = {
+        client_code: {
+            "rows": len(rows),
+            "quantity": sum(row[quantity_key] for row in rows),
+            "unmatched": sum(1 for row in rows if not row.get(product_code_key)),
+        }
+    }
+    return ScmLedger(
+        rows=rows,
+        source_count=len(rows),
+        collapsed_count=0,
+        skipped_count=0,
+        date_from=min(requested_dates),
+        date_to=max(requested_dates),
+        total_quantity=summary[client_code]["quantity"],
+        client_summary=summary,
+        product_codes={str(row[product_code_key]) for row in rows if row.get(product_code_key)},
+    )
+
+
 def _yes24_files(dates: list[str]) -> list[Path]:
     paths: list[Path] = []
     for value in dates:
@@ -349,11 +377,11 @@ def _run_collection(job_id: str, backend: Any, plan: dict[str, Any]) -> None:
             raise RuntimeError("모든 거래처 수집이 실패했습니다.")
 
         _job_update(job_id, stage="정규화 및 Supabase 저장")
-        parsed = parse_date_workbooks(output_map.values())
+        parsed = parse_date_workbooks(output_map.values(), allow_empty=True)
         for code in successful:
             client_started = time.perf_counter()
             try:
-                ledger = _filter_ledger(parsed, code, plan["targets"][code])
+                ledger = _filter_selected_scope(parsed, code, plan["targets"][code])
                 demographics = Yes24Demographics([], 0, "", "", 0, 0)
                 sources = [Path(output_map[value]) for value in plan["targets"][code]]
                 if code == "YES24":
@@ -369,6 +397,10 @@ def _run_collection(job_id: str, backend: Any, plan: dict[str, Any]) -> None:
                     demographics,
                     ",".join(path.name for path in sources)[:500],
                     _combined_hash(sources),
+                    [
+                        {"\ud310\ub9e4\uc77c": sale_date, "\uac70\ub798\ucc98\ucf54\ub4dc": code}
+                        for sale_date in plan["targets"][code]
+                    ],
                 )
                 _verify_rows(backend, ledger, code)
                 _client_update(

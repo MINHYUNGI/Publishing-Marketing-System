@@ -53,7 +53,7 @@ class ScmCollectionTests(unittest.TestCase):
         })
         self.assertEqual(parsed.total_quantity, 21)
 
-    def test_incremental_collection_plans_each_client_after_its_latest_date(self):
+    def test_default_collection_is_yesterday_even_when_latest_dates_differ(self):
         yesterday = (date.today() - timedelta(days=1)).isoformat()
         today = date.today().isoformat()
         database = database_with({
@@ -64,8 +64,9 @@ class ScmCollectionTests(unittest.TestCase):
         })
         backend = type("BackendStub", (), {"db": database})()
         plan = plan_scm_collection(backend, {"clients": ["KYOBO", "YES24"]})
-        self.assertEqual(plan["targets"]["KYOBO"], [today])
-        self.assertEqual(plan["targets"]["YES24"], [])
+        self.assertEqual(plan["mode"], "selected")
+        self.assertEqual(plan["targets"]["KYOBO"], [yesterday])
+        self.assertEqual(plan["targets"]["YES24"], [yesterday])
 
     def test_recollection_is_bounded_and_client_selective(self):
         database = database_with({"SCM\uc77c\ubcc4\uc2e4\ud310\ub9e4": []})
@@ -74,5 +75,18 @@ class ScmCollectionTests(unittest.TestCase):
             backend,
             {"clients": ["ALADIN"], "date_from": "2026-08-18", "date_to": "2026-08-20"},
         )
-        self.assertEqual(plan["mode"], "recollect")
+        self.assertEqual(plan["mode"], "selected")
         self.assertEqual(plan["targets"], {"ALADIN": ["2026-08-18", "2026-08-19", "2026-08-20"]})
+
+    def test_empty_date_workbook_can_represent_zero_sales_scope(self):
+        temporary = TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        path = Path(temporary.name) / "20260817.xlsx"
+        workbook = Workbook()
+        workbook.save(path)
+
+        parsed = parse_date_workbooks([path], allow_empty=True)
+
+        self.assertEqual(parsed.rows, [])
+        self.assertEqual(parsed.date_from, "2026-08-17")
+        self.assertEqual(parsed.date_to, "2026-08-17")
