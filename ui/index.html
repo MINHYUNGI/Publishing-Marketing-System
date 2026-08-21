@@ -801,6 +801,7 @@ body.p299-resizing-timeline *{
   <button id="navDetail" title="마케팅 기획 상세" onclick="showAppPage('detail')"><span class="nav-icon">▤</span><span class="nav-label">마케팅 기획 상세</span></button>
   <div class="nav-group result-group">RESULT</div>
   <button id="navPerformance" title="출간 후 성과" onclick="showAppPage('performance')"><span class="nav-icon">▥</span><span class="nav-label">출간 후 성과</span></button>
+  <button id="navScm" title="실판매 관리" onclick="showAppPage('scm')"><span class="nav-icon">▦</span><span class="nav-label">실판매 관리</span></button>
 </nav>
 <div class="user"><b>개발 모드</b>AI 등록 · 기획 상세 · 출간 후 성과</div>
 </aside>
@@ -906,6 +907,10 @@ body.p299-resizing-timeline *{
   <div class="performance-toolbar"><b>도서 선택</b><select id="performanceProductSelect" onchange="loadPerformanceDetail(this.value)"></select><span id="performanceLoadState">목록 불러오는 중...</span></div>
   <div class="performance-note"><div><b>현재 단계</b> · Supabase의 기획·활동 데이터는 실제 연결됩니다. SCM·ERP 일별 판매 원천은 아직 본 시스템에 연결되지 않아 판매 그래프와 누적 실적은 <b>화면 검증용 예시 데이터</b>로 표시합니다.</div><span class="tag">SCM/ERP 연동 예정</span></div>
   <div id="performanceContent"><div class="perf-empty">도서를 선택하면 출간 후 성과 화면을 표시합니다.</div></div>
+</div>
+
+<div id="scmPage" class="page-view" style="padding:0;overflow:hidden;height:calc(100vh - 68px)">
+  <iframe id="scmDashboardFrame" title="실판매 관리" style="display:block;width:100%;height:100%;border:0;background:#0b1220"></iframe>
 </div>
 
 <div id="detailPage" class="page-view">
@@ -1314,17 +1319,20 @@ let currentDetailCode=null,currentDetailTitle="",currentDetailActivityCount=0,cu
 let editingStrategyField=null;
 let editingActivityId=null;
 function showAppPage(page){
- const upload=page==="upload",detail=page==="detail",performance=page==="performance";
+ const upload=page==="upload",detail=page==="detail",performance=page==="performance",scm=page==="scm";
  document.getElementById("uploadPage").classList.toggle("active",upload);
  document.getElementById("detailPage").classList.toggle("active",detail);
  document.getElementById("performancePage").classList.toggle("active",performance);
+ document.getElementById("scmPage").classList.toggle("active",scm);
  document.getElementById("navUpload").classList.toggle("active",upload);
  document.getElementById("navDetail").classList.toggle("active",detail);
  document.getElementById("navPerformance").classList.toggle("active",performance);
- pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":"출간 후 성과";
- pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.";
+ document.getElementById("navScm").classList.toggle("active",scm);
+ pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":performance?"출간 후 성과":"실판매 관리";
+ pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
  if(detail) loadMarketingPlanList();
  if(performance) loadPerformancePlanList();
+ if(scm){const frame=document.getElementById("scmDashboardFrame");if(!frame.getAttribute("src"))frame.setAttribute("src","scm-dashboard.html");}
 }
 function cleanProductName(v){return String(v||"").replace(/^전문>/,"").replace("100세까지월500만원받는ETF연금수업","100살까지 월 500만 원 받는 ETF 연금 수업");}
 function detailMoney(v){return Number(v||0).toLocaleString("ko-KR")+"원";}
@@ -1664,7 +1672,7 @@ function perfDday(pub){const d=perfDate(pub);if(!d)return "출간일 미정";con
 function perfBudget(a){return (a||[]).reduce((s,x)=>s+perfNum(x.비용),0)}
 function perfActualBudget(a){return (a||[]).reduce((s,x)=>s+perfNum(x.실제비용),0)}
 function perfGoal12(s,bp){return perfNum(s?.출간12개월부수)||perfNum(bp?.연간계획부수)||0}
-function perfSeries(rows){return (rows||[]).map(x=>({date:x.판매일,scm:perfNum(x.SCM실판매부수),erp:perfNum(x.ERP출고부수),scmSales:perfNum(x.SCM환산매출액),erpSales:perfNum(x.ERP매출액)})).filter(x=>x.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function perfSeries(rows){return (rows||[]).map(x=>({date:x.판매일,scm:perfNum(x.SCM실판매부수),erp:perfNum(x.ERP출고부수),scmSales:perfNum(x.SCM환산매출액),erpSales:perfNum(x.ERP매출액),kyobo:perfNum(x.SCM교보부수),ypbooks:perfNum(x.SCM영풍부수),yes24:perfNum(x.SCMYES24부수),aladin:perfNum(x.SCM알라딘부수)})).filter(x=>x.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
 function perfActivityStatus(a){
  if(a.실행상태)return String(a.실행상태);
  const today=new Date();today.setHours(0,0,0,0);
@@ -2945,6 +2953,36 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
  document.addEventListener("pointerout",event=>{const target=event.target.closest?.(".p-detail-sales-bar,.p271-actbar[data-performance-activity]");if(target&&!target.contains(event.relatedTarget))hideTooltip()});
  document.addEventListener("click",event=>{const row=event.target.closest?.(".exec-detail-row[data-performance-activity]");if(row)openPerformanceActivityDetail(row.dataset.performanceActivity)});
  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeDialog();const row=event.target.closest?.(".exec-detail-row[data-performance-activity]");if(row&&(event.key==="Enter"||event.key===" ")){event.preventDefault();openPerformanceActivityDetail(row.dataset.performanceActivity)}});
+})();
+</script>
+<script>
+// SCM Supabase integration: 기존 데이터 관리 화면에 보존형 SCM 동기화 기능만 추가합니다.
+(function(){
+ const previous=window.showDataAdminPage;
+ window.showDataAdminPage=function(){
+  if(typeof previous==="function")previous();
+  const page=document.getElementById("dataAdminPage");if(!page)return;
+  if(!document.getElementById("scmDataAdminPanel")){
+   const panel=document.createElement("section");panel.id="scmDataAdminPanel";panel.className="panel admin-data-panel";panel.style.marginTop="16px";
+   panel.innerHTML=`<div class="head"><div><strong>SCM 실판매 데이터</strong><small>기존 통합원장과 YES24 원본을 읽기 전용으로 검증해 Supabase에 동기화합니다.</small></div></div><div class="admin-data-body"><div class="admin-data-info"><b>원천</b><span>실판매_통합원장.xlsx + download의 YES24 성인/아동 원본</span></div><div style="display:flex;gap:10px"><button class="btn light" id="scmPreviewBtn">SCM 원장 사전검증</button><button class="btn primary" id="scmSyncBtn">SCM 실판매 동기화</button></div><div id="scmSyncResult" class="admin-upload-result">동기화 상태를 확인하는 중입니다.</div></div>`;
+   page.appendChild(panel);document.getElementById("scmPreviewBtn").onclick=previewScmDailySales;document.getElementById("scmSyncBtn").onclick=syncScmDailySales;
+  }
+  loadScmSyncStatus();
+ };
+ window.loadScmSyncStatus=async function(){const out=document.getElementById("scmSyncResult");if(!out)return;try{const r=await pywebview.api.get_scm_sync_status();if(!r.ok){out.textContent=r.message||"상태 조회 실패";return;}const x=r.latest;if(!x){out.textContent="동기화 이력이 없습니다.";return;}const missing=(r.unmatched||[]).map(v=>`${esc(v.ISBN13||"")} · ${esc(v.SCM상품명||"상품명 없음")}`).join("<br>");out.innerHTML=`<b>${esc(x.상태||"-")}</b> · ${esc(x.대상시작일||"-")} ~ ${esc(x.대상종료일||"-")} · ${Number(x.전체건수||0).toLocaleString("ko-KR")}건 · ${Number(x.원천판매수량합계||0).toLocaleString("ko-KR")}부<br>YES24 ${Number(x.YES24원본파일수||0).toLocaleString("ko-KR")}개 파일 · ${Number(x.YES24구매자스냅샷건수||0).toLocaleString("ko-KR")} 스냅샷 · 미매칭 ISBN ${Number(r.unmatched?.length||0).toLocaleString("ko-KR")}건${missing?`<details style="margin-top:8px"><summary>미매칭 제품 목록 보기</summary><div style="margin-top:6px;line-height:1.7">${missing}</div></details>`:""}`;}catch(e){out.textContent="상태 조회 오류: "+e;}};
+ window.previewScmDailySales=async function(){const out=document.getElementById("scmSyncResult"),btn=document.getElementById("scmPreviewBtn");btn.disabled=true;try{const r=await pywebview.api.preview_scm_daily_sales();const y=r.yes24_demographics||{};out.innerHTML=r.ok?`<b>사전검증 완료</b> · SCM ${Number(r.rows||0).toLocaleString("ko-KR")}건/${Number(r.total_quantity||0).toLocaleString("ko-KR")}부 · YES24 ${Number(y.files||0).toLocaleString("ko-KR")}파일/${Number(y.rows||0).toLocaleString("ko-KR")}스냅샷`:esc(r.message||"실패");}catch(e){out.textContent="사전검증 오류: "+e;}finally{btn.disabled=false;}};
+ window.syncScmDailySales=async function(){if(!confirm("SCM 원장과 YES24 구매자 데이터를 Supabase에 동기화하시겠습니까?"))return;const out=document.getElementById("scmSyncResult"),btn=document.getElementById("scmSyncBtn");btn.disabled=true;try{const r=await pywebview.api.sync_scm_daily_sales();out.innerHTML=r.ok?`<b>동기화 완료</b> · ${Number(r.total||0).toLocaleString("ko-KR")}건/${Number(r.quantity||0).toLocaleString("ko-KR")}부 · YES24 ${Number(r.yes24_demographics?.rows||0).toLocaleString("ko-KR")}스냅샷`:esc(r.message||"실패");if(r.ok){const frame=document.getElementById("scmDashboardFrame");if(frame?.src)frame.contentWindow.location.reload();}}catch(e){out.textContent="동기화 오류: "+e;}finally{btn.disabled=false;}};
+})();
+</script>
+<script>
+// SCM/YES24 실데이터를 기존 출간 후 성과 UI 구조에 표시합니다.
+(function(){
+ const previous=window.renderPerformancePage;if(typeof previous!=="function")return;
+ window.renderPerformancePage=function(r){previous(r);const rows=perfSeries(r.판매실적일별||[]),scm=rows.reduce((s,x)=>s+x.scm,0),erp=rows.reduce((s,x)=>s+x.erp,0),clients=rows.reduce((a,x)=>({k:a.k+(x.kyobo||0),y:a.y+(x.ypbooks||0),n:a.n+(x.yes24||0),l:a.l+(x.aladin||0)}),{k:0,y:0,n:0,l:0});
+  const kpis=[...document.querySelectorAll("#performanceContent .p271-kpi")];if(kpis[0])kpis[0].innerHTML=`<span>SCM 누적 실판매</span><strong>${scm.toLocaleString("ko-KR")}부</strong><small>교보 ${clients.k.toLocaleString("ko-KR")} · 영풍 ${clients.y.toLocaleString("ko-KR")} · YES24 ${clients.n.toLocaleString("ko-KR")} · 알라딘 ${clients.l.toLocaleString("ko-KR")}</small>`;if(kpis[1])kpis[1].querySelector("strong").textContent=erp.toLocaleString("ko-KR")+"부";
+  const legend=document.querySelector("#performanceContent .p271-legend");if(legend)legend.innerHTML='<span>SCM 일별 실판매</span><span class="erp">ERP 일별 매출부수</span>';
+  const source=r.YES24구매자분포||[],latest=source.reduce((v,x)=>String(x.기준일||"")>v?String(x.기준일):v,"");const selected=source.filter(x=>String(x.기준일||"")===latest);if(selected.length){const totals=type=>selected.flatMap(x=>x.분포?.[type]||[]).reduce((a,x)=>(a[x.구간]=(a[x.구간]||0)+Number(x.수량||0),a),{}),g=totals("성별"),a=totals("연령"),known=(g.남||0)+(g.녀||0),ageTotal=Object.values(a).reduce((s,x)=>s+x,0),pct=n=>ageTotal?n/ageTotal*100:0;const ageRows=[["20대",(a["20대 초"]||0)+(a["20대 후"]||0)],["30대",(a["30대 초"]||0)+(a["30대 후"]||0)],["40대",(a["40대 초"]||0)+(a["40대 후"]||0)],["50대",(a["50대 초"]||0)+(a["50대 후"]||0)],["60대+",a["60대 이상"]||0]],max=Math.max(1,...ageRows.map(x=>pct(x[1]))),aud=document.querySelector("#performanceContent .p271-audience");if(aud)aud.innerHTML=`<div class="p271-audience-grid"><div class="p271-donut-wrap"><div class="p271-donut" style="background:conic-gradient(#2f6bd5 0 ${known?(g.남||0)/known*100:0}%,#27b7a4 0 100%)"></div><div class="p271-mini-legend"><b>YES24</b><br>남성 ${known?((g.남||0)/known*100).toFixed(1):"0.0"}%<br>여성 ${known?((g.녀||0)/known*100).toFixed(1):"0.0"}%</div></div><div class="p271-age-bars">${ageRows.map(x=>`<div class="p271-age"><div class="row"><span>${x[0]}</span><b>${pct(x[1]).toFixed(1)}%</b></div><div class="p271-track"><div class="p271-fill" style="width:${pct(x[1])/max*100}%"></div></div></div>`).join("")}</div></div><div class="p271-match"><b>기준일 ${latest}</b> · 미가입 ${Number(g.미가입||0).toLocaleString("ko-KR")}명 · 10대 이하 ${Number(a["10대 이하"]||0).toLocaleString("ko-KR")}명 · 원본 세부 구간은 DB에 그대로 보존됩니다.</div>`;}
+ };
 })();
 </script>
 </body>

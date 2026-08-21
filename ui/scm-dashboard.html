@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>미래엔 실판매 대시보드 · 첫 출고일 기준 신간/구간</title>
+
+  <!-- 같은 폴더 기준: Y:\출판사업본부\05. 영업 실적\70. 집계 결과\... -->
+  <!-- Supabase 데이터는 Python 백엔드에서 같은 window.SALES_DATA 계약으로 주입합니다. -->
+  <!-- 마케팅 활동도 현재 출판 마케팅 시스템 Supabase에서 주입합니다. -->
+
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#111827; --panel2:#151f33; --line:#2a3854;
+      --text:#eaf2ff; --muted:#8fa6c9; --blue:#4ea1ff; --green:#29d39a;
+      --yellow:#ffd35a; --orange:#ffae52; --red:#ff6b7a; --input:#0d1628;
+      --hover:#1b2a45; --purple:#b184ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR","Malgun Gothic",Arial,sans-serif;font-size:14px}
+    .wrap{max-width:1680px;margin:0 auto;padding:24px 26px 40px}
+    .top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+    h1{margin:0;font-size:25px;font-weight:950;letter-spacing:-.04em}
+    .sub{margin-top:7px;color:var(--muted);font-size:13px;line-height:1.5}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid rgba(78,161,255,.45);background:rgba(78,161,255,.12);color:#b9d8ff;border-radius:999px;font-size:12px;font-weight:850;white-space:nowrap}
+    .badge.green{border-color:rgba(41,211,154,.45);background:rgba(41,211,154,.12);color:#9ff0d1}
+    .badge.yellow{border-color:rgba(255,211,90,.48);background:rgba(255,211,90,.12);color:#ffe38d}
+    .badge.red{border-color:rgba(255,107,122,.45);background:rgba(255,107,122,.12);color:#ffb7c0}
+    .badge.marketing{border-color:rgba(255,211,90,.62);background:rgba(255,211,90,.18);color:#ffe38d;margin-left:7px}
+    .toolbar{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;margin-bottom:16px;padding:14px;background:#101727;border:1px solid #23314b;border-radius:16px}
+    .field{display:flex;flex-direction:column;gap:7px;min-width:0}
+    .field label{font-size:12px;color:#bcd4f7;font-weight:850}
+    select,input{border:1px solid var(--line);background:var(--input);color:var(--text);border-radius:11px;padding:11px 12px;font-family:inherit;outline:none}
+    input[type="date"]{
+      color-scheme:dark;
+      padding-right:40px;
+      background-color:var(--input);
+      background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2718%27%20height%3D%2718%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-width%3D%272.4%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%274%27%20width%3D%2718%27%20height%3D%2718%27%20rx%3D%272%27%20ry%3D%272%27/%3E%3Cline%20x1%3D%2716%27%20y1%3D%272%27%20x2%3D%2716%27%20y2%3D%276%27/%3E%3Cline%20x1%3D%278%27%20y1%3D%272%27%20x2%3D%278%27%20y2%3D%276%27/%3E%3Cline%20x1%3D%273%27%20y1%3D%2710%27%20x2%3D%2721%27%20y2%3D%2710%27/%3E%3C/svg%3E");
+      background-repeat:no-repeat;
+      background-position:right 12px center;
+      background-size:18px 18px;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator{
+      opacity:0;
+      cursor:pointer;
+      width:32px;
+      height:32px;
+      margin-right:-4px;
+    }
+
+
+    select:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(78,161,255,.14)}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.22)}
+    .card-hd{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .card-hd.section-toggle{cursor:pointer;user-select:none}
+    .card-hd.section-toggle .collapse-indicator{
+      margin-left:6px;
+      flex:0 0 auto;
+      font-size:14px;
+      color:#9db5d6;
+      transition:transform .18s ease,color .18s ease;
+      line-height:1;
+    }
+    .card.collapsed .card-hd{border-bottom:none}
+    .card.collapsed .card-hd.section-toggle .collapse-indicator{
+      transform:rotate(-90deg);
+      color:#6f87aa;
+    }
+    .card-hd h2{margin:0;font-size:16px;font-weight:950;letter-spacing:-.03em;display:flex;align-items:center;gap:9px}
+    .card-hd h2:before{content:"";width:4px;height:17px;background:var(--blue);border-radius:999px;display:inline-block}
+    .card-body{padding:18px}
+    .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
+    .jump-alert-card{
+      margin-bottom:16px;
+      border-color:rgba(255,211,90,.48);
+      box-shadow:0 16px 42px rgba(0,0,0,.24), inset 0 0 0 1px rgba(255,211,90,.05);
+    }
+    .jump-alert-card .card-hd{
+      background:linear-gradient(90deg,rgba(255,211,90,.13),rgba(255,174,82,.04));
+      border-bottom-color:rgba(255,211,90,.25);
+    }
+    .jump-alert-card .card-hd h2:before{background:var(--yellow)}
+    .jump-alert-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;color:#ffe6a2;font-size:12px;font-weight:850;margin-left:auto;text-align:right}
+    .jump-book-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .jump-book-card{
+      min-width:0;
+      border:1px solid rgba(255,211,90,.30);
+      background:linear-gradient(145deg,rgba(255,211,90,.10),rgba(255,174,82,.035));
+      border-radius:14px;
+      padding:8px 12px;
+      cursor:pointer;
+      transition:transform .15s ease,border-color .15s ease,background .15s ease;
+    }
+    .jump-book-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(255,211,90,.72);
+      background:linear-gradient(145deg,rgba(255,211,90,.17),rgba(255,174,82,.07));
+    }
+    .jump-book-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:4px;
+    }
+    .jump-rank{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:22px;height:22px;padding:0 6px;border-radius:8px;
+      background:#ffd35a;color:#172033;font-size:11px;font-weight:950;
+    }
+    .jump-date{font-size:10px;color:#c8d6eb;font-weight:850;white-space:nowrap}
+    .jump-title{
+      margin-top:0;
+      color:#fff;
+      font-size:14px;
+      font-weight:950;
+      line-height:1.22;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      word-break:keep-all;
+    }
+    .jump-cat{
+      margin-top:0;
+      color:#91a8c8;
+      font-size:10px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .jump-first-date{
+      color:#b9cae4;
+      font-size:10px;
+      font-weight:850;
+      white-space:nowrap;
+    }
+    .jump-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+    .jump-card-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      min-width:0;
+      flex:1 1 520px;
+    }
+    .jump-card-title-wrap{
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .jump-book-meta-line{
+      margin-top:2px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      min-width:0;
+      line-height:1.1;
+    }
+    .jump-card-body{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      flex-wrap:nowrap;
+    }
+    .jump-summary-row{
+      margin-top:0;
+      display:flex;
+      flex-wrap:nowrap;
+      gap:6px;
+      align-items:stretch;
+      min-width:0;
+      flex:0 1 auto;
+    }
+    .jump-mini-metric{
+      min-width:0;
+      padding:6px 9px;
+      border-radius:10px;
+      background:rgba(8,17,32,.58);
+      border:1px solid rgba(255,255,255,.07);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:2px;
+      flex:0 0 auto;
+    }
+    .jump-mini-metric .k{
+      font-size:9px;
+      color:#9db5d6;
+      font-weight:800;
+      line-height:1.05;
+      white-space:nowrap;
+    }
+    .jump-mini-metric .v{
+      font-size:12px;
+      color:#fff2b2;
+      font-weight:950;
+      line-height:1.05;
+      white-space:nowrap;
+    }
+    .jump-mini-metric.accent .v{color:#ffd978}
+    .jump-mini-metric.metric-sales{width:94px}
+    .jump-mini-metric.metric-avg{width:118px}
+    .jump-mini-metric.metric-ratio{width:152px}
+    .jump-store-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+      align-items:center;
+      min-width:0;
+      padding-top:0;
+      border-top:none;
+      margin-top:0;
+      flex:0 1 360px;
+    }
+    .jump-store-item{
+      display:inline-flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      padding:5px 8px;
+      border-radius:9px;
+      background:rgba(8,17,32,.50);
+      border:1px solid rgba(255,255,255,.07);
+      font-size:10px;
+      color:#c8d6eb;
+      min-width:0;
+      flex:0 0 auto;
+      line-height:1.05;
+    }
+    .jump-store-name{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      color:#9db5d6;
+      font-weight:800;
+    }
+    .jump-store-qty{
+      color:#fff2b2;
+      font-weight:950;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .jump-metric{
+      border-radius:10px;background:rgba(8,17,32,.58);
+      border:1px solid rgba(255,255,255,.07);padding:9px 10px;
+    }
+    .jump-metric .k{font-size:10px;color:#91a8c8;margin-bottom:4px}
+    .jump-metric .v{font-size:16px;color:#ffe168;font-weight:950}
+    .jump-metric .v.orange{color:#ffb45f}
+    .jump-empty{
+      padding:22px;text-align:center;color:#9fb7d9;
+      border:1px dashed rgba(255,211,90,.25);border-radius:12px;background:rgba(255,211,90,.035);
+    }
+    .trend-card{margin-bottom:16px}
+    .trend-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;color:#9fb7d9;font-size:12px;font-weight:800;margin-left:auto;text-align:right}
+    .trend-chart-wrap{padding:14px 16px 16px;background:#081120;border-radius:14px;border:1px solid var(--line);overflow:hidden}
+    .trend-chart-wrap svg{width:100%;height:auto;display:block}
+    .trend-empty{padding:34px 12px;text-align:center;color:#9fb7d9;font-size:13px}
+    .kpi{border:1px solid var(--line);background:#141b2d;border-radius:14px;padding:15px}
+    .kpi .label{color:var(--muted);font-size:12px;margin-bottom:9px}
+    .kpi .value{font-size:25px;font-weight:950;letter-spacing:-.04em}
+    .kpi .note{margin-top:6px;color:#8fa6c9;font-size:12px}
+    .kpi.primary{border-top:3px solid var(--blue)}
+    .kpi.green{border-top:3px solid var(--green)}
+    .kpi.yellow{border-top:3px solid var(--yellow)}
+    .kpi.orange{border-top:3px solid var(--orange)}
+    .kpi.red{border-top:3px solid var(--red)}
+    .table-wrap{border:1px solid var(--line);border-radius:14px;overflow:auto;background:#0d1628;max-height:calc(100vh - 320px);scrollbar-width:thin;scrollbar-color:#4ea1ff #0b1220}
+    .table-wrap::-webkit-scrollbar{width:11px;height:11px}
+    .table-wrap::-webkit-scrollbar-track{background:#0b1220;border-radius:999px}
+    .table-wrap::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4ea1ff,#2a6fc7);border:3px solid #0b1220;border-radius:999px}
+    .table-wrap::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#76b8ff,#3f8ff0)}
+    .table-wrap::-webkit-scrollbar-corner{background:#0b1220}
+    table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:1200px}
+    thead th{position:sticky;top:0;z-index:3;background:#17243a;color:#bcd4f7;font-size:12px;text-align:right;padding:11px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+    thead th.date-cell{text-align:center;vertical-align:middle;padding:9px 6px 10px;overflow:hidden}
+    .date-head-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+    .date-head-main{font-size:12px;font-weight:900;color:#d9e7ff}
+    .date-head-sub{margin-top:4px;font-size:10px;font-weight:800;color:#8da7ca}
+    thead th.date-cell.weekend-sat{background:#163865}
+    thead th.date-cell.weekend-sat .date-head-main{color:#9ec5ff}
+    thead th.date-cell.weekend-sat .date-head-sub{color:#7fb0ff}
+    thead th.date-cell.weekend-sun{background:#5a2430}
+    thead th.date-cell.weekend-sun .date-head-main{color:#ffb4b4}
+    thead th.date-cell.weekend-sun .date-head-sub{color:#ff9898}
+    thead th.date-cell.holiday{background:#5f4a12}
+    thead th.date-cell.holiday .date-head-main{color:#ffe28b}
+    thead th.date-cell.holiday .date-head-sub{color:#ffd76a}
+
+    tbody td.weekend-sat{background:rgba(22,56,101,.45)}
+    tbody td.weekend-sun{background:rgba(90,36,48,.45)}
+    tbody td.holiday{background:rgba(95,74,18,.45)}
+
+    tbody tr:hover td.weekend-sat{background:rgba(22,56,101,.58)}
+    tbody tr:hover td.weekend-sun{background:rgba(90,36,48,.58)}
+    tbody tr:hover td.holiday{background:rgba(95,74,18,.58)}
+    thead th.left{text-align:left}
+    thead th.sticky-name{
+      position:sticky;
+      left:0;
+      z-index:7;
+      background:#17243a;
+      box-shadow:8px 0 16px rgba(0,0,0,.18);
+    }
+    thead th.sticky-total{
+      position:sticky;
+      left:440px;
+      z-index:6;
+      background:#17243a;
+      box-shadow:8px 0 16px rgba(0,0,0,.18);
+    }
+    tbody td.sticky-name{
+      position:sticky;
+      left:0;
+      z-index:3;
+      background:#0d1628;
+      box-shadow:8px 0 16px rgba(0,0,0,.16);
+    }
+    tbody td.sticky-total{
+      position:sticky;
+      left:440px;
+      z-index:2;
+      background:#0d1628;
+      box-shadow:8px 0 16px rgba(0,0,0,.12);
+    }
+    tbody tr:hover td.sticky-name, tbody tr:hover td.sticky-total{background:var(--hover)}
+    .cat-row td.sticky-name{background:#121e32!important;z-index:5}
+    .cat-row td.sticky-total{background:#121e32!important;z-index:4}
+    .mid-row td.sticky-name{background:#101a2c!important;z-index:4}
+    .mid-row td.sticky-total{background:#101a2c!important;z-index:3}
+    .book-row td.sticky-name{background:#0d1628;z-index:3}
+    .book-row td.sticky-total{background:#0d1628;z-index:2}
+    tbody td{padding:10px 9px;border-bottom:1px solid #21304a;color:#eaf2ff;font-size:13px;vertical-align:middle;text-align:right}
+    tbody tr:hover td{background:var(--hover)}
+    td.left{text-align:left}
+    .cat-row td{background:#121e32!important;font-weight:950;color:#d6e6ff;border-top:1px solid #314563}
+    .mid-row td{background:#101a2c!important;font-weight:850;color:#c5d8f7}
+    .cat-row td.qty,.mid-row td.qty{font-weight:950;color:#d9e9ff}
+    .cat-row td.qty.zero,.mid-row td.qty.zero{color:#34465f}
+    .mid-row td.age-total{color:#d6e6ff}
+
+    /* 대분류/중분류/도서 행 모두 주말·공휴일 날짜 컬럼 색상을 동일하게 적용 */
+    .cat-row td.qty.weekend-sat,
+    .mid-row td.qty.weekend-sat,
+    .book-row td.qty.weekend-sat{background:rgba(22,56,101,.45)!important}
+    .cat-row td.qty.weekend-sun,
+    .mid-row td.qty.weekend-sun,
+    .book-row td.qty.weekend-sun{background:rgba(90,36,48,.45)!important}
+    .cat-row td.qty.holiday,
+    .mid-row td.qty.holiday,
+    .book-row td.qty.holiday{background:rgba(95,74,18,.45)!important}
+
+    tbody tr:hover td.qty.weekend-sat{background:rgba(22,56,101,.58)!important}
+    tbody tr:hover td.qty.weekend-sun{background:rgba(90,36,48,.58)!important}
+    tbody tr:hover td.qty.holiday{background:rgba(95,74,18,.58)!important}
+
+    .book-row td{background:#0d1628}
+    .book-name{font-weight:760;display:inline-flex;align-items:center;gap:4px;max-width:100%}
+    .book-name.marketing-active{color:#fff2a8;font-weight:950}
+    .book-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;max-width:360px;vertical-align:middle}
+    .pub-month{margin-left:7px;font-size:11px;color:#9ca3af;font-weight:800;white-space:nowrap;letter-spacing:-.02em}
+    .new-old{font-size:11px;padding:3px 7px;border-radius:999px;border:1px solid #395070;color:#bcd4f7;margin-right:6px}
+    .new-old.new{border-color:rgba(41,211,154,.45);color:#9ff0d1;background:rgba(41,211,154,.1)}
+    .qty{font-variant-numeric:tabular-nums}
+    .qty.marketing-period{
+      color:#ffe38d;
+      font-weight:950;
+      background:rgba(255,211,90,.08);
+      border-left:1px solid rgba(255,211,90,.18);
+      border-right:1px solid rgba(255,211,90,.18);
+    }
+    .qty.jump-sales{
+      color:#fff3b0;
+      font-weight:950;
+      background:rgba(255,174,82,.22);
+      box-shadow:inset 0 0 0 1px rgba(255,174,82,.55);
+    }
+    .qty.marketing-period.jump-sales{
+      color:#fff8c8;
+      background:linear-gradient(135deg,rgba(255,211,90,.25),rgba(255,107,122,.18));
+      box-shadow:inset 0 0 0 1px rgba(255,211,90,.7), inset 0 -3px 0 rgba(255,174,82,.35);
+    }
+    .qty.zero{color:#3f536f}
+    .date-cell{width:96px}
+    .name-col{width:440px}
+    .total-col{width:90px}
+    .total-period{display:block;margin-top:3px;font-size:10px;color:#8fa6c9;font-weight:850;line-height:1.15;letter-spacing:-.03em}
+    .notice{margin-top:12px;padding:13px 14px;border-radius:12px;background:rgba(78,161,255,.09);border:1px solid rgba(78,161,255,.24);color:#c9e0ff;line-height:1.6;font-size:12px}
+    .tooltip{
+      position:fixed;z-index:9999;display:none;max-width:420px;background:#081120;border:1px solid #496384;
+      color:#eaf2ff;border-radius:12px;padding:12px 13px;box-shadow:0 16px 45px rgba(0,0,0,.45);
+      font-size:12px;line-height:1.55;pointer-events:none;white-space:pre-line
+    }
+    .tooltip .title{font-weight:950;color:#fff;margin-bottom:6px;font-size:13px}
+    .tooltip .line{color:#c8d9f4}
+    .debug{display:none;margin-top:12px;color:#8fa6c9;font-size:12px;line-height:1.6}
+
+    .tree-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+    .arrow{display:inline-block;width:14px;color:#79a9ff;font-weight:900}
+    .group-badge{margin-left:8px;font-size:11px;padding:3px 7px;border-radius:999px;border:1px solid rgba(255,211,90,.45);color:#ffe38d;background:rgba(255,211,90,.1)}
+    .table-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;text-align:right}
+    .title-sort-actions{display:inline-flex;align-items:center;gap:6px;margin-left:8px}
+    .sort-btn{border:1px solid rgba(78,161,255,.42);background:rgba(78,161,255,.10);color:#bddcff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap}
+    .sort-btn:hover{background:rgba(78,161,255,.20);color:#fff;border-color:rgba(78,161,255,.75)}
+    .sort-btn.active{border-color:rgba(255,211,90,.72);background:rgba(255,211,90,.17);color:#ffe38d;box-shadow:inset 0 0 0 1px rgba(255,211,90,.18)}
+    .graph-btn{
+      margin-left:8px;
+      border:1px solid rgba(78,161,255,.55);
+      background:rgba(78,161,255,.14);
+      color:#cfe5ff;
+      border-radius:999px;
+      padding:4px 8px;
+      font-size:11px;
+      font-weight:900;
+      cursor:pointer;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+    .graph-btn:hover{background:rgba(78,161,255,.25);color:#fff;border-color:rgba(78,161,255,.85)}
+    .graph-btn.icon-only{padding:4px 7px;min-width:28px;text-align:center}
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:10000;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(3,8,18,.72);
+      backdrop-filter:blur(4px);
+      padding:24px;
+    }
+    .modal{
+      width:min(980px,calc(100vw - 48px));
+      max-height:calc(100vh - 48px);
+      overflow:auto;
+      background:#0d1628;
+      border:1px solid #385071;
+      border-radius:18px;
+      box-shadow:0 24px 70px rgba(0,0,0,.55);
+    }
+    .modal-hd{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:16px 18px;
+      border-bottom:1px solid var(--line);
+      background:#121e32;
+    }
+    .modal-title{font-size:16px;font-weight:950;color:#fff;line-height:1.45}
+    .modal-sub{margin-top:5px;font-size:12px;color:#9fb7d9}
+    .modal-close{
+      border:1px solid #496384;
+      background:#0b1220;
+      color:#d9e9ff;
+      border-radius:10px;
+      padding:7px 10px;
+      cursor:pointer;
+      font-weight:900;
+    }
+    .modal-close:hover{background:#1b2a45}
+    .modal-body{padding:18px}
+    .chart-wrap{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#081120;
+      padding:12px;
+      overflow:hidden;
+    }
+    .chart-wrap svg{width:100%;height:auto;display:block}
+    .chart-summary{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .chart-summary .mini{
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#111827;
+      padding:11px;
+    }
+    .chart-summary .mini .k{font-size:11px;color:#8fa6c9;margin-bottom:6px}
+    .chart-summary .mini .v{font-size:18px;font-weight:950;color:#eaf2ff}
+    .chart-empty{padding:30px;text-align:center;color:#9fb7d9}
+
+
+    @media(max-width:1420px){
+      .jump-card-body{flex-direction:column;align-items:stretch}
+      .jump-card-head{flex:1 1 auto}
+      .jump-summary-row{flex-wrap:wrap}
+      .jump-store-list{flex:1 1 auto}
+    }
+    @media(max-width:1180px){
+      .toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .jump-card-head{flex:1 1 auto}
+      .jump-summary-row{flex-wrap:wrap}
+    }
+    @media(max-width:720px){
+      .jump-book-top{flex-wrap:wrap}
+      .jump-card-body{flex-direction:column;align-items:stretch}
+      .jump-summary-row{flex-wrap:wrap}
+      .jump-mini-metric.metric-sales,
+      .jump-mini-metric.metric-avg,
+      .jump-mini-metric.metric-ratio{width:auto}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>미래엔 실판매 대시보드</h1>
+      <div class="sub">마케팅 집행 중인 도서를 맨 위에 표시하고, 도서명 마우스오버 시 마케팅명과 기간을 보여줍니다.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+      <span class="badge" id="salesStatus">실판매 데이터 확인 중</span>
+      <span class="badge" id="marketingStatus">마케팅 데이터 확인 중</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="field">
+      <label>시작일</label>
+      <input type="date" id="startDate">
+    </div>
+    <div class="field">
+      <label>종료일</label>
+      <input type="date" id="endDate">
+    </div>
+    <div class="field">
+      <label>표시 단위</label>
+      <select id="periodMode">
+        <option value="daily">일별 보기</option>
+        <option value="7">7일 단위</option>
+        <option value="15">15일 단위</option>
+        <option value="30">30일 단위</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>거래처</label>
+      <select id="clientFilter">
+        <option value="전체">전체</option>
+        <option value="교보문고">교보문고</option>
+        <option value="영풍문고">영풍문고</option>
+        <option value="예스24">예스24</option>
+        <option value="알라딘">알라딘</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>대분류</label>
+      <select id="mainFilter"><option value="전체">전체</option></select>
+    </div>
+    <div class="field">
+      <label>중분류</label>
+      <select id="midFilter"><option value="전체">전체</option></select>
+    </div>
+    <div class="field">
+      <label>신간/구간</label>
+      <select id="ageFilter">
+        <option value="전체">전체</option>
+        <option value="신간">신간</option>
+        <option value="구간">구간</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>도서명 검색</label>
+      <input type="text" id="bookSearch" placeholder="도서명 입력">
+    </div>
+  </div>
+
+  <section class="card jump-alert-card" id="jumpAlertCard">
+    <div class="card-hd section-toggle" data-target="jumpAlertBody" aria-expanded="true">
+      <h2>판매량 급증 도서</h2>
+      <div class="jump-alert-meta" id="jumpAlertMeta">조회 기간의 판매 점핑 도서를 확인 중입니다.</div>
+      <span class="collapse-indicator" aria-hidden="true">▾</span>
+    </div>
+    <div class="card-body" id="jumpAlertBody">
+      <div class="jump-book-grid" id="jumpBookGrid"></div>
+    </div>
+  </section>
+
+  <section class="card trend-card" id="trendCard">
+    <div class="card-hd section-toggle" data-target="trendCardBody" aria-expanded="true">
+      <h2>선택 기간 실판매 추이</h2>
+      <div class="trend-meta" id="trendMeta">조회 조건을 반영해 그래프를 준비 중입니다.</div>
+      <span class="collapse-indicator" aria-hidden="true">▾</span>
+    </div>
+    <div class="card-body" id="trendCardBody">
+      <div class="trend-chart-wrap" id="trendChartArea"></div>
+    </div>
+  </section>
+
+  <section class="card" id="productStatusCard">
+    <div class="card-hd section-toggle" data-target="productStatusBody" aria-expanded="true">
+      <h2>제품별 판매 현황
+        <span class="title-sort-actions">
+          <button type="button" class="sort-btn active" id="sortSalesBtn" data-sort-mode="sales">판매량순</button>
+          <button type="button" class="sort-btn" id="sortDateBtn" data-sort-mode="date">출간일순</button>
+        </span>
+      </h2>
+      <div class="table-actions">
+        <span class="badge yellow">📣 마케팅 집행 도서 우선 표시</span>
+      </div>
+      <span class="collapse-indicator" aria-hidden="true">▾</span>
+    </div>
+    <div class="card-body" id="productStatusBody">
+      <div class="table-wrap">
+        <table id="salesTable"></table>
+      </div>
+      <div class="notice">
+        📣 표시가 붙은 도서는 현재 조회 기간과 마케팅 집행 기간이 겹치는 도서입니다. 판매 숫자에 마우스를 올리면 해당 일자/기간의 거래처별 판매 내역이 표시됩니다. 각 날짜의 직전 5개 평일 평균 대비 판매가 급증한 숫자는 주황색 계열로 강조되며, 마케팅 집행 기간에 해당하는 판매 수량은 노란색 계열로 강조됩니다.
+        모든 마케팅은 저장된 시작일~종료일 기준으로 표시합니다. 하루짜리 마케팅은 시작일과 종료일을 같은 날짜로 입력하면 됩니다.
+      </div>
+      <div class="debug" id="debugArea"></div>
+    </div>
+  </section>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<div class="modal-backdrop" id="chartModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-title" id="chartTitle">도서 실판매 추이</div>
+        <div class="modal-sub" id="chartSub"></div>
+      </div>
+      <button class="modal-close" id="chartClose" type="button">닫기</button>
+    </div>
+    <div class="modal-body">
+      <div class="chart-summary" id="chartSummary"></div>
+      <div class="chart-wrap" id="chartArea"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function startScmDashboard(){
+  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  let api=null;
+  for(let i=0;i<100;i++){
+    api=(window.pywebview&&window.pywebview.api)||(window.parent&&window.parent.pywebview&&window.parent.pywebview.api);
+    if(api)break;
+    await sleep(100);
+  }
+  if(!api){
+    document.body.innerHTML='<div style="padding:32px;font-family:Malgun Gothic;color:#fff;background:#0b1220;min-height:100vh">출판 마케팅 시스템 백엔드에 연결할 수 없습니다.</div>';
+    return;
+  }
+  const response=await api.get_scm_dashboard_data();
+  if(!response||!response.ok){
+    document.body.innerHTML='<div style="padding:32px;font-family:Malgun Gothic;color:#fff;background:#0b1220;min-height:100vh">SCM 실판매 데이터를 불러오지 못했습니다: '+String(response&&response.message||'알 수 없는 오류')+'</div>';
+    return;
+  }
+  window.SALES_DATA=response;
+  window.MARKETING_RECORDS={records:response.marketingRecords||[]};
+(function(){
+  const SALES_RAW = window.SALES_DATA || {};
+  const DASHBOARD_FIX_VERSION = "FIX_20260805_HEADER_META_RIGHT_ALIGN";
+  const MARKETING_RAW = window.MARKETING_RECORDS || window.MARKETING_DATA || {records:[]};
+
+  let rows = normalizeSalesRows(SALES_RAW.rows || []);
+  let products = normalizeProducts(SALES_RAW.products || []);
+
+  // 같은 제품코드에 여러 도서명이 있으면 가장 최근 판매기준일의 도서명을
+  // 화면용 대표 도서명으로 사용합니다.
+  applyLatestProductNamesInHtml(rows, products);
+
+  let records = Array.isArray(MARKETING_RAW) ? MARKETING_RAW : (MARKETING_RAW.records || []);
+  let productNameMap = new Map();
+  let currentSalesDetailMap = new Map();
+  let currentRenderedBooks = [];
+  let currentRenderedDates = [];
+  let currentFilteredRowsCache = [];
+  let currentBookMetaMap = new Map();
+  let sortMode = "sales";
+  const expanded = new Set();
+
+  const el = id => document.getElementById(id);
+  const tooltip = el("tooltip");
+
+  // 대시보드 전체에서 표시하지 않을 대분류
+  const HIDDEN_MAIN_CATEGORIES = new Set([
+    "04. 문구팬시"
+  ]);
+
+  function isHiddenMainCategory(value){
+    return HIDDEN_MAIN_CATEGORIES.has(String(value || "").trim());
+  }
+
+  function esc(text){
+    return String(text ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  }
+  function n(v){ return Number(v || 0); }
+  function fmt(v){ return Number(v || 0).toLocaleString("ko-KR"); }
+  function normalizeKey(v){ return String(v ?? "").replace(/\.0$/,"").replace(/\s+/g,"").trim().toLowerCase(); }
+  function isBlankDateValue(value){
+    const text = String(value ?? "").trim();
+    if(!text) return true;
+    const lowered = text.toLowerCase();
+    return lowered === "null" || lowered === "undefined" || lowered === "nan" || lowered === "nat" || lowered === "none";
+  }
+
+  function isValidYmd(value){
+    const text = String(value ?? "").trim().slice(0,10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(text);
+  }
+
+  function isPubDateMissingProduct(product){
+    if(!product) return true;
+    if(product.ageForceOld) return true;
+    if(String(product.baseDateSource || "").includes("출판일자없음")) return true;
+    if(product.ageStatus === "구간" && isBlankDateValue(product.firstDate) && isBlankDateValue(product.firstShipDate)) return true;
+    return false;
+  }
+
+  function isForcedOldTitle(title){
+    // HTML 강제 보정: 도서명에 '00]'이 포함되면 출간일/첫판매일 계산과 무관하게 구간 처리합니다.
+    const text = String(title ?? "");
+    return text.includes("00]");
+  }
+  function normalizeClientName(v){
+    const s = String(v ?? "").replace(/\s+/g,"").toLowerCase();
+    if(!s) return "";
+    if(s.includes("교보")) return "교보문고";
+    if(s.includes("영풍")) return "영풍문고";
+    if(s.includes("yes24") || s.includes("예스24") || s.includes("예스")) return "예스24";
+    if(s.includes("aladin") || s.includes("알라딘")) return "알라딘";
+    return String(v ?? "").trim();
+  }
+  function parseDate(s){ const [y,m,d]=String(s).slice(0,10).split("-").map(Number); return new Date(y,m-1,d); }
+  function dateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+  function addDays(dateStrValue, days){ const d=parseDate(dateStrValue); d.setDate(d.getDate()+days); return dateStr(d); }
+  function compactDate(s){ return String(s).slice(5).replace("-","/"); }
+  function between(date,start,end){ return String(date)>=String(start) && String(date)<=String(end); }
+  function daysBetween(a,b){ return Math.floor((parseDate(a)-parseDate(b))/(24*3600*1000)); }
+  function todayStr(){ return dateStr(new Date()); }
+  function periodLabel(start,end){
+    return start === end ? compactDate(start) : `${compactDate(start)}~${compactDate(end)}`;
+  }
+
+  function normalizeSalesRows(src){
+    return (src || []).map(r=>{
+      if(Array.isArray(r)){
+        return {
+          date:String(r[0]||"").slice(0,10),
+          div:r[1]||"",
+          main:r[2]||"",
+          mid:r[3]||"",
+          code:String(r[4]||"").replace(/\.0$/,""),
+          title:r[5]||"",
+          isbn:r[6]||"",
+          client:normalizeClientName(r[7]||r[8]||""),
+          channel:r[8]||"",
+          qty:Number(r[9]||0)
+        };
+      }
+      return {
+        date:String(r.date||"").slice(0,10),
+        div:r.div||"",
+        main:r.mainCat||r.main||"",
+        mid:r.midCat||r.mid||"",
+        code:String(r.prodCode||r.code||"").replace(/\.0$/,""),
+        title:r.prodName||r.title||"",
+        isbn:r.isbn||"",
+        client:normalizeClientName(r.client||r.store||r.clientName||r.account||""),
+        channel:r.channel||"",
+        qty:Number(r.qty||0)
+      };
+    }).filter(r=>r.date && r.code && r.qty);
+  }
+
+  function normalizeProducts(src){
+    return (src || []).map(p=>({
+      code:String(p.code||p.prodCode||"").replace(/\.0$/,""),
+      name:p.name||p.title||p.prodName||"",
+      firstDate:String(p.firstShipDate||p.firstDate||p.pubDate||"").slice(0,10),
+      firstShipDate:String(p.firstShipDate||p.firstDate||p.pubDate||"").slice(0,10),
+      ageStatus:p.ageStatus||"",
+      ageForceOld:!!p.ageForceOld,
+      baseDateSource:p.baseDateSource||""
+    })).filter(p=>p.code);
+  }
+
+  function applyLatestProductNamesInHtml(rowList, productList){
+    const latestByCode = new Map();
+
+    (rowList || []).forEach(row=>{
+      const code = String(row.code || "").replace(/\.0$/,"").trim();
+      const date = String(row.date || "").slice(0,10);
+      const title = String(row.title || "").trim();
+
+      if(!code || !date || !title) return;
+
+      const current = latestByCode.get(code);
+      if(!current || date > current.date){
+        latestByCode.set(code, {date, title});
+      }
+    });
+
+    // 과거 판매행도 화면 안에서는 최신 도서명으로 통일합니다.
+    (rowList || []).forEach(row=>{
+      const code = String(row.code || "").replace(/\.0$/,"").trim();
+      const latest = latestByCode.get(code);
+      if(latest && latest.title) row.title = latest.title;
+    });
+
+    // 제품 목록의 대표 도서명도 같은 최신 이름으로 통일합니다.
+    (productList || []).forEach(product=>{
+      const code = String(product.code || "").replace(/\.0$/,"").trim();
+      const latest = latestByCode.get(code);
+      if(latest && latest.title) product.name = latest.title;
+    });
+  }
+
+  function productForBook(code, title){
+    const codeKey = normalizeKey(code);
+    const titleKey = normalizeKey(title);
+    let p = products.find(x => normalizeKey(x.code) === codeKey);
+    if(p) return p;
+    if(titleKey) return products.find(x => normalizeKey(x.name) === titleKey) || null;
+    return null;
+  }
+
+  function inferRecordEnd(record){
+    // 모든 마케팅은 저장된 시작일~종료일 기준으로 판단한다.
+    // 과거에 저장된 바이럴 데이터처럼 종료일이 비어 있으면 하루짜리로 보정한다.
+    return record.end || record.start;
+  }
+
+  function typeText(record){
+    return record.type === "viral" ? "바이럴 마케팅" : "서점 마케팅";
+  }
+
+  function isRecordActive(record, 기준일){
+    if(!record.start || !기준일) return false;
+    const end = inferRecordEnd(record);
+    return between(기준일, record.start, end);
+  }
+
+  function recordHasBook(record, code, title){
+    const codeKey = normalizeKey(code);
+    const titleKey = normalizeKey(title);
+    return (record.books || []).some(b=>{
+      const bCode = normalizeKey(b.code);
+      const bItem = normalizeKey(b.itemCode);
+      const bTitle = normalizeKey(b.title);
+
+      // 중요:
+      // 마케팅 대상 도서는 제품코드 또는 도서명 "정확히 일치"할 때만 매칭한다.
+      // 제품코드 앞자리/품목코드 prefix 매칭을 허용하면
+      // 흔한남매21과 흔한남매21_스페셜에디션처럼 비슷한 코드의 다른 도서가 같이 잡힐 수 있다.
+      if(codeKey && bCode && codeKey === bCode) return true;
+      if(codeKey && bItem && codeKey === bItem) return true;
+      if(titleKey && bTitle && titleKey === bTitle) return true;
+      return false;
+    });
+  }
+
+  function activeMarketingForBook(code,title,기준일){
+    return records.filter(r=>isRecordActive(r,기준일) && recordHasBook(r,code,title));
+  }
+
+  function marketingRecordsForBookRange(code, title, startDate, endDate){
+    return records.filter(r => {
+      if(!recordHasBook(r, code, title)) return false;
+      if(!r.start) return false;
+      const rEnd = inferRecordEnd(r);
+      // 마케팅 기간과 현재 대시보드 조회 기간이 하루라도 겹치면 태그 표시
+      return String(r.start) <= String(endDate) && String(rEnd) >= String(startDate);
+    });
+  }
+
+  function rowMatchesBook(row, code, title){
+    const codeKey = normalizeKey(code);
+    const titleKey = normalizeKey(title);
+    const rowCode = normalizeKey(row.code);
+    const rowTitle = normalizeKey(row.title);
+
+    // 거래처별 판매 툴팁도 제품코드/도서명 정확히 일치 기준으로만 집계한다.
+    if(codeKey && rowCode && codeKey === rowCode) return true;
+    if(titleKey && rowTitle && titleKey === rowTitle) return true;
+    return false;
+  }
+
+  function storeName(row){
+    const text = normalizeClientName(row.client || row.channel || "기타");
+    return text || "기타";
+  }
+
+  function salesDetailKey(code, date){
+    return `${date}|${normalizeKey(code)}`;
+  }
+
+  function rebuildSalesDetailMap(frows){
+    const detailMap = new Map();
+
+    frows.forEach(r=>{
+      const key = salesDetailKey(r.code, r.date);
+      if(!detailMap.has(key)) detailMap.set(key, new Map());
+
+      const storeMap = detailMap.get(key);
+      const s = storeName(r);
+      storeMap.set(s, (storeMap.get(s) || 0) + n(r.qty));
+    });
+
+    currentSalesDetailMap = detailMap;
+  }
+
+  function salesTooltipForBookDates(code, title, label, dates){
+    const merged = new Map();
+
+    (dates || []).forEach(date => {
+      const storeMap = currentSalesDetailMap.get(salesDetailKey(code, date));
+      if(!storeMap || !storeMap.size) return;
+      storeMap.forEach((qty, store) => {
+        merged.set(store, (merged.get(store) || 0) + n(qty));
+      });
+    });
+
+    if(!merged.size) return "";
+
+    const list = [...merged.entries()].sort((a,b)=>b[1]-a[1]);
+    const total = list.reduce((a,b)=>a+b[1],0);
+
+    return `${label} 판매 내역\n${title}\n\n` +
+      list.map(([store, qty]) => `${store}: ${fmt(qty)}부`).join("\n") +
+      `\n\n합계: ${fmt(total)}부`;
+  }
+
+  function salesTooltipForBookDate(code, title, date){
+    return salesTooltipForBookDates(code, title, date, [date]);
+  }
+
+  function rowMatchesSalesScope(row, scopeType, main, mid, age){
+    if(scopeType === "main") return row.main === main;
+    if(scopeType === "mid") return row.main === main && row.mid === mid;
+    if(scopeType === "age"){
+      if(row.main !== main || row.mid !== mid) return false;
+      const meta = currentBookMetaMap.get(normalizeKey(row.code));
+      return !!meta && meta.newOld === age;
+    }
+    return false;
+  }
+
+  function salesTooltipForScopeDates(scopeType, main, mid, age, title, label, dates){
+    const merged = new Map();
+
+    currentFilteredRowsCache.forEach(row=>{
+      if(!(dates || []).includes(row.date)) return;
+      if(!rowMatchesSalesScope(row, scopeType, main, mid, age)) return;
+
+      const store = storeName(row);
+      merged.set(store, (merged.get(store) || 0) + n(row.qty));
+    });
+
+    if(!merged.size) return "";
+
+    const list = [...merged.entries()].sort((a,b)=>b[1]-a[1]);
+    const total = list.reduce((a,b)=>a+b[1],0);
+
+    return `${label} 판매 내역\n${title}\n\n` +
+      list.map(([store, qty]) => `${store}: ${fmt(qty)}부`).join("\n") +
+      `\n\n합계: ${fmt(total)}부`;
+  }
+
+  function marketingRecordsForBookDate(code, title, date){
+    return records.filter(r => {
+      if(!recordHasBook(r, code, title)) return false;
+      if(!r.start) return false;
+      const end = inferRecordEnd(r);
+      return between(date, r.start, end);
+    });
+  }
+
+  function marketingTooltip(markets, 기준일){
+    if(!markets.length) return "";
+    return markets.map(r=>{
+      const end = inferRecordEnd(r);
+      const sub = r.type === "viral" ? "전체" : (r.sub || "-");
+      return `${typeText(r)} · ${sub}\n${r.name}\n기간: ${r.start} ~ ${end}`;
+    }).join("\n\n");
+  }
+
+  function init(){
+    const salesOk = rows.length > 0;
+    el("salesStatus").textContent = salesOk ? `실판매 ${fmt(rows.length)}행 연결` : "실판매 데이터 없음";
+    el("salesStatus").className = salesOk ? "badge green" : "badge red";
+
+    el("marketingStatus").textContent = `마케팅 ${fmt(records.length)}건 연결`;
+    el("marketingStatus").className = records.length ? "badge green" : "badge yellow";
+
+    products.forEach(p=>{
+      productNameMap.set(normalizeKey(p.code), p.name);
+      if (p.name) productNameMap.set("TITLE|" + normalizeKey(p.name), p.firstDate || "");
+    });
+    rows.forEach(r=>{
+      if(!productNameMap.has(normalizeKey(r.code))) productNameMap.set(normalizeKey(r.code), r.title);
+    });
+
+    setDateDefaults();
+    fillFilters();
+    bindSectionToggles();
+    bindEvents();
+    render();
+  }
+
+  function bindSectionToggles(){
+    document.querySelectorAll(".card-hd.section-toggle").forEach(header=>{
+      header.addEventListener("click", e=>{
+        if(e.target.closest("button, a, input, select, textarea, label")) return;
+        const targetId = header.dataset.target;
+        const body = targetId ? document.getElementById(targetId) : null;
+        const card = header.closest(".card");
+        if(!body || !card) return;
+
+        const collapsed = card.classList.toggle("collapsed");
+        body.style.display = collapsed ? "none" : "";
+        header.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      });
+    });
+  }
+
+  function setDateDefaults(){
+    const dates = [...new Set(rows.map(r=>r.date))].sort();
+    if(!dates.length) return;
+    // 최초 실행 기본 조회 기간: 최근 30일치 실판매 데이터
+    el("startDate").value = dates[Math.max(0, dates.length-30)];
+    el("endDate").value = dates[dates.length-1];
+  }
+
+  function fillFilters(){
+    const mains = [...new Set(
+      rows.map(r=>r.main).filter(v => v && !isHiddenMainCategory(v))
+    )].sort();
+    el("mainFilter").innerHTML = `<option value="전체">전체</option>` + mains.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    refreshMidFilter();
+  }
+
+  function refreshMidFilter(){
+    const main = el("mainFilter").value;
+    const mids = [...new Set(rows.filter(r=>main==="전체" || r.main===main).map(r=>r.mid).filter(Boolean))].sort();
+    const cur = el("midFilter").value;
+    el("midFilter").innerHTML = `<option value="전체">전체</option>` + mids.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    if(mids.includes(cur)) el("midFilter").value = cur;
+  }
+
+  function bindEvents(){
+    ["startDate","endDate"].forEach(id=>{
+      const node = el(id);
+      if(node && node.showPicker){
+        node.addEventListener("click", ()=>node.showPicker());
+      }
+    });
+    ["startDate","endDate","periodMode","clientFilter","mainFilter","midFilter","ageFilter","bookSearch"].forEach(id=>{
+      el(id).addEventListener(id==="bookSearch" ? "input" : "change", ()=>{
+        if(id==="mainFilter") refreshMidFilter();
+        render();
+      });
+    });
+    document.querySelectorAll("[data-sort-mode]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        sortMode = btn.dataset.sortMode || "sales";
+        updateSortButtons();
+        render();
+      });
+    });
+    // 툴팁은 마우스를 따라다니지 않고, 대상 숫자/도서명 셀의 좌우 상단에 고정 배치합니다.
+    // 표 하단에서는 툴팁이 화면 밖으로 잘리지 않도록 자동으로 위쪽에 띄웁니다.
+  }
+
+  function updateSortButtons(){
+    document.querySelectorAll("[data-sort-mode]").forEach(btn=>{
+      btn.classList.toggle("active", (btn.dataset.sortMode || "sales") === sortMode);
+    });
+  }
+
+
+  function placeTooltipNear(node){
+    if(!node) return;
+
+    // 먼저 보이게 한 뒤 실제 크기를 재서 위치를 계산합니다.
+    tooltip.style.display = "block";
+    tooltip.style.left = "0px";
+    tooltip.style.top = "-9999px";
+
+    const rect = node.getBoundingClientRect();
+    const gap = 10;
+    const margin = 8;
+    const tw = tooltip.offsetWidth || 420;
+    const th = tooltip.offsetHeight || 140;
+
+    let left;
+    const rightSpace = window.innerWidth - rect.right;
+    const leftSpace = rect.left;
+
+    // 기본은 숫자 오른쪽 위, 오른쪽 공간이 부족하면 왼쪽 위로 이동합니다.
+    if(rightSpace >= tw + gap + margin){
+      left = rect.right + gap;
+    }else if(leftSpace >= tw + gap + margin){
+      left = rect.left - tw - gap;
+    }else{
+      left = Math.max(margin, Math.min(rect.left, window.innerWidth - tw - margin));
+    }
+
+    // 기본은 대상 셀보다 위쪽. 위 공간이 부족할 때만 아래쪽으로 보냅니다.
+    let top = rect.top - th - gap;
+    if(top < margin){
+      top = rect.bottom + gap;
+    }
+    if(top + th > window.innerHeight - margin){
+      top = Math.max(margin, window.innerHeight - th - margin);
+    }
+
+    tooltip.style.left = Math.round(left) + "px";
+    tooltip.style.top = Math.round(top) + "px";
+  }
+
+  function currentFilteredRows(){
+    const start = el("startDate").value;
+    const end = el("endDate").value;
+    const client = el("clientFilter").value;
+    const main = el("mainFilter").value;
+    const mid = el("midFilter").value;
+    const q = normalizeKey(el("bookSearch").value);
+
+    return rows.filter(r=>{
+      if(isHiddenMainCategory(r.main)) return false;
+      if(start && r.date < start) return false;
+      if(end && r.date > end) return false;
+      if(client !== "전체" && normalizeClientName(r.client) !== client) return false;
+      if(main !== "전체" && r.main !== main) return false;
+      if(mid !== "전체" && r.mid !== mid) return false;
+      if(q && !normalizeKey(r.title).includes(q) && !normalizeKey(r.code).includes(q)) return false;
+      return true;
+    });
+  }
+
+  function isNewBook(code, title, dates){
+    if(isForcedOldTitle(title)) return false;
+
+    // HTML 안전장치:
+    // 출판일자가 비어 있는 제품은 파이썬 계산 결과나 첫 판매일과 무관하게 무조건 구간 처리합니다.
+    // sales_data.js의 products 안에 ageForceOld=true 또는 baseDateSource="출판일자없음"으로 들어온 경우를 우선 적용합니다.
+    const p = productForBook(code, title);
+    if(!p) return false;
+    if(isPubDateMissingProduct(p)) return false;
+
+    // 파이썬이 계산한 신간/구간 결과를 우선 사용합니다.
+    if(p.ageStatus === "구간") return false;
+    if(p.ageStatus === "신간") return true;
+
+    // 구버전 sales_data.js 호환용 보조 계산입니다.
+    const end = SALES_RAW.generatedDate || todayStr();
+    const firstDate = String(p.firstDate || p.firstShipDate || "").slice(0,10);
+    if(!isValidYmd(firstDate)) return false;
+
+    const days = Math.round((parseDate(end)-parseDate(firstDate))/(24*3600*1000));
+    return days >= 0 && days <= 365;
+  }
+
+  function firstDateForBook(code, title){
+    if(isForcedOldTitle(title)) return "";
+
+    const p = productForBook(code, title);
+    if(!p) return "";
+
+    // 출판일자 null/빈값 도서는 화면 날짜도 비워두고 구간 처리합니다.
+    if(isPubDateMissingProduct(p)) return "";
+
+    const firstDate = String(p.firstDate || p.firstShipDate || "").slice(0,10);
+    const today = SALES_RAW.generatedDate || todayStr();
+    if(!isValidYmd(firstDate)) return "";
+    if(firstDate > today) return "";
+    return firstDate;
+  }
+
+  function formatFirstShipDate(value){
+    const text = String(value ?? "").trim();
+    if(!text) return "";
+
+    // YYYY-MM-DD / YYYY.MM.DD / YYYY/MM/DD / YYYYMMDD 형태를 24.12.03으로 표시
+    let m = text.match(/^(\d{4})[-/.]?(\d{1,2})[-/.]?(\d{1,2})/);
+    if(!m) return "";
+
+    const year = Number(m[1]);
+    const month = Number(m[2]);
+    const day = Number(m[3]);
+    if(!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) return "";
+
+    return `${String(year).slice(2)}.${String(month).padStart(2,"0")}.${String(day).padStart(2,"0")}`;
+  }
+
+  function firstShipDateLabelForBook(code, title){
+    return formatFirstShipDate(firstDateForBook(code, title));
+  }
+
+  function aggregate(){
+    const frows = currentFilteredRows();
+    const dates = [...new Set(frows.map(r=>r.date))].sort();
+    rebuildSalesDetailMap(frows);
+    const map = new Map();
+
+    frows.forEach(r=>{
+      const key = normalizeKey(r.code);
+      if(!map.has(key)){
+        map.set(key,{
+          code:r.code, title:r.title, main:r.main, mid:r.mid, daily:{}, total:0
+        });
+      }
+      const item = map.get(key);
+      item.daily[r.date] = (item.daily[r.date] || 0) + n(r.qty);
+      item.total += n(r.qty);
+    });
+
+    let books = [...map.values()];
+    const 기준일 = el("endDate").value;
+
+    const 조회시작일 = el("startDate").value || (dates[0] || 기준일);
+    const 조회종료일 = el("endDate").value || (dates[dates.length - 1] || 기준일);
+
+    books.forEach(b=>{
+      // 기존에는 종료일 하루만 기준으로 마케팅 태그를 붙였으나,
+      // 이제는 현재 조회 기간과 마케팅 기간이 겹치면 태그를 붙인다.
+      // 그래야 마케팅 기간 판매수량 강조와 도서명 마케팅 태그가 서로 어긋나지 않는다.
+      b.marketing = marketingRecordsForBookRange(b.code,b.title,조회시작일,조회종료일);
+      b.marketingActive = b.marketing.length > 0;
+      b.firstDate = firstDateForBook(b.code, b.title);
+      b.newOld = isNewBook(b.code,b.title,dates) ? "신간" : "구간";
+    });
+
+    const age = el("ageFilter").value;
+    if(age !== "전체") books = books.filter(b=>b.newOld === age);
+
+    books.sort((a,b)=>{
+      if(a.marketingActive !== b.marketingActive) return a.marketingActive ? -1 : 1;
+      if(a.main !== b.main) return String(a.main).localeCompare(String(b.main),"ko");
+      if(a.mid !== b.mid) return String(a.mid).localeCompare(String(b.mid),"ko");
+      if(a.newOld !== b.newOld) return a.newOld === "신간" ? -1 : 1;
+      return compareBooksByCurrentSort(a,b);
+    });
+
+    return {books, dates, frows};
+  }
+
+  function compareBooksByCurrentSort(a,b){
+    if(sortMode === "date"){
+      const ad = a.firstDate || "0000-00-00";
+      const bd = b.firstDate || "0000-00-00";
+      if(ad !== bd) return String(bd).localeCompare(String(ad));
+      return b.total - a.total;
+    }
+    return b.total - a.total;
+  }
+
+  function render(){
+    const {books, dates, frows} = aggregate();
+    currentRenderedBooks = books;
+    currentRenderedDates = dates;
+    currentFilteredRowsCache = frows;
+    currentBookMetaMap = new Map(books.map(b => [normalizeKey(b.code), {
+      newOld:b.newOld,
+      title:b.title,
+      main:b.main,
+      mid:b.mid,
+      firstDate:b.firstDate || ""
+    }]));
+    updateSortButtons();
+    renderJumpBooks(books, dates);
+    renderTrendChart(books, dates);
+    renderTable(books, dates);
+    renderDebug(books);
+  }
+
+  function renderJumpBooks(books, dates){
+    // 상단 급증 도서는 조회기간 전체가 아니라
+    // sales_data.js에 들어 있는 가장 최근 판매기준일 1일만 판단합니다.
+    const sourceRows = (currentFilteredRowsCache && currentFilteredRowsCache.length) ? currentFilteredRowsCache : rows;
+    const allDates = [...new Set(sourceRows.map(r=>r.date).filter(Boolean))].sort();
+    const targetDate = allDates[allDates.length - 1] || "";
+
+    if(!targetDate){
+      el("jumpAlertMeta").textContent = "판단할 최신 실판매일이 없습니다.";
+      el("jumpBookGrid").innerHTML = `<div class="jump-empty" style="grid-column:1/-1;">실판매 데이터가 없습니다.</div>`;
+      return;
+    }
+
+    // 최신 판매일 이전의 최근 5개 평일을 비교 기준으로 사용합니다.
+    const previousWeekdays = allDates
+      .filter(d => d < targetDate && !isWeekendDate(d))
+      .sort((a,b)=>String(b).localeCompare(String(a)))
+      .slice(0,5)
+      .sort();
+
+    const bookMap = new Map();
+
+    // 현재 조회 조건에 맞는 rows를 제품코드 기준으로 다시 묶어
+    // 최신 판매일 판매량과 이전 5개 평일 판매량을 계산합니다.
+    sourceRows.forEach(r=>{
+      const codeKey = normalizeKey(r.code);
+      if(!codeKey) return;
+
+      if(!bookMap.has(codeKey)){
+        bookMap.set(codeKey,{
+          code:r.code,
+          title:r.title,
+          main:r.main,
+          mid:r.mid,
+          firstDate:"",
+          daily:{},
+          storesByDate:{}
+        });
+      }
+
+      const item = bookMap.get(codeKey);
+      item.title = r.title || item.title;
+      item.main = r.main || item.main;
+      item.mid = r.mid || item.mid;
+      const metaBook = currentBookMetaMap.get(codeKey);
+      if(metaBook && metaBook.firstDate) item.firstDate = metaBook.firstDate;
+      item.daily[r.date] = (item.daily[r.date] || 0) + n(r.qty);
+
+      const store = storeName(r);
+      if(!item.storesByDate[r.date]) item.storesByDate[r.date] = {};
+      item.storesByDate[r.date][store] = (item.storesByDate[r.date][store] || 0) + n(r.qty);
+    });
+
+    const events = [];
+
+    bookMap.forEach(book=>{
+      const targetQty = n(book.daily[targetDate] || 0);
+      if(targetQty <= 0) return;
+
+      const baseValues = previousWeekdays.map(d => n(book.daily[d] || 0));
+      const avg = baseValues.length
+        ? baseValues.reduce((a,b)=>a+b,0) / baseValues.length
+        : 0;
+
+      const increase = targetQty - avg;
+      const ratio = avg > 0 ? targetQty / avg : Infinity;
+      const isJump = targetQty >= avg * 3 && increase >= 10;
+
+      if(!isJump) return;
+
+      const storeMap = book.storesByDate[targetDate] || {};
+      const stores = Object.entries(storeMap).sort((a,b)=>b[1]-a[1]);
+
+      events.push({
+        book,
+        targetQty,
+        avg,
+        increase,
+        ratio,
+        stores
+      });
+    });
+
+    events.sort((a,b)=>{
+      if((b.ratio || 0) !== (a.ratio || 0)) return (b.ratio || 0) - (a.ratio || 0);
+      if((b.increase || 0) !== (a.increase || 0)) return (b.increase || 0) - (a.increase || 0);
+      return (b.targetQty || 0) - (a.targetQty || 0);
+    });
+
+    const visible = events.slice(0,10);
+    const weekdayLabel = previousWeekdays.length
+      ? `${previousWeekdays[0]} ~ ${previousWeekdays[previousWeekdays.length-1]} 중 최근 ${previousWeekdays.length}개 평일`
+      : "이전 평일 데이터 없음";
+
+    el("jumpAlertMeta").innerHTML = events.length
+      ? `<span class="badge yellow">🚀 ${fmt(events.length)}종 감지</span><span>판단일 ${esc(targetDate)} · 비교기준 ${esc(weekdayLabel)} · 직전 5개 평일 평균의 3배 이상 + 10부 이상 증가</span>`
+      : `<span>판단일 ${esc(targetDate)} · 비교기준 ${esc(weekdayLabel)} · 급증 조건에 해당하는 도서가 없습니다.</span>`;
+
+    if(!visible.length){
+      el("jumpBookGrid").innerHTML = `<div class="jump-empty" style="grid-column:1/-1;">${esc(targetDate)} 판매량 기준 급증 도서가 없습니다.</div>`;
+      return;
+    }
+
+    el("jumpBookGrid").innerHTML = visible.map((item,index)=>{
+      const ratioText = Number.isFinite(item.ratio)
+        ? `${item.ratio.toLocaleString("ko-KR",{maximumFractionDigits:1})}배`
+        : "신규 급증";
+
+      const storeHtml = item.stores.length
+        ? `<div class="jump-store-list">` + item.stores.map(([store, qty]) => `
+            <div class="jump-store-item">
+              <span class="jump-store-name">${esc(store)}</span>
+              <span class="jump-store-qty">${fmt(qty)}부</span>
+            </div>
+          `).join("") + `</div>`
+        : "";
+
+      return `
+        <article class="jump-book-card" data-chart-code="${esc(item.book.code)}" title="클릭하면 실판매 추이 그래프를 확인할 수 있습니다.">
+          <div class="jump-card-body">
+            <div class="jump-card-head">
+              <span class="jump-rank">${index+1}</span>
+              <div class="jump-card-title-wrap">
+                <div class="jump-title">${esc(item.book.title)}</div>
+                <div class="jump-book-meta-line">
+                  <div class="jump-cat">${esc(item.book.main || "미분류")} · ${esc(item.book.mid || "미분류")}</div>
+                  <div class="jump-first-date">첫 출간일 ${esc(item.book.firstDate || "-")}</div>
+                </div>
+              </div>
+              <span class="jump-date">${esc(targetDate)}</span>
+            </div>
+            <div class="jump-summary-row">
+              <div class="jump-mini-metric metric-sales">
+                <div class="k">전일 판매</div>
+                <div class="v">${fmt(item.targetQty)}부</div>
+              </div>
+              <div class="jump-mini-metric metric-avg">
+                <div class="k">최근 5개 평일 평균</div>
+                <div class="v">${item.avg.toLocaleString("ko-KR",{maximumFractionDigits:1})}부</div>
+              </div>
+              <div class="jump-mini-metric metric-ratio accent">
+                <div class="k">급증 정도</div>
+                <div class="v">${esc(ratioText)} · +${item.increase.toLocaleString("ko-KR",{maximumFractionDigits:1})}부</div>
+              </div>
+              ${item.stores.length ? `<div class="jump-store-list">` + item.stores.map(([store, qty]) => `
+                <div class="jump-store-item">
+                  <span class="jump-store-name">${esc(store)}</span>
+                  <span class="jump-store-qty">${fmt(qty)}부</span>
+                </div>
+              `).join("") + `</div>` : ""}
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderTrendChart(books, dates){
+    const periods = buildDisplayPeriods(dates);
+    const values = groupDailyTotalsFromBooks(books, periods);
+    const labels = periods.map(p => p.label);
+    const tipLabels = periods.map(p => p.tipLabel);
+    const series = periods.map(p => values[p.key] || 0);
+    const total = series.reduce((a,b)=>a+b,0);
+    const maxVal = series.length ? Math.max(...series) : 0;
+    const avg = series.length ? total / series.length : 0;
+    const mode = el("periodMode") ? el("periodMode").value : "daily";
+    const modeText = mode === "daily" ? "일별" : `${mode}일 단위`;
+    const start = el("startDate").value || (dates[0] || "-");
+    const end = el("endDate").value || (dates[dates.length-1] || "-");
+
+    el("trendMeta").innerHTML = `
+      <span class="badge">${esc(modeText)}</span>
+      <span>기간 ${esc(start)} ~ ${esc(end)}</span>
+      <span>합계 ${fmt(total)}부</span>
+      <span>평균 ${avg.toLocaleString("ko-KR",{maximumFractionDigits:1})}부</span>
+      <span>최고 ${fmt(maxVal)}부</span>
+    `;
+
+    el("trendChartArea").innerHTML = renderTrendLineChartSvg(labels, tipLabels, series);
+  }
+
+  function renderTrendLineChartSvg(labels, tipLabels, values){
+    if(!labels.length){
+      return `<div class="trend-empty">현재 선택한 조건에 표시할 실판매 데이터가 없습니다.</div>`;
+    }
+
+    const width = 1440;
+    const height = 320;
+    const left = 66;
+    const right = 32;
+    const top = 30;
+    const bottom = 58;
+    const plotW = width - left - right;
+    const plotH = height - top - bottom;
+    const maxVal = Math.max(...values, 1);
+    const stepX = labels.length > 1 ? plotW / (labels.length - 1) : plotW;
+    const x = i => left + (labels.length > 1 ? i * stepX : plotW / 2);
+    const y = v => top + plotH - (v / maxVal) * plotH;
+    const points = values.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+    const areaPoints = `${left},${top+plotH} ${points} ${x(values.length-1)},${top+plotH}`;
+
+    const gridLines = [];
+    for(let i=0;i<=4;i++){
+      const gy = top + (plotH/4)*i;
+      const gv = Math.round(maxVal - (maxVal/4)*i);
+      gridLines.push(`
+        <line x1="${left}" y1="${gy}" x2="${width-right}" y2="${gy}" stroke="#21304a" stroke-width="1"/>
+        <text x="${left-12}" y="${gy+4}" text-anchor="end" fill="#8fa6c9" font-size="11">${fmt(gv)}</text>
+      `);
+    }
+
+    const labelEvery = Math.max(1, Math.ceil(labels.length / 18));
+    const xLabels = labels.map((label,i)=>{
+      if(i % labelEvery !== 0 && i !== labels.length-1) return "";
+      return `<text x="${x(i)}" y="${height-25}" text-anchor="middle" fill="#8fa6c9" font-size="11">${esc(label)}</text>`;
+    }).join("");
+
+    const circles = values.map((v,i)=>{
+      const r = v > 0 ? 4.5 : 3;
+      return `<circle cx="${x(i)}" cy="${y(v)}" r="${r}" fill="#ffd35a" stroke="#081120" stroke-width="2"><title>${esc(tipLabels[i])}: ${fmt(v)}부</title></circle>`;
+    }).join("");
+
+    return `
+      <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="선택 기간 실판매 추이">
+        <rect x="0" y="0" width="${width}" height="${height}" rx="12" fill="#081120"/>
+        ${gridLines.join("")}
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}" stroke="#385071" stroke-width="1.2"/>
+        <line x1="${left}" y1="${top+plotH}" x2="${width-right}" y2="${top+plotH}" stroke="#385071" stroke-width="1.2"/>
+        <polygon points="${areaPoints}" fill="rgba(78,161,255,.13)"/>
+        <polyline points="${points}" fill="none" stroke="#4ea1ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        ${circles}
+        ${xLabels}
+      </svg>
+    `;
+  }
+
+  function renderKpis(books, frows){
+    const total = books.reduce((a,b)=>a+n(b.total),0);
+    const active = books.filter(b=>b.marketingActive);
+    const activeTotal = active.reduce((a,b)=>a+b.total,0);
+    const dateCount = new Set(frows.map(r=>r.date)).size;
+    el("kpiArea").innerHTML = `
+      <div class="kpi primary"><div class="label">총 실판매</div><div class="value">${fmt(total)}</div><div class="note">선택 기간 합계</div></div>
+      <div class="kpi green"><div class="label">판매 도서 수</div><div class="value">${fmt(books.length)}</div><div class="note">제품코드 기준</div></div>
+      <div class="kpi yellow"><div class="label">마케팅 집행 도서</div><div class="value">${fmt(active.length)}</div><div class="note">조회 기간 겹침 기준</div></div>
+      <div class="kpi orange"><div class="label">마케팅 도서 판매</div><div class="value">${fmt(activeTotal)}</div><div class="note">선택 기간 판매</div></div>
+      <div class="kpi red"><div class="label">분석 일수</div><div class="value">${fmt(dateCount)}</div><div class="note">일자 수</div></div>
+    `;
+  }
+
+  function groupBooks(books){
+    const groups = new Map();
+    books.forEach(b=>{
+      const main = b.main || "미분류";
+      const mid = b.mid || "미분류";
+      const age = b.newOld || "구간";
+      if(!groups.has(main)) groups.set(main,new Map());
+      if(!groups.get(main).has(mid)) groups.get(main).set(mid,new Map());
+      if(!groups.get(main).get(mid).has(age)) groups.get(main).get(mid).set(age,[]);
+      groups.get(main).get(mid).get(age).push(b);
+    });
+    return groups;
+  }
+
+  function groupStatsFromMidMap(midMap){
+    const books = [...midMap.values()].flatMap(ageMap => [...ageMap.values()].flat());
+    return {
+      total: books.reduce((a,b)=>a+b.total,0),
+      count: books.length,
+      marketingCount: books.filter(b=>b.marketingActive).length
+    };
+  }
+
+  function groupStatsFromAgeMap(ageMap){
+    const books = [...ageMap.values()].flat();
+    return {
+      total: books.reduce((a,b)=>a+b.total,0),
+      count: books.length,
+      marketingCount: books.filter(b=>b.marketingActive).length
+    };
+  }
+
+  function groupStatsFromList(list){
+    return {
+      total: list.reduce((a,b)=>a+b.total,0),
+      count: list.length,
+      marketingCount: list.filter(b=>b.marketingActive).length
+    };
+  }
+
+  function buildDisplayPeriods(dates, order="asc"){
+    const mode = el("periodMode") ? el("periodMode").value : "daily";
+    const sortedDates = [...dates].sort();
+
+    if(mode === "daily"){
+      const dailyPeriods = sortedDates.map(d => ({
+        key:d,
+        start:d,
+        end:d,
+        label:compactDate(d),
+        tipLabel:d,
+        dates:[d]
+      }));
+      return order === "desc" ? dailyPeriods.reverse() : dailyPeriods;
+    }
+
+    const size = Number(mode || 1);
+    const anchor = todayStr();
+    const periodMap = new Map();
+
+    sortedDates.forEach(d => {
+      let diff = daysBetween(anchor, d);
+      if(!Number.isFinite(diff)) diff = 0;
+      const bucket = Math.max(0, Math.floor(diff / size));
+      const end = addDays(anchor, -bucket * size);
+      const start = addDays(end, -(size - 1));
+      const key = `${start}|${end}`;
+
+      if(!periodMap.has(key)){
+        periodMap.set(key, {
+          key,
+          start,
+          end,
+          label:periodLabel(start,end),
+          tipLabel:`${start} ~ ${end}`,
+          dates:[]
+        });
+      }
+      periodMap.get(key).dates.push(d);
+    });
+
+    const periodList = [...periodMap.values()].sort((a,b)=>String(a.start).localeCompare(String(b.start)));
+    return order === "desc" ? periodList.reverse() : periodList;
+  }
+
+  function groupDailyTotalsFromBooks(bookList, periods){
+    const totals = {};
+    periods.forEach(p => totals[p.key] = 0);
+    bookList.forEach(b => {
+      periods.forEach(p => {
+        totals[p.key] += p.dates.reduce((sum,d)=>sum + n((b.daily || {})[d] || 0), 0);
+      });
+    });
+    return totals;
+  }
+
+  // 필요 시 아래 배열에 YYYY-MM-DD 형식으로 공휴일을 직접 추가하면
+  // 날짜 헤더에 공휴일 색상이 함께 적용됩니다.
+  const MANUAL_HOLIDAY_DATES = new Set([
+    // "2026-01-01",
+    // "2026-03-01",
+    // "2026-05-05"
+  ]);
+
+  function weekdayLabel(dateValue){
+    const labels = ["일","월","화","수","목","금","토"];
+    const day = parseDate(dateValue).getDay();
+    return `(${labels[day] || ""})`;
+  }
+
+  function isHolidayDate(dateValue){
+    const d = String(dateValue || "").slice(0,10);
+    return MANUAL_HOLIDAY_DATES.has(d);
+  }
+
+  function dateColumnClass(dateValue){
+    const day = parseDate(dateValue).getDay();
+    let cls = "date-cell";
+    if(day === 6) cls += " weekend-sat";
+    if(day === 0) cls += " weekend-sun";
+    if(isHolidayDate(dateValue)) cls += " holiday";
+    return cls;
+  }
+
+  function isWeekendDate(dateValue){
+    const day = parseDate(dateValue).getDay();
+    return day === 0 || day === 6;
+  }
+
+  function weekdayJumpInfoForBook(book, baseDates){
+    // 공통 판매 급증 기준
+    // 각 날짜의 판매량을 그 날짜 직전 최근 5개 평일 평균과 비교합니다.
+    // 판단 대상 날짜는 주말도 포함하지만, 비교 평균은 평일만 사용합니다.
+    const allDates = [...new Set(rows.map(r=>r.date).filter(Boolean))].sort();
+    const targetDates = [...baseDates].sort();
+    const jumpDates = new Set();
+    const infoByDate = new Map();
+
+    targetDates.forEach(d => {
+      const previousWeekdays = allDates
+        .filter(x => x < d && !isWeekendDate(x))
+        .sort((a,b)=>String(b).localeCompare(String(a)))
+        .slice(0,5)
+        .sort();
+
+      if(!previousWeekdays.length) return;
+
+      const baseValues = previousWeekdays.map(x => n((book.daily || {})[x] || 0));
+      const avg = baseValues.reduce((a,b)=>a+b,0) / baseValues.length;
+      const value = n((book.daily || {})[d] || 0);
+      const increase = value - avg;
+      const ratio = avg > 0 ? value / avg : (value >= 10 ? Infinity : 0);
+      const isJump = value > 0 && value >= avg * 3 && increase >= 10;
+
+      if(isJump){
+        jumpDates.add(d);
+        infoByDate.set(d, {
+          date:d,
+          value,
+          avg,
+          increase,
+          ratio,
+          baseDates:previousWeekdays
+        });
+      }
+    });
+
+    return {avg:0, jumpDates, infoByDate};
+  }
+
+  function jumpTooltipForPeriod(jumpInfo, dates){
+    const items = (dates || []).map(d => jumpInfo.infoByDate.get(d)).filter(Boolean);
+    if(!items.length) return "";
+    return "🚀 판매량 급증 감지\n" + items.map(info => {
+      const ratioText = Number.isFinite(info.ratio)
+        ? `${info.ratio.toLocaleString("ko-KR",{maximumFractionDigits:1})}배`
+        : "신규 급증";
+      const baseLabel = (info.baseDates || []).join(", ");
+      return `${info.date}: ${fmt(info.value)}부 / 직전 5개 평일 평균 ${info.avg.toLocaleString("ko-KR",{maximumFractionDigits:1})}부 / 평균 대비 ${ratioText}${baseLabel ? `\n비교일: ${baseLabel}` : ""}`;
+    }).join("\n\n");
+  }
+
+  function booksFromMidMap(midMap){
+    return [...midMap.values()].flatMap(ageMap => [...ageMap.values()].flat());
+  }
+
+  function booksFromAgeMap(ageMap){
+    return [...ageMap.values()].flat();
+  }
+
+  function renderDailyTotalCells(bookList, periods, rowClass, salesMeta){
+    const totals = groupDailyTotalsFromBooks(bookList, periods);
+    return periods.map(p => {
+      const v = totals[p.key] || 0;
+      const baseDate = (p.dates && p.dates[0]) || p.start || "";
+      const dateCls = dateColumnClass(baseDate).replace(/^date-cell\s*/,"").trim();
+      const salesAttr = (v && salesMeta)
+        ? ` data-sales-scope="${esc(salesMeta.scope)}" data-sales-main="${esc(salesMeta.main || "")}" data-sales-mid="${esc(salesMeta.mid || "")}" data-sales-age="${esc(salesMeta.age || "")}" data-sales-title="${esc(salesMeta.title || "")}" data-sales-dates="${esc((p.dates || []).join(","))}" data-sales-label="${esc(p.tipLabel)}"`
+        : "";
+      const cls = `qty ${rowClass || ""} ${dateCls} ${v ? "" : "zero"}`.trim();
+      return `<td class="${cls}"${salesAttr}>${v ? fmt(v) : ""}</td>`;
+    }).join("");
+  }
+
+  function sortAgeEntries(entries){
+    const order = {"신간":0,"구간":1};
+    return entries.sort((a,b)=>(order[a[0]] ?? 9) - (order[b[0]] ?? 9));
+  }
+
+  function toggleKey(key){
+    if(expanded.has(key)) expanded.delete(key);
+    else expanded.add(key);
+
+    // 대분류/중분류/신간·구간을 펼칠 때는 제품 표만 다시 그립니다.
+    // 판매량 급증 도서, 실판매 추이, 전체 필터·집계는 다시 계산하지 않습니다.
+    renderTable(currentRenderedBooks, currentRenderedDates);
+  }
+
+  function groupMarketingBadge(count){
+    return count ? `<span class="group-badge">📣 ${count}종</span>` : "";
+  }
+
+  function renderTable(books, dates){
+    const groups = groupBooks(books);
+    // 표의 날짜 열은 왼쪽이 최신, 오른쪽이 오래된 날짜가 되도록 표시한다.
+    const periods = buildDisplayPeriods(dates, "desc");
+    const 조회시작일 = el("startDate").value || (dates[0] || "");
+    const 조회종료일 = el("endDate").value || (dates[dates.length - 1] || "");
+    const totalPeriodLabel = 조회시작일 && 조회종료일 ? `${compactDate(조회시작일)}~${compactDate(조회종료일)}` : "";
+    let html = `<thead><tr><th class="left name-col sticky-name">도서명</th><th class="total-col sticky-total">합계${totalPeriodLabel ? `<span class="total-period">${esc(totalPeriodLabel)}</span>` : ""}</th>`;
+    periods.forEach(p=>{
+      const headerDates = p.dates || [];
+      const baseDate = headerDates[0] || p.start || "";
+      const subLabel = (el("periodMode") ? el("periodMode").value : "daily") === "daily"
+        ? weekdayLabel(baseDate)
+        : `${compactDate(p.start)}~${compactDate(p.end)}`;
+      html += `<th class="${dateColumnClass(baseDate)}" title="${esc(p.tipLabel)}"><span class="date-head-wrap"><span class="date-head-main">${esc(p.label)}</span><span class="date-head-sub">${esc(subLabel)}</span></span></th>`;
+    });
+    html += `</tr></thead><tbody>`;
+
+    if(!books.length){
+      html += `<tr><td colspan="${periods.length+2}" class="left">조건에 맞는 데이터가 없습니다.</td></tr>`;
+    }
+
+    groups.forEach((midMap, main)=>{
+      const mainKey = `main|${main}`;
+      const mainOpen = expanded.has(mainKey);
+      const mainStats = groupStatsFromMidMap(midMap);
+      html += `<tr class="cat-row" data-toggle-key="${esc(mainKey)}">
+        <td class="left sticky-name">
+          <span class="tree-toggle"><span class="arrow">${mainOpen ? "▼" : "▶"}</span>${esc(main)} ${groupMarketingBadge(mainStats.marketingCount)}</span>
+        </td>
+        <td class="sticky-total qty"
+            data-sales-scope="main"
+            data-sales-main="${esc(main)}"
+            data-sales-title="${esc(main)}"
+            data-sales-dates="${esc(dates.join(","))}"
+            data-sales-label="${esc(totalPeriodLabel || "선택 기간 합계")}">${fmt(mainStats.total)}</td>${renderDailyTotalCells(booksFromMidMap(midMap), periods, "cat-total", {scope:"main", main, title:main})}
+      </tr>`;
+
+      if(!mainOpen) return;
+
+      midMap.forEach((ageMap, mid)=>{
+        const midKey = `mid|${main}|${mid}`;
+        const midOpen = expanded.has(midKey);
+        const midStats = groupStatsFromAgeMap(ageMap);
+        html += `<tr class="mid-row" data-toggle-key="${esc(midKey)}">
+          <td class="left sticky-name">
+            <span class="tree-toggle" style="padding-left:18px;"><span class="arrow">${midOpen ? "▼" : "▶"}</span>${esc(mid)} ${groupMarketingBadge(midStats.marketingCount)}</span>
+          </td>
+          <td class="sticky-total qty"
+              data-sales-scope="mid"
+              data-sales-main="${esc(main)}"
+              data-sales-mid="${esc(mid)}"
+              data-sales-title="${esc(mid)}"
+              data-sales-dates="${esc(dates.join(","))}"
+              data-sales-label="${esc(totalPeriodLabel || "선택 기간 합계")}">${fmt(midStats.total)}</td>${renderDailyTotalCells(booksFromAgeMap(ageMap), periods, "mid-total", {scope:"mid", main, mid, title:mid})}
+        </tr>`;
+
+        if(!midOpen) return;
+
+        sortAgeEntries([...ageMap.entries()]).forEach(([age, list])=>{
+          const ageKey = `age|${main}|${mid}|${age}`;
+          const ageOpen = expanded.has(ageKey);
+          const ageStats = groupStatsFromList(list);
+
+          // 신간/구간 안에서는 마케팅 도서를 무조건 상단에 배치
+          const sortedList = [...list].sort((a,b)=>{
+            if(a.marketingActive !== b.marketingActive) return a.marketingActive ? -1 : 1;
+            return compareBooksByCurrentSort(a,b);
+          });
+
+          html += `<tr class="mid-row" data-toggle-key="${esc(ageKey)}">
+            <td class="left sticky-name">
+              <span class="tree-toggle" style="padding-left:38px;"><span class="arrow">${ageOpen ? "▼" : "▶"}</span>${esc(age)} ${ageStats.count}종 ${groupMarketingBadge(ageStats.marketingCount)}</span>
+            </td>
+            <td class="sticky-total qty"
+                data-sales-scope="age"
+                data-sales-main="${esc(main)}"
+                data-sales-mid="${esc(mid)}"
+                data-sales-age="${esc(age)}"
+                data-sales-title="${esc(`${mid} · ${age}`)}"
+                data-sales-dates="${esc(dates.join(","))}"
+                data-sales-label="${esc(totalPeriodLabel || "선택 기간 합계")}">${fmt(ageStats.total)}</td>${renderDailyTotalCells(list, periods, "age-total", {scope:"age", main, mid, age, title:`${mid} · ${age}`})}
+          </tr>`;
+
+          if(!ageOpen) return;
+
+          sortedList.forEach(b=>{
+            const tooltipText = marketingTooltip(b.marketing, el("endDate").value);
+            const tooltipAttr = b.marketingActive ? ` data-marketing-tip="${esc(tooltipText)}"` : "";
+            const marketingBadge = b.marketingActive ? `<span class="badge marketing" data-marketing-tip="${esc(tooltipText)}">📣 마케팅</span>` : "";
+            const firstShipDate = firstShipDateLabelForBook(b.code, b.title);
+            const firstShipDateHtml = firstShipDate ? `<span class="pub-month">${esc(firstShipDate)}</span>` : "";
+            const jumpInfo = weekdayJumpInfoForBook(b, dates);
+            html += `<tr class="book-row">
+              <td class="left sticky-name" style="padding-left:70px;">
+                <span class="book-name ${b.marketingActive?"marketing-active":""}"${tooltipAttr}>
+                  <span class="book-name-text">${esc(b.title)}</span>${firstShipDateHtml}
+                </span>
+                <button type="button" class="graph-btn icon-only" data-chart-code="${esc(b.code)}" title="조회 기간 실판매 추이 보기">📈</button>
+                ${marketingBadge}
+              </td>
+              <td class="qty sticky-total"
+                  data-sales-code="${esc(b.code)}"
+                  data-sales-title="${esc(b.title)}"
+                  data-sales-dates="${esc(dates.join(","))}"
+                  data-sales-label="${esc(totalPeriodLabel || "선택 기간 합계")}">${fmt(b.total)}</td>
+              ${periods.map(p=>{
+                const v = p.dates.reduce((sum,d)=>sum + n((b.daily || {})[d] || 0), 0);
+                const jumpTip = jumpTooltipForPeriod(jumpInfo, p.dates);
+                const salesAttr = v ? ` data-sales-code="${esc(b.code)}" data-sales-title="${esc(b.title)}" data-sales-dates="${esc(p.dates.join(","))}" data-sales-label="${esc(p.tipLabel)}"${jumpTip ? ` data-jump-tip="${esc(jumpTip)}"` : ""}` : "";
+                const inMarketingPeriod = p.dates.some(d => marketingRecordsForBookDate(b.code, b.title, d).length > 0);
+                const hasJump = !!jumpTip;
+                const baseDate = (p.dates && p.dates[0]) || p.start || "";
+                const dateCls = dateColumnClass(baseDate).replace(/^date-cell\s*/,"").trim();
+                const cls = `qty ${dateCls} ${v ? "" : "zero"} ${inMarketingPeriod && v ? "marketing-period" : ""} ${hasJump && v ? "jump-sales" : ""}`;
+                return `<td class="${cls.trim()}"${salesAttr}>${v?fmt(v):""}</td>`;
+              }).join("")}
+            </tr>`;
+          });
+        });
+      });
+    });
+    html += `</tbody>`;
+    el("salesTable").innerHTML = html;
+
+    document.querySelectorAll("[data-toggle-key]").forEach(tr=>{
+      tr.addEventListener("click", ()=>{
+        toggleKey(tr.dataset.toggleKey);
+      });
+    });
+
+    bindMarketingTooltip();
+    bindChartButtons();
+  }
+
+  function bindMarketingTooltip(){
+    document.querySelectorAll("[data-marketing-tip]").forEach(node=>{
+      node.addEventListener("mouseenter", ()=>{
+        tooltip.innerHTML = `<div class="title">📣 마케팅 집행 정보</div><div class="line">${esc(node.dataset.marketingTip)}</div>`;
+        placeTooltipNear(node);
+      });
+      node.addEventListener("mouseleave", ()=>{
+        tooltip.style.display = "none";
+      });
+    });
+
+    document.querySelectorAll("[data-sales-code], [data-sales-scope]").forEach(node=>{
+      node.addEventListener("mouseenter", ()=>{
+        const dates = node.dataset.salesDates ? node.dataset.salesDates.split(",").filter(Boolean) : [node.dataset.salesDate].filter(Boolean);
+        const label = node.dataset.salesLabel || node.dataset.salesDate || "선택 기간";
+        const jumpTip = node.dataset.jumpTip || "";
+        let salesTip = "";
+
+        if(node.dataset.salesCode){
+          salesTip = salesTooltipForBookDates(node.dataset.salesCode, node.dataset.salesTitle, label, dates);
+        }else if(node.dataset.salesScope){
+          salesTip = salesTooltipForScopeDates(
+            node.dataset.salesScope,
+            node.dataset.salesMain || "",
+            node.dataset.salesMid || "",
+            node.dataset.salesAge || "",
+            node.dataset.salesTitle || "",
+            label,
+            dates
+          );
+        }
+
+        if(!salesTip && !jumpTip){
+          tooltip.style.display = "none";
+          return;
+        }
+
+        const tip = jumpTip && salesTip ? `${jumpTip}\n\n${salesTip}` : (jumpTip || salesTip);
+        tooltip.innerHTML = `<div class="title">${jumpTip ? "🚀 판매 점핑 · 거래처별 내역" : "📊 거래처별 판매 내역"}</div><div class="line">${esc(tip)}</div>`;
+        placeTooltipNear(node);
+      });
+      node.addEventListener("mouseleave", ()=>{
+        tooltip.style.display = "none";
+      });
+    });
+  }
+
+  function bindChartButtons(){
+    document.querySelectorAll("[data-chart-code]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const code = normalizeKey(btn.dataset.chartCode);
+        const book = currentRenderedBooks.find(b=>normalizeKey(b.code) === code);
+        if(book) openBookChart(book);
+      });
+    });
+  }
+
+  function openBookChart(book){
+    const baseDates = currentRenderedDates || [];
+    const baseValues = baseDates.map(d => n((book.daily || {})[d] || 0));
+
+    // 그래프 표시 조건:
+    // 1) 사용자가 선택한 시작일~종료일 범위를 기준으로 한다.
+    // 2) 단, 시작일의 판매가 0이면 조회 기간 안에서 최초로 판매가 발생한 날짜부터 그래프를 시작한다.
+    // 3) 표시 단위가 7일/15일/30일이면 도서별 그래프도 같은 단위로 합산해서 표시한다.
+    const firstSaleIndex = baseValues.findIndex(v => v > 0);
+    const chartDates = firstSaleIndex >= 0 ? baseDates.slice(firstSaleIndex) : baseDates;
+    const periods = buildDisplayPeriods(chartDates);
+    const values = periods.map(p => p.dates.reduce((sum,d)=>sum + n((book.daily || {})[d] || 0), 0));
+
+    const total = values.reduce((a,b)=>a+b,0);
+    const maxVal = values.length ? Math.max(...values) : 0;
+    const avg = values.length ? total / values.length : 0;
+    const nonZeroPeriods = values.filter(v=>v>0).length;
+
+    const originalStart = el("startDate").value || "-";
+    const originalEnd = el("endDate").value || "-";
+    const chartStart = chartDates[0] || originalStart;
+    const startNote = firstSaleIndex > 0 ? ` · 그래프 시작일: ${chartStart}` : "";
+    const mode = el("periodMode") ? el("periodMode").value : "daily";
+    const modeText = mode === "daily" ? "일별" : `${mode}일 단위`;
+
+    el("chartTitle").textContent = book.title;
+    el("chartSub").textContent = `${originalStart} ~ ${originalEnd}${startNote} · ${modeText} · ${book.main || "-"} / ${book.mid || "-"} · ${book.newOld || "-"}`;
+
+    el("chartSummary").innerHTML = `
+      <div class="mini"><div class="k">그래프 기간 합계</div><div class="v">${fmt(total)}</div></div>
+      <div class="mini"><div class="k">구간 평균</div><div class="v">${avg.toLocaleString("ko-KR",{maximumFractionDigits:1})}</div></div>
+      <div class="mini"><div class="k">최고 구간판매</div><div class="v">${fmt(maxVal)}</div></div>
+      <div class="mini"><div class="k">판매 발생 구간</div><div class="v">${fmt(nonZeroPeriods)}개</div></div>
+    `;
+
+    el("chartArea").innerHTML = renderLineChartSvg(periods, values, book);
+    el("chartModal").style.display = "flex";
+  }
+
+  function renderLineChartSvg(periods, values, book){
+    if(!periods.length){
+      return `<div class="chart-empty">조회 기간에 표시할 날짜가 없습니다.</div>`;
+    }
+
+    // 그래프는 조회 기간 전체를 100% 폭 안에 압축해서 표시한다.
+    // 날짜/기간 구간이 많아도 가로 스크롤을 만들지 않는다.
+    const width = 900;
+    const height = 360;
+    const left = 58;
+    const right = 24;
+    const top = 28;
+    const bottom = 58;
+    const plotW = width - left - right;
+    const plotH = height - top - bottom;
+    const maxVal = Math.max(...values, 1);
+    const stepX = periods.length > 1 ? plotW / (periods.length - 1) : plotW;
+
+    const x = i => left + (periods.length > 1 ? i * stepX : plotW / 2);
+    const y = v => top + plotH - (v / maxVal) * plotH;
+
+    const points = values.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+    const areaPoints = `${left},${top+plotH} ${points} ${x(values.length-1)},${top+plotH}`;
+
+    const gridLines = [];
+    for(let i=0;i<=4;i++){
+      const gy = top + (plotH/4)*i;
+      const gv = Math.round(maxVal - (maxVal/4)*i);
+      gridLines.push(`
+        <line x1="${left}" y1="${gy}" x2="${width-right}" y2="${gy}" stroke="#21304a" stroke-width="1"/>
+        <text x="${left-10}" y="${gy+4}" text-anchor="end" fill="#8fa6c9" font-size="11">${fmt(gv)}</text>
+      `);
+    }
+
+    const labelEvery = Math.max(1, Math.ceil(periods.length / 14));
+    const xLabels = periods.map((p,i)=>{
+      if(i % labelEvery !== 0 && i !== periods.length-1) return "";
+      return `<text x="${x(i)}" y="${height-25}" text-anchor="middle" fill="#8fa6c9" font-size="11">${esc(p.label)}</text>`;
+    }).join("");
+
+    const circles = values.map((v,i)=>{
+      if(v <= 0) return "";
+      // 그래프 꼭지점 마우스오버 시 해당 일자/기간의 거래처별 판매 내역 표시
+      const p = periods[i];
+      const detail = salesTooltipForBookDates(book.code, book.title, p.tipLabel, p.dates) || `${p.tipLabel}: ${fmt(v)}부`;
+      return `<circle cx="${x(i)}" cy="${y(v)}" r="4.8" fill="#ffd35a" stroke="#081120" stroke-width="2"><title>${esc(detail)}</title></circle>`;
+    }).join("");
+
+    return `
+      <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(book.title)} 실판매 추이">
+        <rect x="0" y="0" width="${width}" height="${height}" rx="12" fill="#081120"/>
+        ${gridLines.join("")}
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}" stroke="#385071" stroke-width="1.2"/>
+        <line x1="${left}" y1="${top+plotH}" x2="${width-right}" y2="${top+plotH}" stroke="#385071" stroke-width="1.2"/>
+        <polygon points="${areaPoints}" fill="rgba(78,161,255,.13)"/>
+        <polyline points="${points}" fill="none" stroke="#4ea1ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        ${circles}
+        ${xLabels}
+      </svg>
+    `;
+  }
+
+  function closeBookChart(){
+    el("chartModal").style.display = "none";
+  }
+
+  el("chartClose").addEventListener("click", closeBookChart);
+  el("chartModal").addEventListener("click", e=>{
+    if(e.target === el("chartModal")) closeBookChart();
+  });
+  document.addEventListener("keydown", e=>{
+    if(e.key === "Escape") closeBookChart();
+  });
+
+  function renderDebug(books){
+    const activeCount = books.filter(b=>b.marketingActive).length;
+    el("debugArea").innerHTML = `
+      sales rows: ${rows.length}<br>
+      marketing records: ${records.length}<br>
+      active marketing books: ${activeCount}<br>
+      조회 종료일: ${el("endDate").value || "-"}
+    `;
+  }
+
+  init();
+})();
+}
+startScmDashboard().catch(error=>{
+  document.body.innerHTML='<div style="padding:32px;font-family:Malgun Gothic;color:#fff;background:#0b1220;min-height:100vh">SCM 실판매 화면 초기화 오류: '+String(error&&error.message||error)+'</div>';
+});
+</script>
+</body>
+</html>
+

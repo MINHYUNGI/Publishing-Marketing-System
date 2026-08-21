@@ -10,6 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 UI = ROOT / "ui" / "index.html"
+SCM_UI = ROOT / "ui" / "scm-dashboard.html"
+LEGACY_SCM_UI = Path(r"Y:\출판사업본부\05. 영업 실적\01. 실판매_대시보드(교보,영풍,예스,알라).html")
 
 
 class UiSmokeTests(unittest.TestCase):
@@ -22,6 +24,8 @@ class UiSmokeTests(unittest.TestCase):
             'id="uploadPage"',
             'id="detailPage"',
             'id="performancePage"',
+            'id="scmPage"',
+            'id="navScm"',
             "function openSnsContent",
             "function loadMarketingPlanDetail",
             "function loadPerformanceDetail",
@@ -46,6 +50,29 @@ class UiSmokeTests(unittest.TestCase):
         source = "\n".join(scripts)
         with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as handle:
             handle.write(source)
+            path = Path(handle.name)
+        try:
+            result = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        finally:
+            path.unlink(missing_ok=True)
+
+    def test_preserved_scm_dashboard_contract_and_syntax(self):
+        html = SCM_UI.read_text(encoding="utf-8")
+        legacy = LEGACY_SCM_UI.read_text(encoding="utf-8")
+        self.assertIn("get_scm_dashboard_data", html)
+        self.assertEqual(
+            set(re.findall(r'id=["\']([^"\']+)', legacy)),
+            set(re.findall(r'id=["\']([^"\']+)', html)),
+        )
+        functions = lambda text: set(re.findall(r"function\s+([A-Za-z_$][\w$]*)\s*\(", text))
+        self.assertTrue(functions(legacy).issubset(functions(html)))
+        node = shutil.which("node")
+        if not node:
+            return
+        scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, flags=re.DOTALL | re.IGNORECASE)
+        with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as handle:
+            handle.write("\n".join(scripts))
             path = Path(handle.name)
         try:
             result = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)

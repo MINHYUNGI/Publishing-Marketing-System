@@ -18,6 +18,7 @@ from .analyzer import analyze_document
 from .config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE, PROJECT_URL, ATTACHMENT_ROOT
 from .database import Database
 from .erp_import import choose_and_import_erp
+from .scm_import import preview_scm_sync, sync_scm_ledger
 from .file_store import copy_document, copy_reference_file, save_reference_bytes
 from .security import get_openai_api_key, get_supabase_secret_key, sha256_file
 
@@ -32,6 +33,38 @@ class Backend:
 
     def import_erp_monthly_excel(self) -> dict[str, Any]:
         return choose_and_import_erp(self, None)
+
+    def preview_scm_daily_sales(self) -> dict[str, Any]:
+        try:
+            return preview_scm_sync()
+        except Exception as exc:
+            logging.exception("SCM 실판매 원장 사전검증 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def sync_scm_daily_sales(self) -> dict[str, Any]:
+        try:
+            return sync_scm_ledger(self)
+        except Exception as exc:
+            logging.exception("SCM 실판매 동기화 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def get_scm_sync_status(self) -> dict[str, Any]:
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            return {"ok": True, **self.db.fetch_scm_sync_status()}
+        except Exception as exc:
+            logging.exception("SCM 동기화 상태 조회 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def get_scm_dashboard_data(self) -> dict[str, Any]:
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            return {"ok": True, **self.db.fetch_scm_dashboard_data()}
+        except Exception as exc:
+            logging.exception("SCM 실판매 대시보드 조회 실패")
+            return {"ok": False, "message": str(exc)}
 
     def open_external_url(self, url: str) -> dict[str, Any]:
         """등록된 콘텐츠 URL을 운영체제의 기본 브라우저에서 엽니다."""

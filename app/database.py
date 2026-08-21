@@ -754,6 +754,85 @@ class Database:
                 links = by_execution.get(str(item["실행활동ID"]), [])
             item["콘텐츠링크"] = links
 
+    def _fetch_scm_rows(self, product_code: str | None = None) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        start = 0
+        while True:
+            query = self.client.table("SCM일별실판매").select(
+                "판매일,거래처코드,ISBN13,제품코드,판매수량,원본파일명,원본시트"
+            )
+            if product_code:
+                query = query.eq("제품코드", product_code)
+            batch = query.order("판매일").range(start, start + 999).execute().data or []
+            rows.extend(batch)
+            if len(batch) < 1000:
+                return rows
+            start += 1000
+
+    def fetch_scm_sync_status(self) -> dict[str, Any]:
+        history = self.client.table("SCM동기화이력").select("*").order("시작일시", desc=True).limit(1).execute().data or []
+        latest = history[0] if history else None
+        clients = []
+        if latest:
+            clients = self.client.table("SCM동기화거래처결과").select("*").eq("동기화ID", latest["동기화ID"]).execute().data or []
+        unmatched = self.client.table("SCM제품매핑").select("ISBN13,SCM상품명,최초확인일,최종확인일").is_("제품코드", "null").order("SCM상품명").execute().data or []
+        return {"latest": latest, "clients": clients, "unmatched": unmatched}
+
+    def fetch_scm_dashboard_data(self) -> dict[str, Any]:
+        facts = self._fetch_scm_rows()
+        mappings: list[dict[str, Any]] = []
+        start = 0
+        while True:
+            batch = self.client.table("SCM제품매핑").select("ISBN13,제품코드,SCM상품명,출판일자,매칭상태").range(start, start + 999).execute().data or []
+            mappings.extend(batch)
+            if len(batch) < 1000:
+                break
+            start += 1000
+        mapping_by_isbn = {str(row.get("ISBN13")): row for row in mappings}
+        products = {str(row.get("제품코드")): row for row in self.fetch_product_index() if row.get("제품코드")}
+        client_names = {"KYOBO": "교보문고", "YPBOOKS": "영풍문고", "YES24": "예스24", "ALADIN": "알라딘"}
+        first_sales: dict[str, str] = {}
+        dashboard_rows = []
+        for fact in facts:
+            isbn = str(fact.get("ISBN13") or "")
+            mapping = mapping_by_isbn.get(isbn, {})
+            code = str(fact.get("제품코드") or mapping.get("제품코드") or "")
+            product = products.get(code, {})
+            name = product.get("제품명") or mapping.get("SCM상품명") or isbn
+            main, middle = product.get("최종대분류") or "", product.get("최종중분류") or ""
+            division = "아동" if any(token in f"{main} {middle}" for token in ("아동", "만화", "01.")) else "성인"
+            sale_date = str(fact.get("판매일") or "")
+            if code and sale_date and (code not in first_sales or sale_date < first_sales[code]):
+                first_sales[code] = sale_date
+            dashboard_rows.append([sale_date, division, main, middle, code, name, isbn, client_names.get(str(fact.get("거래처코드")), ""), "실판매", fact.get("판매수량") or 0])
+        dashboard_products = []
+        for code in sorted({str(row[4]) for row in dashboard_rows if row[4]}):
+            product = products.get(code, {})
+            product_mappings = [row for row in mappings if str(row.get("제품코드") or "") == code]
+            publication_dates = sorted(str(row.get("출판일자")) for row in product_mappings if row.get("출판일자"))
+            first_date = (publication_dates[0] if publication_dates else "") or first_sales.get(code, "")
+            dashboard_products.append({"code": code, "name": product.get("제품명") or next((row.get("SCM상품명") for row in product_mappings if row.get("SCM상품명")), code), "firstDate": first_date, "firstShipDate": first_date, "ageForceOld": not bool(publication_dates), "baseDateSource": "출판일자" if publication_dates else "출판일자없음", "mainCat": product.get("최종대분류") or "", "midCat": product.get("최종중분류") or ""})
+        dates = sorted({row[0] for row in dashboard_rows if row[0]})
+        marketing_rows = self.client.table("마케팅활동").select("활동ID,제품코드,활동분류,채널또는매체,활동명,시작일,종료일,계획실행구분").execute().data or []
+        marketing_records = []
+        for row in marketing_rows:
+            code = str(row.get("제품코드") or "")
+            marketing_records.append({"id": row.get("활동ID"), "type": "viral" if any(token in str(row.get("활동분류") or "") for token in ("SNS", "바이럴")) else "store", "name": row.get("활동명") or row.get("채널또는매체") or "마케팅 활동", "start": row.get("시작일"), "end": row.get("종료일") or row.get("시작일"), "books": [{"code": code, "itemCode": code, "title": products.get(code, {}).get("제품명") or code}]})
+        return {"generatedAt": datetime.now().isoformat(), "generatedDate": date.today().isoformat(), "source": "Supabase SCM일별실판매", "rowCount": len(dashboard_rows), "dateMin": dates[0] if dates else "", "dateMax": dates[-1] if dates else "", "clients": sorted(set(client_names.values())), "products": dashboard_products, "rows": dashboard_rows, "marketingRecords": marketing_records}
+
+    def fetch_yes24_buyer_demographics(self, product_code: str) -> list[dict[str, Any]]:
+        snapshots = self.client.table("YES24구매자스냅샷").select("스냅샷ID,기준일,기간시작일,기간종료일,계정구분,ISBN13,제품코드,YES24상품번호,상품명,총판매수량,원본파일명").eq("제품코드", product_code).order("기준일").execute().data or []
+        by_id = {row["스냅샷ID"]: row for row in snapshots}
+        for row in snapshots:
+            row["분포"] = {"성별": [], "연령": [], "지역": []}
+        ids = list(by_id)
+        for offset in range(0, len(ids), 200):
+            distributions = self.client.table("YES24구매자분포").select("스냅샷ID,분포유형,구간값,수량,정렬순서").in_("스냅샷ID", ids[offset:offset + 200]).order("정렬순서").execute().data or []
+            for item in distributions:
+                if item.get("스냅샷ID") in by_id:
+                    by_id[item["스냅샷ID"]]["분포"][item["분포유형"]].append({"구간": item["구간값"], "수량": item.get("수량") or 0})
+        return snapshots
+
     def fetch_post_launch_performance(self, product_code: str) -> dict[str, Any] | None:
         """출간 후 성과 화면에 필요한 계획, 실행, 콘텐츠, ERP 데이터를 반환합니다."""
         detail = self.fetch_marketing_plan_detail(product_code)
@@ -772,21 +851,21 @@ class Database:
             .select("제품코드,제품명,매출일자,매출부수,매출금액,출고부수,출고금액,반품부수,반품금액,원본파일명")
             .eq("제품코드", product_code).order("매출일자").execute()
         ).data or []
-        sales_rows = [
-            {
-                "제품코드": product_code,
-                "판매일": row.get("매출일자"),
-                "SCM실판매부수": 0,
-                "SCM환산매출액": 0,
-                "ERP출고부수": row.get("매출부수") or 0,
-                "ERP매출액": row.get("매출금액") or 0,
-                "ERP원출고부수": row.get("출고부수") or 0,
-                "ERP원출고금액": row.get("출고금액") or 0,
-                "ERP반품부수": row.get("반품부수") or 0,
-                "ERP반품금액": row.get("반품금액") or 0,
-            }
-            for row in erp_rows
-        ]
+        by_date: dict[str, dict[str, Any]] = {}
+        client_fields = {"KYOBO": "SCM교보부수", "YPBOOKS": "SCM영풍부수", "YES24": "SCMYES24부수", "ALADIN": "SCM알라딘부수"}
+        for row in self._fetch_scm_rows(product_code):
+            sale_date = str(row.get("판매일") or "")
+            item = by_date.setdefault(sale_date, {"제품코드": product_code, "판매일": sale_date, "SCM실판매부수": 0, "SCM환산매출액": 0, "SCM교보부수": 0, "SCM영풍부수": 0, "SCMYES24부수": 0, "SCM알라딘부수": 0, "ERP출고부수": 0, "ERP매출액": 0, "ERP원출고부수": 0, "ERP원출고금액": 0, "ERP반품부수": 0, "ERP반품금액": 0})
+            quantity = row.get("판매수량") or 0
+            item["SCM실판매부수"] += quantity
+            field = client_fields.get(str(row.get("거래처코드")))
+            if field:
+                item[field] += quantity
+        for row in erp_rows:
+            sale_date = str(row.get("매출일자") or "")
+            item = by_date.setdefault(sale_date, {"제품코드": product_code, "판매일": sale_date, "SCM실판매부수": 0, "SCM환산매출액": 0, "SCM교보부수": 0, "SCM영풍부수": 0, "SCMYES24부수": 0, "SCM알라딘부수": 0})
+            item.update({"ERP출고부수": row.get("매출부수") or 0, "ERP매출액": row.get("매출금액") or 0, "ERP원출고부수": row.get("출고부수") or 0, "ERP원출고금액": row.get("출고금액") or 0, "ERP반품부수": row.get("반품부수") or 0, "ERP반품금액": row.get("반품금액") or 0})
+        sales_rows = [by_date[key] for key in sorted(by_date)]
         execution_rows = self.fetch_execution_rows(product_code)
         self._merge_execution_rows(detail, product_code, execution_rows)
         content_rows = (
@@ -802,6 +881,7 @@ class Database:
             "ERP일별판매실적": erp_rows,
             "콘텐츠성과": content_rows,
             "구매자반응": buyer_rows[0] if buyer_rows else None,
+            "YES24구매자분포": self.fetch_yes24_buyer_demographics(product_code),
             "마케팅성과평가": evaluation_rows[0] if evaluation_rows else None,
             "대표표지": self.fetch_cover_reference(product_code),
         }

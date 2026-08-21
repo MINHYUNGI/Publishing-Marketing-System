@@ -16,6 +16,8 @@ REPORT_DIR = BASE_DIR / "reports"
 DOCUMENT_ROOT = BASE_DIR.parent / "documents"
 # 도서별 참조 이미지/PDF 등은 운영 시스템 공용 data/attachments 아래에 저장합니다.
 ATTACHMENT_ROOT = BASE_DIR / "data" / "attachments"
+SCM_LEDGER_FILE = Path(r"Y:\출판사업본부\05. 영업 실적\70. 집계 결과\실판매_통합원장.xlsx")
+YES24_DOWNLOAD_DIR = Path(r"Y:\출판사업본부\05. 영업 실적\01. 실판매\download")
 
 ALLOWED_EXTENSIONS = {".xlsx", ".xls", ".pdf", ".docx", ".pptx"}
 
