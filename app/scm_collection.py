@@ -16,6 +16,7 @@ from .config import BASE_DIR, YES24_DOWNLOAD_DIR
 from .scm_import import ScmLedger, sync_scm_dataset
 from .yes24_demographics import Yes24Demographics, parse_yes24_demographic_files
 from .scm_collectors.workbook_parser import parse_date_workbooks
+from .scm_credentials import get_account, get_recipient
 
 
 CLIENTS = {
@@ -35,6 +36,7 @@ MAX_RECOLLECT_DAYS = 31
 
 _jobs: dict[str, dict[str, Any]] = {}
 _lock = threading.RLock()
+_input_waiters: dict[str, dict[str, Any]] = {}
 
 
 def _now() -> str:
@@ -66,6 +68,27 @@ def get_scm_collection_status(job_id: str) -> dict[str, Any]:
         if not job:
             return {"ok": False, "message": "SCM 수집 작업을 찾을 수 없습니다."}
         return {"ok": True, "job": deepcopy(job)}
+
+def submit_scm_collection_input(job_id: str, request_id: str, value: str) -> dict[str, Any]:
+    with _lock:
+        waiter = _input_waiters.get(str(job_id))
+        if not waiter or waiter["request_id"] != str(request_id):
+            return {"ok": False, "message": "이미 처리되었거나 유효하지 않은 인증 요청입니다."}
+        code = str(value or "").strip()
+        if not code: return {"ok": False, "message": "인증번호를 입력해주세요."}
+        waiter["value"] = code; waiter["event"].set()
+        return {"ok": True}
+
+def _wait_for_input(job_id: str, title: str, prompt: str, timeout: int = 600) -> str:
+    request_id = str(uuid.uuid4()); waiter = {"request_id":request_id,"event":threading.Event(),"value":""}
+    with _lock:
+        _input_waiters[job_id] = waiter
+        _jobs[job_id]["input_request"] = {"request_id":request_id,"kind":"sms_code","title":title,"prompt":prompt}
+        _jobs[job_id]["stage"] = "YES24 인증번호 입력 대기"
+    if not waiter["event"].wait(timeout): raise TimeoutError("YES24 인증번호 입력 시간이 초과되었습니다.")
+    with _lock:
+        _input_waiters.pop(job_id, None); _jobs[job_id]["input_request"] = None
+    return str(waiter["value"])
 
 
 def _parse_date(value: Any) -> date:
@@ -129,10 +152,16 @@ def plan_scm_collection(backend: Any, options: dict[str, Any] | None = None) -> 
 
 
 def start_scm_collection(backend: Any, options: dict[str, Any] | None = None) -> dict[str, Any]:
+    options = options or {}
     with _lock:
         if any(job.get("state") in {"queued", "running"} for job in _jobs.values()):
             return {"ok": False, "message": "이미 SCM 데이터 수집이 진행 중입니다."}
     plan = plan_scm_collection(backend, options)
+    plan["yes24_recipient_id"] = str(options.get("yes24_recipient_id") or "")
+    account_map = {"KYOBO":["KYOBO"],"YPBOOKS":["YPBOOKS"],"YES24":["YES24_CHILD","YES24_ADULT"],"ALADIN":["ALADIN_CHILD","ALADIN_ADULT"]}
+    for code in plan["clients"]:
+        for key in account_map[code]: get_account(key)
+    if "YES24" in plan["clients"]: get_recipient(plan["yes24_recipient_id"])
     if not any(plan["targets"].values()):
         return {"ok": True, "started": False, "message": "모든 거래처가 오늘 날짜까지 동기화되어 있습니다.", "plan": plan}
     job_id = str(uuid.uuid4())
@@ -161,19 +190,19 @@ def start_scm_collection(backend: Any, options: dict[str, Any] | None = None) ->
             "latest": plan["latest"],
             "logs": [],
             "error": "",
+            "input_request": None,
         }
     threading.Thread(target=_run_collection, args=(job_id, backend, plan), daemon=True).start()
     return {"ok": True, "started": True, "job_id": job_id, "plan": plan}
 
 
-def _configure_legacy(run_dir: Path, job_id: str) -> Any:
+def _configure_legacy(run_dir: Path, job_id: str, yes24_recipient_id: str = "") -> Any:
     from .scm_collectors import legacy_v72 as engine
 
     engine.SCRIPT_DIR = run_dir
     engine.BASE_DIR = SCM_ROOT
     engine.DOWNLOAD_DIR = YES24_DOWNLOAD_DIR
-    engine.MASTER_DATA_DIR = SCM_MASTER_DIR
-    engine.LOGIN_XLSX = SCM_LOGIN_FILE
+    engine.MASTER_DATA_DIR = run_dir
     original_log = engine.log
 
     def progress_log(message: Any = "") -> None:
@@ -181,6 +210,30 @@ def _configure_legacy(run_dir: Path, job_id: str) -> Any:
         original_log(message)
 
     engine.log = progress_log
+
+    engine.read_kyobo_login_info = lambda: tuple(get_account("KYOBO")[x] for x in ("login_id", "password", "url"))
+    engine.read_ypscm_login_info = lambda: tuple(get_account("YPBOOKS")[x] for x in ("login_id", "password", "url"))
+    def yes_login(kind: str | None = None) -> dict[str, str]:
+        row = get_account("YES24_CHILD" if kind == "child" else "YES24_ADULT")
+        return {"id":row["login_id"],"password":row["password"],"url":row["url"],"row_text":kind or "YES24"}
+    def aladin_login(kind: str) -> dict[str, str]:
+        row = get_account("ALADIN_CHILD" if kind == "child" else "ALADIN_ADULT")
+        return {"id":row["login_id"],"password":row["password"],"url":row["url"],"row_text":kind}
+    engine.yes24_find_login_row = yes_login
+    engine.aladin_find_login_row = aladin_login
+    if yes24_recipient_id:
+        recipient = get_recipient(yes24_recipient_id)
+        popup_count = {"value": 0}
+        def inline_yes24_input(title: str, prompt: str, default_value: str = "") -> str:
+            popup_count["value"] += 1
+            if popup_count["value"] % 2 == 1:
+                progress_log(f"YES24 인증 수신자: {recipient['name']}")
+                return recipient["phone"]
+            progress_log(f"YES24 {recipient['name']}님에게 발송된 인증번호 입력 대기")
+            masked = recipient['phone'][:3] + '-****-' + recipient['phone'][-4:]
+            return _wait_for_input(job_id, title, f"{recipient['name']}님({masked})에게 발송된 인증번호를 입력해주세요.")
+        engine.yes24_popup_input = inline_yes24_input
+        engine.yes24_popup_info = lambda title, message: progress_log(f"{title}: {message}")
 
     def copy_sheet_without_excel(source_file: Path, target_file: Path, partner: dict[str, Any]) -> None:
         """COM/Excel 설치 없이 다운로드 원본 값을 임시 날짜 작업파일에 복사합니다."""
@@ -354,7 +407,7 @@ def _run_collection(job_id: str, backend: Any, plan: dict[str, Any]) -> None:
         if not SCM_TEMPLATE.exists():
             raise FileNotFoundError(f"SCM 복사 양식을 찾을 수 없습니다: {SCM_TEMPLATE}")
         shutil.copy2(SCM_TEMPLATE, run_dir / SCM_TEMPLATE.name)
-        engine = _configure_legacy(run_dir, job_id)
+        engine = _configure_legacy(run_dir, job_id, plan.get("yes24_recipient_id", ""))
         all_dates = sorted({value for dates in plan["targets"].values() for value in dates})
         output_map = engine.create_date_workbooks(all_dates)
 
@@ -423,7 +476,8 @@ def _run_collection(job_id: str, backend: Any, plan: dict[str, Any]) -> None:
 
         states = [values["state"] for values in _jobs[job_id]["clients"].values()]
         final_state = "completed" if all(state in {"completed", "skipped"} for state in states) else "partial"
-        _job_update(job_id, state=final_state, stage="완료")
+        final_stage = "Supabase에 DB 등록을 완료했습니다." if final_state == "completed" else "일부 거래처 저장에 실패했습니다."
+        _job_update(job_id, state=final_state, stage=final_stage, db_registered=final_state == "completed")
     except Exception as exc:
         _log(job_id, f"SCM 수집 작업 실패: {exc}")
         _job_update(job_id, state="failed", stage="실패", error=str(exc))

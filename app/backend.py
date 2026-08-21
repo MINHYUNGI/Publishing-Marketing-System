@@ -19,7 +19,8 @@ from .config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE, PROJECT_URL, ATTACHMENT_R
 from .database import Database
 from .erp_import import choose_and_import_erp
 from .scm_import import preview_scm_sync, sync_scm_ledger
-from .scm_collection import get_scm_collection_status, plan_scm_collection, start_scm_collection
+from .scm_collection import get_scm_collection_status, plan_scm_collection, start_scm_collection, submit_scm_collection_input
+from .scm_credentials import public_settings, save_account, save_recipient, delete_recipient
 from .file_store import copy_document, copy_reference_file, save_reference_bytes
 from .security import get_openai_api_key, get_supabase_secret_key, sha256_file
 
@@ -69,6 +70,26 @@ class Backend:
         except Exception as exc:
             logging.exception("SCM 직접 수집 상태 조회 실패")
             return {"ok": False, "message": str(exc)}
+
+    def get_scm_credentials(self) -> dict[str, Any]:
+        try: return public_settings()
+        except Exception as exc: return {"ok": False, "message": str(exc)}
+
+    def save_scm_credential(self, payload: dict[str, Any]) -> dict[str, Any]:
+        try: return save_account(payload.get("key", ""), payload.get("login_id", ""), payload.get("password", ""), payload.get("url", ""))
+        except Exception as exc: return {"ok": False, "message": str(exc)}
+
+    def save_yes24_recipient(self, payload: dict[str, Any]) -> dict[str, Any]:
+        try: return save_recipient(payload.get("name", ""), payload.get("phone", ""), payload.get("id", ""))
+        except Exception as exc: return {"ok": False, "message": str(exc)}
+
+    def delete_yes24_recipient(self, recipient_id: str) -> dict[str, Any]:
+        try: return delete_recipient(recipient_id)
+        except Exception as exc: return {"ok": False, "message": str(exc)}
+
+    def submit_scm_collection_input(self, job_id: str, request_id: str, value: str) -> dict[str, Any]:
+        try: return submit_scm_collection_input(job_id, request_id, value)
+        except Exception as exc: return {"ok": False, "message": str(exc)}
 
     def get_scm_sync_status(self) -> dict[str, Any]:
         try:
