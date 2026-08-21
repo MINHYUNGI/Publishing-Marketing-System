@@ -55,6 +55,34 @@ class Database:
         ).data or []
         return {r["제품코드"] for r in rows if r.get("제품코드")}
 
+    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+        """Fetch activity rows and publication metadata without per-row queries."""
+        rows: list[dict[str, Any]] = []
+        page_size = 1000
+        for start in range(0, 1000000, page_size):
+            batch = (
+                self.client.table("마케팅활동")
+                .select("활동ID,제품코드,활동분류,채널또는매체,활동명,시작일,종료일,일정비고,비용,URL,비고,계획실행구분,수정일시")
+                .order("시작일")
+                .range(start, start + page_size - 1)
+                .execute()
+            ).data or []
+            rows.extend(batch)
+            if len(batch) < page_size:
+                break
+
+        codes = sorted({str(row.get("제품코드") or "") for row in rows if row.get("제품코드")})
+        marketing_products: dict[str, dict[str, Any]] = {}
+        for start in range(0, len(codes), 200):
+            batch = (
+                self.client.table("마케팅대상제품")
+                .select("제품코드,출간일")
+                .in_("제품코드", codes[start:start + 200])
+                .execute()
+            ).data or []
+            marketing_products.update({str(row["제품코드"]): row for row in batch})
+        return rows, marketing_products
+
     def ensure_marketing_product(self, product_code: str) -> None:
         existing = (
             self.client.table("마케팅대상제품")

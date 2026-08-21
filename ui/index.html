@@ -768,6 +768,15 @@ body.p299-resizing-timeline *{
 <script>/* v335-sns-content-consolidated */</script>
 
 <style>
+/* Major bookstore activity timeline */
+.channel-nav-parent{display:flex;align-items:center;gap:12px;padding:8px 14px;color:#c9d7e8;font-size:calc(var(--font-sm) * var(--font-scale));font-weight:800;line-height:1.35}.channel-nav-child{padding-left:28px!important}.app.sidebar-collapsed .channel-nav-parent{display:none}.app.sidebar-collapsed .channel-nav-child{padding-left:0!important}
+.bookstore-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fff}.bookstore-toolbar label{font-size:calc(var(--font-sm) * var(--font-scale));color:#526174}.bookstore-toolbar input{display:block;height:36px;margin-top:4px;padding:0 9px;border:1px solid #cbd5df;border-radius:7px}.bookstore-toolbar #bookstoreLoadState{margin-left:auto;color:#64748b;font-size:calc(var(--font-sm) * var(--font-scale))}
+.bookstore-section{margin-bottom:14px;border:1px solid #d7e0ea;border-radius:10px;background:#fff;overflow:hidden}.bookstore-section>summary{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f6f8fb;color:#26364a;font-weight:900;cursor:pointer;list-style:none}.bookstore-section>summary::-webkit-details-marker{display:none}.bookstore-section>summary:before{content:'▾';margin-right:8px}.bookstore-section:not([open])>summary:before{content:'▸'}.bookstore-section>summary span{margin-left:auto;color:#6b7788;font-size:calc(var(--font-sm) * var(--font-scale));font-weight:600}
+.bookstore-scroll{overflow-x:auto;padding:12px 14px 16px}.bookstore-grid{min-width:920px}.bookstore-axis,.bookstore-activity-row,.bookstore-book-row,.bookstore-category-row{display:grid;grid-template-columns:290px minmax(600px,1fr);align-items:stretch}.bookstore-axis{position:sticky;top:0;z-index:3;background:#fff}.bookstore-axis-label{padding:8px 10px;color:#667085;font-size:calc(var(--font-sm) * var(--font-scale));font-weight:700}.bookstore-track{position:relative;min-height:34px;border-left:1px solid #d8e0e9;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(14.2857% - 1px),#edf1f5 calc(14.2857% - 1px),#edf1f5 14.2857%)}.bookstore-axis .bookstore-track{height:44px;border-bottom:1px solid #d8e0e9}.bookstore-tick{position:absolute;bottom:7px;transform:translateX(-50%);color:#6b7788;font-size:11px;white-space:nowrap}.bookstore-tick:before{content:'';position:absolute;left:50%;bottom:-8px;width:1px;height:6px;background:#aeb9c6}
+.bookstore-category-row{margin-top:8px;background:#eaf1f9;color:#24415f;font-weight:900}.bookstore-category-row>div{grid-column:1/-1;padding:8px 10px}.bookstore-book-row{background:#f8fafc;border-top:1px solid #e7ecf2}.bookstore-book-row>div:first-child{padding:9px 10px;font-weight:800;color:#344054}.bookstore-book-row small{display:block;margin-top:2px;color:#788596;font-weight:500}.bookstore-activity-row{border-top:1px solid #edf1f5}.bookstore-activity-label{min-width:0;padding:8px 10px;color:#4b596b;font-size:calc(var(--font-sm) * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bookstore-activity-label b{color:#26364a}.bookstore-activity-bar{position:absolute;top:7px;height:20px;min-width:7px;border-radius:5px;background:#2f6bd5;color:#fff;box-shadow:0 1px 3px rgba(20,53,100,.22);cursor:help}.bookstore-activity-bar.yes24{background:#7b61c9}.bookstore-activity-bar.aladin{background:#2c9678}.bookstore-activity-bar.ypbooks{background:#d9842b}.bookstore-empty{padding:24px;text-align:center;color:#7a8797}.bookstore-hover-tip{position:fixed;display:none;z-index:13000;max-width:min(420px,calc(100vw - 24px));padding:10px 12px;border-radius:7px;background:#1f2937;color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.24);font-size:calc(var(--font-sm) * var(--font-scale));line-height:1.55;white-space:pre-line;pointer-events:none}.bookstore-hover-tip.show{display:block}
+</style>
+
+<style>
 /* v287-restart-latest-sidebar */
 .restart-latest-wrap{padding:8px 10px 10px;margin-top:auto}
 .restart-latest-btn{width:100%;min-height:42px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:rgba(255,255,255,.06);color:#dce6f4;display:flex;align-items:center;gap:9px;padding:0 12px;cursor:pointer;text-align:left}
@@ -801,6 +810,9 @@ body.p299-resizing-timeline *{
   <button id="navDetail" title="마케팅 기획 상세" onclick="showAppPage('detail')"><span class="nav-icon">▤</span><span class="nav-label">마케팅 기획 상세</span></button>
   <div class="nav-group">SALES</div>
   <button id="navScm" title="일별 실판매 현황" onclick="showAppPage('scm')"><span class="nav-icon">▦</span><span class="nav-label">일별 실판매 현황</span></button>
+  <div class="nav-group">CHANNEL</div>
+  <div class="channel-nav-parent"><span class="nav-icon">◇</span><span class="nav-label">채널별 마케팅 활동 현황</span></div>
+  <button id="navBookstore" class="channel-nav-child" title="주요 4개 서점 현황" onclick="showAppPage('bookstore')"><span class="nav-icon">└</span><span class="nav-label">주요 4개 서점 현황</span></button>
   <div class="nav-group result-group">RESULT</div>
   <button id="navPerformance" title="신간 마케팅 성과 분석" onclick="showAppPage('performance')"><span class="nav-icon">▥</span><span class="nav-label">신간 마케팅 성과 분석</span></button>
 </nav>
@@ -912,6 +924,12 @@ body.p299-resizing-timeline *{
 
 <div id="scmPage" class="page-view" style="padding:0;overflow:hidden;height:calc(100vh - 68px)">
   <iframe id="scmDashboardFrame" title="일별 실판매 현황" style="display:block;width:100%;height:100%;border:0;background:#0b1220"></iframe>
+</div>
+
+<div id="bookstorePage" class="page-view">
+  <div class="title"><div><h1>주요 4개 서점 마케팅 실행 현황</h1><div class="sub">교보문고·영풍문고·YES24·알라딘의 마케팅 활동을 공통 날짜축에서 확인합니다.</div></div><span class="badge">마케팅활동 실데이터</span></div>
+  <div class="bookstore-toolbar"><b>조회 기간</b><label>시작일 <input id="bookstoreDateFrom" type="date"></label><label>종료일 <input id="bookstoreDateTo" type="date"></label><button class="btn primary" onclick="renderMajorBookstoreTimeline()">조회</button><button class="btn light" onclick="loadMajorBookstoreTimeline(true)">새로고침</button><span id="bookstoreLoadState">데이터를 불러오는 중...</span></div>
+  <div id="bookstoreTimelineRoot"><div class="perf-empty">메뉴를 선택하면 주요 서점 활동을 불러옵니다.</div></div>
 </div>
 
 <div id="detailPage" class="page-view">
@@ -1320,20 +1338,23 @@ let currentDetailCode=null,currentDetailTitle="",currentDetailActivityCount=0,cu
 let editingStrategyField=null;
 let editingActivityId=null;
 function showAppPage(page){
- const upload=page==="upload",detail=page==="detail",performance=page==="performance",scm=page==="scm";
+ const upload=page==="upload",detail=page==="detail",performance=page==="performance",scm=page==="scm",bookstore=page==="bookstore";
  document.getElementById("uploadPage").classList.toggle("active",upload);
  document.getElementById("detailPage").classList.toggle("active",detail);
  document.getElementById("performancePage").classList.toggle("active",performance);
  document.getElementById("scmPage").classList.toggle("active",scm);
+ document.getElementById("bookstorePage").classList.toggle("active",bookstore);
  document.getElementById("navUpload").classList.toggle("active",upload);
  document.getElementById("navDetail").classList.toggle("active",detail);
  document.getElementById("navPerformance").classList.toggle("active",performance);
  document.getElementById("navScm").classList.toggle("active",scm);
- pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":performance?"신간 마케팅 성과 분석":"일별 실판매 현황";
- pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
+ document.getElementById("navBookstore").classList.toggle("active",bookstore);
+ pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":performance?"신간 마케팅 성과 분석":bookstore?"주요 4개 서점 현황":"일별 실판매 현황";
+ pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":bookstore?"주요 서점별 마케팅 실행 일정을 공통 날짜축으로 조회합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
  if(detail) loadMarketingPlanList();
  if(performance) loadPerformancePlanList();
  if(scm){const frame=document.getElementById("scmDashboardFrame");if(!frame.getAttribute("src"))frame.setAttribute("src","scm-dashboard.html");}
+ if(bookstore)loadMajorBookstoreTimeline();
 }
 function cleanProductName(v){return String(v||"").replace(/^전문>/,"").replace("100세까지월500만원받는ETF연금수업","100살까지 월 500만 원 받는 ETF 연금 수업");}
 function detailMoney(v){return Number(v||0).toLocaleString("ko-KR")+"원";}
@@ -2102,8 +2123,8 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
  }
 
  window.showDataAdminPage=function(){
-   ["uploadPage","detailPage","performancePage","dataAdminPage"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="dataAdminPage");});
-   ["navUpload","navDetail","navPerformance","navDataAdmin"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="navDataAdmin");});
+   ["uploadPage","detailPage","performancePage","scmPage","bookstorePage","dataAdminPage"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="dataAdminPage");});
+   ["navUpload","navDetail","navPerformance","navScm","navBookstore","navDataAdmin"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="navDataAdmin");});
    const title=document.getElementById("pageHeaderTitle"),sub=document.getElementById("pageHeaderSub");
    if(title)title.textContent="데이터 관리";
    if(sub)sub.textContent="ERP·SCM 등 성과 원천 데이터를 업로드하고 관리합니다.";
@@ -3029,6 +3050,60 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
   const legend=document.querySelector("#performanceContent .p271-legend");if(legend)legend.innerHTML='<span>SCM 일별 실판매</span><span class="erp">ERP 일별 매출부수</span>';
   const source=r.YES24구매자분포||[],latest=source.reduce((v,x)=>String(x.기준일||"")>v?String(x.기준일):v,"");const selected=source.filter(x=>String(x.기준일||"")===latest);if(selected.length){const totals=type=>selected.flatMap(x=>x.분포?.[type]||[]).reduce((a,x)=>(a[x.구간]=(a[x.구간]||0)+Number(x.수량||0),a),{}),g=totals("성별"),a=totals("연령"),known=(g.남||0)+(g.녀||0),ageTotal=Object.values(a).reduce((s,x)=>s+x,0),pct=n=>ageTotal?n/ageTotal*100:0;const ageRows=[["20대",(a["20대 초"]||0)+(a["20대 후"]||0)],["30대",(a["30대 초"]||0)+(a["30대 후"]||0)],["40대",(a["40대 초"]||0)+(a["40대 후"]||0)],["50대",(a["50대 초"]||0)+(a["50대 후"]||0)],["60대+",a["60대 이상"]||0]],max=Math.max(1,...ageRows.map(x=>pct(x[1]))),aud=document.querySelector("#performanceContent .p271-audience");if(aud)aud.innerHTML=`<div class="p271-audience-grid"><div class="p271-donut-wrap"><div class="p271-donut" style="background:conic-gradient(#2f6bd5 0 ${known?(g.남||0)/known*100:0}%,#27b7a4 0 100%)"></div><div class="p271-mini-legend"><b>YES24</b><br>남성 ${known?((g.남||0)/known*100).toFixed(1):"0.0"}%<br>여성 ${known?((g.녀||0)/known*100).toFixed(1):"0.0"}%</div></div><div class="p271-age-bars">${ageRows.map(x=>`<div class="p271-age"><div class="row"><span>${x[0]}</span><b>${pct(x[1]).toFixed(1)}%</b></div><div class="p271-track"><div class="p271-fill" style="width:${pct(x[1])/max*100}%"></div></div></div>`).join("")}</div></div><div class="p271-match"><b>기준일 ${latest}</b> · 미가입 ${Number(g.미가입||0).toLocaleString("ko-KR")}명 · 10대 이하 ${Number(a["10대 이하"]||0).toLocaleString("ko-KR")}명 · 원본 세부 구간은 DB에 그대로 보존됩니다.</div>`;}
  };
+})();
+</script>
+<script>
+// 기존 마케팅활동을 조회 시점에 주요 4개 서점으로 분류해 공통 날짜축에 표시한다.
+(function(){
+ const stores=["교보문고","영풍문고","YES24","알라딘"],categories=["아동","만화","단행본"];
+ let bookstoreData=null,bookstoreLoading=false;
+ const dayMs=86400000,parseDay=v=>new Date(String(v||"").slice(0,10)+"T00:00:00"),iso=d=>d.toISOString().slice(0,10);
+ window.loadMajorBookstoreTimeline=async function(force){
+  if(bookstoreLoading)return;if(bookstoreData&&!force){renderMajorBookstoreTimeline();return;}
+  bookstoreLoading=true;const state=document.getElementById("bookstoreLoadState");if(state)state.textContent="Supabase에서 불러오는 중...";
+  try{
+   const r=await pywebview.api.get_major_bookstore_marketing_activities();if(!r.ok)throw new Error(r.message||"조회 실패");bookstoreData=r;
+   const from=document.getElementById("bookstoreDateFrom"),to=document.getElementById("bookstoreDateTo");
+   if(!from.value||!to.value){const first=r.date_from?parseDay(r.date_from):new Date(),last=r.date_to?parseDay(r.date_to):new Date();first.setDate(first.getDate()-7);last.setDate(last.getDate()+14);from.value=iso(first);to.value=iso(last);}
+   renderMajorBookstoreTimeline();
+  }catch(e){if(state)state.textContent="조회 실패";document.getElementById("bookstoreTimelineRoot").innerHTML=`<div class="bookstore-empty">${esc(e?.message||e)}</div>`;}
+  finally{bookstoreLoading=false;}
+ };
+ function activityTooltip(row){return [
+  `서점: ${row.서점||"-"}`,`도서: ${row.도서명||"-"}`,`제품코드: ${row.제품코드||"-"}`,`분류: ${row.분류||"-"}`,`출간일: ${row.출간일||"-"}`,
+  `활동분류: ${row.활동분류||"-"}`,`채널·매체: ${row.채널또는매체||"-"}`,`활동명: ${row.활동명||"-"}`,`기간: ${row.시작일||"-"} ~ ${row.종료일||row.시작일||"-"}`,
+  `비용: ${Number(row.비용||0).toLocaleString("ko-KR")}원`,`일정비고: ${row.일정비고||"-"}`,`비고: ${row.비고||"-"}`,`URL: ${row.URL||"-"}`
+ ].join("\n");}
+ function axisHtml(start,totalDays){
+  const step=totalDays<=62?7:totalDays<=186?14:28,ticks=[];
+  for(let i=0;i<totalDays;i+=step){const d=new Date(start.getTime()+i*dayMs);ticks.push(`<span class="bookstore-tick" style="left:${(i/totalDays)*100}%">${iso(d).slice(5)}</span>`);}
+  return ticks.join("");
+ }
+ function storeClass(name){return name==="YES24"?"yes24":name==="알라딘"?"aladin":name==="영풍문고"?"ypbooks":"";}
+ window.renderMajorBookstoreTimeline=function(){
+  if(!bookstoreData)return;const state=document.getElementById("bookstoreLoadState"),root=document.getElementById("bookstoreTimelineRoot"),fromValue=document.getElementById("bookstoreDateFrom").value,toValue=document.getElementById("bookstoreDateTo").value;
+  let start=parseDay(fromValue),end=parseDay(toValue);if(!fromValue||!toValue||Number.isNaN(start)||Number.isNaN(end)||start>end){if(state)state.textContent="조회 기간을 확인해주세요.";return;}
+  const totalDays=Math.max(1,Math.round((end-start)/dayMs)+1),axis=axisHtml(start,totalDays);let visibleTotal=0;
+  root.innerHTML=stores.map(store=>{
+   const source=bookstoreData.bookstores?.[store]||[],rows=source.filter(row=>{if(!row.시작일&&!row.종료일)return true;const s=parseDay(row.시작일||row.종료일),e=parseDay(row.종료일||row.시작일);return e>=start&&s<=end;});visibleTotal+=rows.length;
+   let body=`<div class="bookstore-axis"><div class="bookstore-axis-label">도서 · 마케팅 활동</div><div class="bookstore-track">${axis}</div></div>`;
+   if(!rows.length)body+=`<div class="bookstore-empty">선택한 기간에 등록된 활동이 없습니다.</div>`;
+   categories.forEach(category=>{
+    const categoryRows=rows.filter(row=>row.분류===category);if(!categoryRows.length)return;
+    body+=`<div class="bookstore-category-row"><div>${category}</div></div>`;
+    const products=new Map();categoryRows.forEach(row=>{const key=String(row.제품코드||row.도서명||"");if(!products.has(key))products.set(key,[]);products.get(key).push(row);});
+    products.forEach(productRows=>{const first=productRows[0];body+=`<div class="bookstore-book-row"><div>${esc(first.도서명||"제품 미연결")}<small>${esc(first.제품코드||"-")} · 출간일 ${esc(first.출간일||"-")}</small></div><div></div></div>`;
+     productRows.forEach(row=>{let bar="";if(row.시작일||row.종료일){const rawStart=parseDay(row.시작일||row.종료일),rawEnd=parseDay(row.종료일||row.시작일),shownStart=rawStart<start?start:rawStart,shownEnd=rawEnd>end?end:rawEnd,left=Math.max(0,(shownStart-start)/dayMs/totalDays*100),width=Math.max(100/totalDays,(Math.round((shownEnd-shownStart)/dayMs)+1)/totalDays*100);bar=`<span class="bookstore-activity-bar ${storeClass(store)}" style="left:${left}%;width:${Math.min(width,100-left)}%" data-bookstore-tip="${encodeURIComponent(activityTooltip(row))}"></span>`;}
+      body+=`<div class="bookstore-activity-row"><div class="bookstore-activity-label"><b>${esc(row.활동명||"활동명 없음")}</b> · ${esc(row.채널또는매체||"-")}</div><div class="bookstore-track">${bar}</div></div>`;});
+    });
+   });
+   return `<details class="bookstore-section" open><summary>${store}<span>${rows.length.toLocaleString("ko-KR")}건</span></summary><div class="bookstore-scroll"><div class="bookstore-grid">${body}</div></div></details>`;
+  }).join("");if(state)state.textContent=`${fromValue} ~ ${toValue} · 총 ${visibleTotal.toLocaleString("ko-KR")}건`;
+ };
+ const tip=document.createElement("div");tip.className="bookstore-hover-tip";document.body.appendChild(tip);
+ document.addEventListener("pointerover",e=>{const bar=e.target.closest?.("[data-bookstore-tip]");if(!bar)return;tip.textContent=decodeURIComponent(bar.dataset.bookstoreTip);tip.classList.add("show");});
+ document.addEventListener("pointermove",e=>{if(!tip.classList.contains("show"))return;tip.style.left=Math.min(e.clientX+14,window.innerWidth-tip.offsetWidth-10)+"px";tip.style.top=Math.min(e.clientY+14,window.innerHeight-tip.offsetHeight-10)+"px";});
+ document.addEventListener("pointerout",e=>{if(e.target.closest?.("[data-bookstore-tip]"))tip.classList.remove("show");});
 })();
 </script>
 </body>
