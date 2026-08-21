@@ -668,6 +668,9 @@ async function startScmDashboard(){
 
   let rows = normalizeSalesRows(SALES_RAW.rows || []);
   let products = normalizeProducts(SALES_RAW.products || []);
+  let loadedDateFrom = SALES_RAW.loadedDateFrom || SALES_RAW.dateMin || "";
+  let loadedDateTo = SALES_RAW.loadedDateTo || SALES_RAW.dateMax || "";
+  let rangeReloadTimer = null;
 
   // 같은 제품코드에 여러 도서명이 있으면 가장 최근 판매기준일의 도서명을
   // 화면용 대표 도서명으로 사용합니다.
@@ -1031,6 +1034,10 @@ async function startScmDashboard(){
   function setDateDefaults(){
     const dates = [...new Set(rows.map(r=>r.date))].sort();
     if(!dates.length) return;
+    el("startDate").min = SALES_RAW.availableDateMin || dates[0];
+    el("endDate").min = SALES_RAW.availableDateMin || dates[0];
+    el("startDate").max = SALES_RAW.availableDateMax || dates[dates.length-1];
+    el("endDate").max = SALES_RAW.availableDateMax || dates[dates.length-1];
     // 최초 실행 기본 조회 기간: 최근 30일치 실판매 데이터
     el("startDate").value = dates[Math.max(0, dates.length-30)];
     el("endDate").value = dates[dates.length-1];
@@ -1052,6 +1059,34 @@ async function startScmDashboard(){
     if(mids.includes(cur)) el("midFilter").value = cur;
   }
 
+  async function reloadDashboardRange(){
+    const dateFrom = el("startDate").value;
+    const dateTo = el("endDate").value;
+    if(!dateFrom || !dateTo || dateFrom > dateTo) return;
+    if(loadedDateFrom && loadedDateTo && dateFrom >= loadedDateFrom && dateTo <= loadedDateTo){
+      render();
+      return;
+    }
+    const result = await api.get_scm_dashboard_data({date_from:dateFrom, date_to:dateTo});
+    if(!result || !result.ok){
+      console.error("SCM 기간 조회 실패", result && result.message);
+      return;
+    }
+    rows = normalizeSalesRows(result.rows || []);
+    products = normalizeProducts(result.products || []);
+    records = Array.isArray(result.marketingRecords) ? result.marketingRecords : [];
+    loadedDateFrom = result.loadedDateFrom || dateFrom;
+    loadedDateTo = result.loadedDateTo || dateTo;
+    applyLatestProductNamesInHtml(rows, products);
+    fillFilters();
+    render();
+  }
+
+  function scheduleRangeReload(){
+    clearTimeout(rangeReloadTimer);
+    rangeReloadTimer = setTimeout(reloadDashboardRange, 250);
+  }
+
   function bindEvents(){
     ["startDate","endDate"].forEach(id=>{
       const node = el(id);
@@ -1059,7 +1094,10 @@ async function startScmDashboard(){
         node.addEventListener("click", ()=>node.showPicker());
       }
     });
-    ["startDate","endDate","periodMode","clientFilter","mainFilter","midFilter","ageFilter","bookSearch"].forEach(id=>{
+    ["startDate","endDate"].forEach(id=>{
+      el(id).addEventListener("change", scheduleRangeReload);
+    });
+    ["periodMode","clientFilter","mainFilter","midFilter","ageFilter","bookSearch"].forEach(id=>{
       el(id).addEventListener(id==="bookSearch" ? "input" : "change", ()=>{
         if(id==="mainFilter") refreshMidFilter();
         render();
@@ -2077,4 +2115,3 @@ startScmDashboard().catch(error=>{
 </script>
 </body>
 </html>
-

@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 import openpyxl
 
@@ -64,19 +64,16 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def parse_yes24_demographics(directory: Path = YES24_DOWNLOAD_DIR) -> Yes24Demographics:
-    """YES24 일별 원본을 수정하지 않고 원본 수준의 구매자 분포로 읽습니다."""
-    if not directory.exists():
-        raise FileNotFoundError(f"YES24 원본 폴더를 찾을 수 없습니다: {directory}")
-    files = sorted(
-        path for path in directory.iterdir()
-        if path.is_file() and FILE_PATTERN.match(path.name)
-    )
+def parse_yes24_demographic_files(paths: Iterable[Path]) -> Yes24Demographics:
+    """명시된 YES24 원본만 읽어 증분 동기화 범위를 제한합니다."""
+    files = sorted(Path(path) for path in paths if FILE_PATTERN.match(Path(path).name))
     if not files:
-        raise RuntimeError(f"YES24 성인/아동 원본 파일이 없습니다: {directory}")
+        return Yes24Demographics([], 0, "", "", 0, 0)
 
     normalized: dict[tuple[str, str, str], dict[str, Any]] = {}
     for path in files:
+        if not path.exists():
+            raise FileNotFoundError(f"YES24 원본 파일을 찾을 수 없습니다: {path}")
         match = FILE_PATTERN.match(path.name)
         if not match:
             continue
@@ -138,6 +135,20 @@ def parse_yes24_demographics(directory: Path = YES24_DOWNLOAD_DIR) -> Yes24Demog
         total_quantity=sum(row["총판매수량"] for row in rows),
         distribution_count=len(rows) * (len(GENDER_COLUMNS) + len(AGE_COLUMNS) + len(REGION_COLUMNS)),
     )
+
+
+def parse_yes24_demographics(directory: Path = YES24_DOWNLOAD_DIR) -> Yes24Demographics:
+    """YES24 일별 원본을 수정하지 않고 원본 수준의 구매자 분포로 읽습니다."""
+    if not directory.exists():
+        raise FileNotFoundError(f"YES24 원본 폴더를 찾을 수 없습니다: {directory}")
+    files = sorted(
+        path for path in directory.iterdir()
+        if path.is_file() and FILE_PATTERN.match(path.name)
+    )
+    if not files:
+        raise RuntimeError(f"YES24 성인/아동 원본 파일이 없습니다: {directory}")
+
+    return parse_yes24_demographic_files(files)
 
 
 def preview_yes24_demographics(directory: Path = YES24_DOWNLOAD_DIR) -> dict[str, Any]:

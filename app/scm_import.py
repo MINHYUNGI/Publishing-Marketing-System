@@ -9,7 +9,7 @@ from typing import Any, Iterable
 import openpyxl
 
 from .config import SCM_LEDGER_FILE
-from .yes24_demographics import parse_yes24_demographics, preview_yes24_demographics
+from .yes24_demographics import Yes24Demographics, parse_yes24_demographics, preview_yes24_demographics
 
 
 SYNC_VERSION = "SCM-SUPABASE-V1"
@@ -215,15 +215,32 @@ def preview_scm_sync(path: Path = SCM_LEDGER_FILE) -> dict[str, Any]:
     }
 
 
-def sync_scm_ledger(backend: Any, path: Path = SCM_LEDGER_FILE) -> dict[str, Any]:
-    """검증된 전체 원장을 스테이징한 뒤 DB 함수로 원자적으로 확정합니다."""
-    from .security import sha256_file
-
+def sync_scm_dataset(
+    backend: Any,
+    ledger: ScmLedger,
+    yes24: Yes24Demographics,
+    source_file: str,
+    source_hash: str,
+) -> dict[str, Any]:
+    """정규화된 증분 범위를 스테이징한 뒤 DB 함수로 원자적으로 확정합니다."""
     if not backend.db:
         raise RuntimeError("Supabase가 연결되지 않았습니다.")
-    ledger = parse_scm_ledger(path)
-    yes24 = parse_yes24_demographics()
     client = backend.db.client
+    isbn_values = sorted({row["ISBN13"] for row in ledger.rows})
+    mapping_by_isbn: dict[str, str] = {}
+    for isbn_batch in (isbn_values[start : start + 200] for start in range(0, len(isbn_values), 200)):
+        mapped = (
+            client.table("SCM제품매핑")
+            .select("ISBN13,제품코드")
+            .in_("ISBN13", isbn_batch)
+            .execute()
+        ).data or []
+        mapping_by_isbn.update(
+            {str(row["ISBN13"]): str(row["제품코드"]) for row in mapped if row.get("제품코드")}
+        )
+    for row in ledger.rows:
+        if not row.get("제품코드"):
+            row["제품코드"] = mapping_by_isbn.get(row["ISBN13"])
     valid_product_codes = {
         str(row.get("제품코드"))
         for row in backend.product_index
@@ -261,8 +278,8 @@ def sync_scm_ledger(backend: Any, path: Path = SCM_LEDGER_FILE) -> dict[str, Any
     history = {
         "대상시작일": ledger.date_from,
         "대상종료일": ledger.date_to,
-        "원천파일명": path.name,
-        "원천파일해시": sha256_file(path),
+        "원천파일명": source_file,
+        "원천파일해시": source_hash,
         "상태": "진행",
         "전체건수": len(ledger.rows),
         "신규건수": inserted,
@@ -332,7 +349,7 @@ def sync_scm_ledger(backend: Any, path: Path = SCM_LEDGER_FILE) -> dict[str, Any
         return {
             "ok": True,
             "sync_id": sync_id,
-            "file_name": path.name,
+            "file_name": source_file,
             "date_from": ledger.date_from,
             "date_to": ledger.date_to,
             "total": len(ledger.rows),
@@ -356,3 +373,16 @@ def sync_scm_ledger(backend: Any, path: Path = SCM_LEDGER_FILE) -> dict[str, Any
             {"상태": "실패", "종료일시": datetime.now().isoformat(), "오류건수": 1, "오류내용": str(exc)}
         ).eq("동기화ID", sync_id).execute()
         raise
+
+
+def sync_scm_ledger(backend: Any, path: Path = SCM_LEDGER_FILE) -> dict[str, Any]:
+    """기존 전체 원장 수동 동기화 호환 진입점입니다."""
+    from .security import sha256_file
+
+    return sync_scm_dataset(
+        backend,
+        parse_scm_ledger(path),
+        parse_yes24_demographics(),
+        path.name,
+        sha256_file(path),
+    )

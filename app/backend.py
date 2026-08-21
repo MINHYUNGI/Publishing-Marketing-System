@@ -19,6 +19,7 @@ from .config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE, PROJECT_URL, ATTACHMENT_R
 from .database import Database
 from .erp_import import choose_and_import_erp
 from .scm_import import preview_scm_sync, sync_scm_ledger
+from .scm_collection import get_scm_collection_status, plan_scm_collection, start_scm_collection
 from .file_store import copy_document, copy_reference_file, save_reference_bytes
 from .security import get_openai_api_key, get_supabase_secret_key, sha256_file
 
@@ -48,6 +49,27 @@ class Backend:
             logging.exception("SCM 실판매 동기화 실패")
             return {"ok": False, "message": str(exc)}
 
+    def preview_scm_collection(self, options: dict[str, Any] | None = None) -> dict[str, Any]:
+        try:
+            return {"ok": True, **plan_scm_collection(self, options)}
+        except Exception as exc:
+            logging.exception("SCM 직접 수집 계획 조회 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def start_scm_collection(self, options: dict[str, Any] | None = None) -> dict[str, Any]:
+        try:
+            return start_scm_collection(self, options)
+        except Exception as exc:
+            logging.exception("SCM 직접 수집 시작 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def get_scm_collection_status(self, job_id: str) -> dict[str, Any]:
+        try:
+            return get_scm_collection_status(job_id)
+        except Exception as exc:
+            logging.exception("SCM 직접 수집 상태 조회 실패")
+            return {"ok": False, "message": str(exc)}
+
     def get_scm_sync_status(self) -> dict[str, Any]:
         try:
             if not self.db:
@@ -57,11 +79,11 @@ class Backend:
             logging.exception("SCM 동기화 상태 조회 실패")
             return {"ok": False, "message": str(exc)}
 
-    def get_scm_dashboard_data(self) -> dict[str, Any]:
+    def get_scm_dashboard_data(self, options: dict[str, Any] | None = None) -> dict[str, Any]:
         try:
             if not self.db:
                 raise RuntimeError("Supabase가 연결되지 않았습니다.")
-            return {"ok": True, **self.db.fetch_scm_dashboard_data()}
+            return {"ok": True, **self.db.fetch_scm_dashboard_data(options)}
         except Exception as exc:
             logging.exception("SCM 실판매 대시보드 조회 실패")
             return {"ok": False, "message": str(exc)}

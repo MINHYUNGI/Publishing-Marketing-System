@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
 from .content_metrics import platform_from_url, youtube_statistics
@@ -754,7 +754,12 @@ class Database:
                 links = by_execution.get(str(item["실행활동ID"]), [])
             item["콘텐츠링크"] = links
 
-    def _fetch_scm_rows(self, product_code: str | None = None) -> list[dict[str, Any]]:
+    def _fetch_scm_rows(
+        self,
+        product_code: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         start = 0
         while True:
@@ -763,6 +768,10 @@ class Database:
             )
             if product_code:
                 query = query.eq("제품코드", product_code)
+            if date_from:
+                query = query.gte("판매일", date_from)
+            if date_to:
+                query = query.lte("판매일", date_to)
             batch = query.order("판매일").range(start, start + 999).execute().data or []
             rows.extend(batch)
             if len(batch) < 1000:
@@ -778,8 +787,19 @@ class Database:
         unmatched = self.client.table("SCM제품매핑").select("ISBN13,SCM상품명,최초확인일,최종확인일").is_("제품코드", "null").order("SCM상품명").execute().data or []
         return {"latest": latest, "clients": clients, "unmatched": unmatched}
 
-    def fetch_scm_dashboard_data(self) -> dict[str, Any]:
-        facts = self._fetch_scm_rows()
+    def fetch_scm_dashboard_data(self, options: dict[str, Any] | None = None) -> dict[str, Any]:
+        options = options or {}
+        earliest_rows = self.client.table("SCM일별실판매").select("판매일").order("판매일").limit(1).execute().data or []
+        latest_rows = self.client.table("SCM일별실판매").select("판매일").order("판매일", desc=True).limit(1).execute().data or []
+        available_date_min = str(earliest_rows[0]["판매일"]) if earliest_rows else ""
+        available_date_max = str(latest_rows[0]["판매일"]) if latest_rows else ""
+        requested_from = str(options.get("date_from") or "")
+        requested_to = str(options.get("date_to") or "")
+        date_to = requested_to or available_date_max
+        date_from = requested_from
+        if not date_from and date_to:
+            date_from = (date.fromisoformat(date_to) - timedelta(days=45)).isoformat()
+        facts = self._fetch_scm_rows(date_from=date_from or None, date_to=date_to or None)
         mappings: list[dict[str, Any]] = []
         start = 0
         while True:
@@ -818,7 +838,7 @@ class Database:
         for row in marketing_rows:
             code = str(row.get("제품코드") or "")
             marketing_records.append({"id": row.get("활동ID"), "type": "viral" if any(token in str(row.get("활동분류") or "") for token in ("SNS", "바이럴")) else "store", "name": row.get("활동명") or row.get("채널또는매체") or "마케팅 활동", "start": row.get("시작일"), "end": row.get("종료일") or row.get("시작일"), "books": [{"code": code, "itemCode": code, "title": products.get(code, {}).get("제품명") or code}]})
-        return {"generatedAt": datetime.now().isoformat(), "generatedDate": date.today().isoformat(), "source": "Supabase SCM일별실판매", "rowCount": len(dashboard_rows), "dateMin": dates[0] if dates else "", "dateMax": dates[-1] if dates else "", "clients": sorted(set(client_names.values())), "products": dashboard_products, "rows": dashboard_rows, "marketingRecords": marketing_records}
+        return {"generatedAt": datetime.now().isoformat(), "generatedDate": date.today().isoformat(), "source": "Supabase SCM일별실판매", "rowCount": len(dashboard_rows), "dateMin": dates[0] if dates else "", "dateMax": dates[-1] if dates else "", "availableDateMin": available_date_min, "availableDateMax": available_date_max, "loadedDateFrom": date_from, "loadedDateTo": date_to, "clients": sorted(set(client_names.values())), "products": dashboard_products, "rows": dashboard_rows, "marketingRecords": marketing_records}
 
     def fetch_yes24_buyer_demographics(self, product_code: str) -> list[dict[str, Any]]:
         snapshots = self.client.table("YES24구매자스냅샷").select("스냅샷ID,기준일,기간시작일,기간종료일,계정구분,ISBN13,제품코드,YES24상품번호,상품명,총판매수량,원본파일명").eq("제품코드", product_code).order("기준일").execute().data or []
