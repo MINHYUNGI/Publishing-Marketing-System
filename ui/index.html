@@ -775,6 +775,7 @@ body.p299-resizing-timeline *{
 .bookstore-scroll{overflow-x:auto;padding:12px 14px 16px}.bookstore-grid{min-width:920px}.bookstore-axis,.bookstore-activity-row,.bookstore-book-row,.bookstore-category-row{display:grid;grid-template-columns:290px minmax(600px,1fr);align-items:stretch}.bookstore-axis{position:sticky;top:0;z-index:3;background:#fff}.bookstore-axis-label{padding:8px 10px;color:#667085;font-size:calc(var(--font-sm) * var(--font-scale));font-weight:700}.bookstore-track{position:relative;min-height:34px;border-left:1px solid #d8e0e9;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(14.2857% - 1px),#edf1f5 calc(14.2857% - 1px),#edf1f5 14.2857%)}.bookstore-axis .bookstore-track{height:44px;border-bottom:1px solid #d8e0e9}.bookstore-tick{position:absolute;bottom:7px;transform:translateX(-50%);color:#6b7788;font-size:11px;white-space:nowrap}.bookstore-tick:before{content:'';position:absolute;left:50%;bottom:-8px;width:1px;height:6px;background:#aeb9c6}
 .bookstore-category-row{margin-top:8px;background:#eaf1f9;color:#24415f;font-weight:900}.bookstore-category-row>div{grid-column:1/-1;padding:8px 10px}.bookstore-book-row{background:#f8fafc;border-top:1px solid #e7ecf2}.bookstore-book-row>div:first-child{padding:9px 10px;font-weight:800;color:#344054}.bookstore-book-row small{display:block;margin-top:2px;color:#788596;font-weight:500}.bookstore-activity-row{border-top:1px solid #edf1f5}.bookstore-activity-label{min-width:0;padding:8px 10px;color:#4b596b;font-size:calc(var(--font-sm) * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bookstore-activity-label b{color:#26364a}.bookstore-activity-bar{position:absolute;top:7px;height:20px;min-width:7px;border-radius:5px;background:#2f6bd5;color:#fff;box-shadow:0 1px 3px rgba(20,53,100,.22);cursor:help}.bookstore-activity-bar.yes24{background:#7b61c9}.bookstore-activity-bar.aladin{background:#2c9678}.bookstore-activity-bar.ypbooks{background:#d9842b}.bookstore-empty{padding:24px;text-align:center;color:#7a8797}.bookstore-hover-tip{position:fixed;display:none;z-index:13000;max-width:min(420px,calc(100vw - 24px));padding:10px 12px;border-radius:7px;background:#1f2937;color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.24);font-size:calc(var(--font-sm) * var(--font-scale));line-height:1.55;white-space:pre-line;pointer-events:none}.bookstore-hover-tip.show{display:block}
 </style>
+<style>.ai-detail-row{grid-template-columns:1.1fr 120px 120px 90px 1.2fr 1.7fr auto!important}@media(max-width:1100px){.ai-detail-row{grid-template-columns:1fr 1fr!important}}@media(max-width:720px){.ai-detail-row{grid-template-columns:1fr!important}}</style>
 
 <style>
 /* Major bookstore unified view refinements */
@@ -799,6 +800,11 @@ body.p299-resizing-timeline *{
 </style>
 
 <style>
+/* AI marketing and sales activity recorder */
+.ai-recorder{display:grid;gap:16px}.ai-recorder-panel{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}.ai-recorder-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line);background:#f8fafc}.ai-recorder-head h3{margin:0;font-size:calc(var(--font-lg) * var(--font-scale))}.ai-recorder-body{padding:18px}.ai-recorder-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.ai-recorder-field{display:grid;gap:6px}.ai-recorder-field.full{grid-column:1/-1}.ai-recorder-field label{color:#526174;font-size:calc(var(--font-sm) * var(--font-scale));font-weight:800}.ai-recorder-field input,.ai-recorder-field select,.ai-recorder-field textarea{width:100%;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#26364a;padding:9px 10px;font:inherit}.ai-recorder-field textarea{min-height:82px;resize:vertical}.ai-recorder-prompt{min-height:220px!important;line-height:1.7}.ai-recorder-actions{display:flex;align-items:center;gap:9px;margin-top:14px}.ai-recorder-actions .spacer{flex:1}.ai-recorder-note{color:#6b7788;font-size:calc(var(--font-sm) * var(--font-scale));line-height:1.6}.ai-recorder-warning{display:none;margin-bottom:14px;padding:11px 13px;border:1px solid #f0c36a;border-radius:8px;background:#fff8e7;color:#8a5711;white-space:pre-line}.ai-recorder-warning.show{display:block}.ai-recorder-result{display:none}.ai-recorder-result.show{display:block}.ai-recorder-details{display:grid;gap:9px;margin-top:14px}.ai-detail-row{display:grid;grid-template-columns:1.1fr 130px 130px 90px 1.8fr auto;gap:7px;align-items:center}.ai-detail-row input{min-width:0;border:1px solid #d3dbe5;border-radius:6px;padding:7px 8px}.ai-detail-remove{height:34px;border:1px solid #e1b8bc;border-radius:6px;background:#fff5f5;color:#b4232c;cursor:pointer}.ai-product-selected{min-height:23px;margin-top:5px;color:#255da8;font-size:calc(var(--font-sm) * var(--font-scale));font-weight:800}.ai-save-status{min-height:24px;margin-top:12px;color:#177447;font-weight:900}.ai-analysis-badge{padding:4px 8px;border-radius:999px;background:#e8f1ff;color:#245da7;font-size:12px;font-weight:900}@media(max-width:1100px){.ai-recorder-grid{grid-template-columns:1fr 1fr}.ai-detail-row{grid-template-columns:1fr 1fr}.ai-recorder-field.full{grid-column:1/-1}}@media(max-width:720px){.ai-recorder-grid{grid-template-columns:1fr}.ai-recorder-field.full{grid-column:auto}.ai-detail-row{grid-template-columns:1fr}}
+</style>
+
+<style>
 /* Performance detail tooltip and activity dialog */
 .performance-hover-tip{position:fixed;display:none;z-index:12000;max-width:min(380px,calc(100vw - 24px));padding:9px 11px;border-radius:7px;background:#1f2937;color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.22);font-size:calc(var(--font-sm) * var(--font-scale));line-height:1.55;white-space:pre-line;pointer-events:none}
 .performance-hover-tip.show{display:block}.p-detail-sales-bar{cursor:help}.p271-actbar[data-performance-activity]{cursor:help}
@@ -819,6 +825,7 @@ body.p299-resizing-timeline *{
   <div class="nav-group">PLAN</div>
   <button id="navUpload" class="active" title="AI 문서 등록" onclick="showAppPage('upload')"><span class="nav-icon">＋</span><span class="nav-label">AI 문서 등록</span></button>
   <button id="navDetail" title="마케팅 기획 상세" onclick="showAppPage('detail')"><span class="nav-icon">▤</span><span class="nav-label">마케팅 기획 상세</span></button>
+  <button id="navAiRecorder" title="AI 마케팅·영업 활동 기록" onclick="showAppPage('aiRecorder')"><span class="nav-icon">✦</span><span class="nav-label">AI 마케팅·영업 활동 기록</span></button>
   <div class="nav-group">SALES</div>
   <button id="navScm" title="일별 실판매 현황" onclick="showAppPage('scm')"><span class="nav-icon">▦</span><span class="nav-label">일별 실판매 현황</span></button>
   <div class="nav-group">CHANNEL</div>
@@ -932,6 +939,59 @@ body.p299-resizing-timeline *{
   <div class="performance-toolbar"><b>도서 선택</b><select id="performanceProductSelect" onchange="loadPerformanceDetail(this.value)"></select><span id="performanceLoadState">목록 불러오는 중...</span></div>
   <div class="performance-note"><div><b>실데이터 연결</b> · Supabase의 마케팅 계획·활동, ERP 일별 실적, SCM 거래처별 실판매와 YES24 구매자 정보를 같은 제품과 날짜축으로 조회합니다.</div><span class="tag">SCM/ERP 연결됨</span></div>
   <div id="performanceContent"><div class="perf-empty">도서를 선택하면 출간 후 성과 화면을 표시합니다.</div></div>
+</div>
+
+<div id="aiRecorderPage" class="page-view">
+  <div class="title"><div><h1>AI 마케팅·영업 활동 기록</h1><div class="sub">자유롭게 작성한 활동을 AI가 구조화하며, 사용자가 검토·수정한 뒤에만 Supabase에 저장합니다.</div></div><span class="badge">AI 초안 → 사용자 확정</span></div>
+  <div class="ai-recorder">
+    <section class="ai-recorder-panel">
+      <div class="ai-recorder-head"><h3>1. 기본 정보와 자유입력</h3><span class="ai-analysis-badge">분석 중 DB 저장 없음</span></div>
+      <div class="ai-recorder-body">
+        <div class="ai-recorder-grid">
+          <div class="ai-recorder-field"><label>채널 *</label><select id="aiRecordChannel" onchange="updateAiRecordAssignees()"><option value="">선택</option></select></div>
+          <div class="ai-recorder-field"><label>담당자 *</label><select id="aiRecordAssignee"><option value="">선택</option></select></div>
+          <div class="ai-recorder-field"><label>등록자 *</label><select id="aiRecordRegistrar"><option value="">선택</option></select></div>
+          <div class="ai-recorder-field full"><label>마케팅 대상 도서 (선택)</label><input id="aiRecordProductQuery" list="aiRecordProductOptions" placeholder="제품코드·제품명·ISBN 검색" oninput="scheduleAiProductSearch()" onchange="selectAiRecordProduct()"><datalist id="aiRecordProductOptions"></datalist><div id="aiRecordProductSelected" class="ai-product-selected">도서를 선택하지 않아도 기록할 수 있습니다.</div></div>
+          <div class="ai-recorder-field full"><label>마케팅·영업 활동 자유입력 *</label><textarea id="aiRecordPrompt" class="ai-recorder-prompt" placeholder="마케팅 또는 영업 활동 내용을 자유롭게 작성하세요. 날짜, 거래처, 도서, 활동내용, 성과 등을 자연스럽게 입력하면 AI가 구조화합니다."></textarea></div>
+        </div>
+        <div class="ai-recorder-actions"><span class="ai-recorder-note">AI 분석 결과는 초안이며 확정 저장 전까지 Supabase에 기록되지 않습니다.</span><span class="spacer"></span><button id="aiAnalyzeBtn" class="btn primary" onclick="analyzeAiRecord()">AI 분석</button></div>
+      </div>
+    </section>
+    <section id="aiRecordResult" class="ai-recorder-panel ai-recorder-result">
+      <div class="ai-recorder-head"><h3>2. AI 분석 결과 검토·수정</h3><span id="aiRecordModel" class="ai-analysis-badge"></span></div>
+      <div class="ai-recorder-body">
+        <div id="aiRecordWarnings" class="ai-recorder-warning"></div>
+        <div class="ai-recorder-grid">
+          <div class="ai-recorder-field"><label>채널 *</label><select id="aiDraftChannel" onchange="syncAiDraftAssignees()"></select></div>
+          <div class="ai-recorder-field"><label>담당자 *</label><select id="aiDraftAssignee"></select></div>
+          <div class="ai-recorder-field"><label>거래처</label><input id="aiDraftClient"></div>
+          <div class="ai-recorder-field"><label>제품코드</label><input id="aiDraftProductCode" placeholder="선택사항"></div>
+          <div class="ai-recorder-field"><label>제품명 (ERP 확인)</label><input id="aiDraftProductName" readonly></div>
+          <div class="ai-recorder-field"><label>ISBN</label><input id="aiDraftIsbn" readonly></div>
+          <div class="ai-recorder-field"><label>활동 유형</label><input id="aiDraftType"></div>
+          <div class="ai-recorder-field"><label>활동 시작일</label><input id="aiDraftStart" type="date"></div>
+          <div class="ai-recorder-field"><label>활동 종료일</label><input id="aiDraftEnd" type="date"></div>
+          <div class="ai-recorder-field"><label>성과 발생일</label><input id="aiDraftResultDate" type="date"></div>
+          <div class="ai-recorder-field"><label>미팅 횟수</label><input id="aiDraftMeeting" type="number" min="0"></div>
+          <div class="ai-recorder-field"><label>날짜 표현 원문</label><input id="aiDraftDateExpression"></div>
+          <div class="ai-recorder-field"><label>제안서 발송</label><select id="aiDraftProposal"><option value="">미확인</option><option value="true">있음</option><option value="false">없음</option></select></div>
+          <div class="ai-recorder-field"><label>샘플 제공</label><select id="aiDraftSample"><option value="">미확인</option><option value="true">있음</option><option value="false">없음</option></select></div>
+          <div class="ai-recorder-field"><label>납품부수</label><input id="aiDraftUnits" type="number" min="0"></div>
+          <div class="ai-recorder-field"><label>매출액 (원)</label><input id="aiDraftSales" type="number" min="0"></div>
+          <div class="ai-recorder-field"><label>영업이익 (원)</label><input id="aiDraftProfit" type="number"></div>
+          <div class="ai-recorder-field"><label>영업이익률 (%)</label><input id="aiDraftProfitRate" type="number" step="0.01"></div>
+          <div class="ai-recorder-field full"><label>활동 요약</label><input id="aiDraftSummary"></div>
+          <div class="ai-recorder-field full"><label>주요 활동 내용 *</label><textarea id="aiDraftDetails"></textarea></div>
+          <div class="ai-recorder-field full"><label>기타 성과</label><textarea id="aiDraftOther"></textarea></div>
+          <div class="ai-recorder-field full"><label>비고</label><textarea id="aiDraftNote"></textarea></div>
+        </div>
+        <div class="ai-recorder-actions"><b>세부 활동</b><span class="spacer"></span><button class="btn light" onclick="addAiDetailRow()">＋ 세부 활동</button></div>
+        <div id="aiRecordDetails" class="ai-recorder-details"></div>
+        <div class="ai-recorder-actions"><button class="btn light" onclick="analyzeAiRecord()">다시 분석</button><span class="spacer"></span><button id="aiSaveBtn" class="btn primary" onclick="saveAiRecord()">확정 저장</button></div>
+        <div id="aiRecordSaveStatus" class="ai-save-status"></div>
+      </div>
+    </section>
+  </div>
 </div>
 
 <div id="scmPage" class="page-view" style="padding:0;overflow:hidden;height:calc(100vh - 68px)">
@@ -1121,6 +1181,7 @@ async function bootstrap(){
  products.forEach(p=>{productByCode.set(String(p.제품코드),p);displayToCode.set(productDisplay(p),String(p.제품코드));});
  productOptions.innerHTML=products.map(p=>`<option value="${esc(productDisplay(p))}"></option>`).join("");
  registrar.innerHTML='<option value="">선택</option>'+users.map(u=>`<option value="${u.사용자ID}">${esc(u.이름)} · ${esc(u.담당BU||"-")}</option>`).join("");
+ await setupAiRecorderOptions();
  connectionStatus.textContent=`● Supabase 연결됨 · 제품인덱스 ${products.length.toLocaleString("ko-KR")}건`;
  setupReferenceDropzone();
  const saved=localStorage.getItem("fontScale")||"100";fontScale.value=saved;setFontScale(saved,false);
@@ -1356,26 +1417,88 @@ let currentDetailCode=null,currentDetailTitle="",currentDetailActivityCount=0,cu
 let editingStrategyField=null;
 let editingActivityId=null,editingActivitySource="detail",editingActivitySnapshot=null;
 function showAppPage(page){
- const upload=page==="upload",detail=page==="detail",performance=page==="performance",scm=page==="scm",bookstore=page==="bookstore",social=page==="social";
+ const upload=page==="upload",aiRecorder=page==="aiRecorder",detail=page==="detail",performance=page==="performance",scm=page==="scm",bookstore=page==="bookstore",social=page==="social";
  document.getElementById("uploadPage").classList.toggle("active",upload);
+ document.getElementById("aiRecorderPage").classList.toggle("active",aiRecorder);
  document.getElementById("detailPage").classList.toggle("active",detail);
  document.getElementById("performancePage").classList.toggle("active",performance);
  document.getElementById("scmPage").classList.toggle("active",scm);
  document.getElementById("bookstorePage").classList.toggle("active",bookstore);
  document.getElementById("socialPage").classList.toggle("active",social);
  document.getElementById("navUpload").classList.toggle("active",upload);
+ document.getElementById("navAiRecorder").classList.toggle("active",aiRecorder);
  document.getElementById("navDetail").classList.toggle("active",detail);
  document.getElementById("navPerformance").classList.toggle("active",performance);
  document.getElementById("navScm").classList.toggle("active",scm);
  document.getElementById("navBookstore").classList.toggle("active",bookstore);
  document.getElementById("navSocial").classList.toggle("active",social);
- pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":performance?"신간 마케팅 성과 분석":bookstore?"주요 4개 서점 현황":social?"SNS·바이럴 마케팅 현황":"일별 실판매 현황";
- pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":bookstore?"주요 서점별 마케팅 실행 일정을 공통 날짜축으로 조회합니다.":social?"SNS 게시일을 기준으로 전후 SCM 실판매 변화를 비교합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
+ pageHeaderTitle.textContent=upload?"AI 문서 등록":aiRecorder?"AI 마케팅·영업 활동 기록":detail?"마케팅 기획 상세":performance?"신간 마케팅 성과 분석":bookstore?"주요 4개 서점 현황":social?"SNS·바이럴 마케팅 현황":"일별 실판매 현황";
+ pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":aiRecorder?"자유입력을 AI가 구조화하고 사용자가 검토한 최종값만 저장합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":bookstore?"주요 서점별 마케팅 실행 일정을 공통 날짜축으로 조회합니다.":social?"SNS 게시일을 기준으로 전후 SCM 실판매 변화를 비교합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
  if(detail) loadMarketingPlanList();
  if(performance) loadPerformancePlanList();
  if(scm){const frame=document.getElementById("scmDashboardFrame");if(!frame.getAttribute("src"))frame.setAttribute("src","scm-dashboard.html");}
  if(bookstore)loadMajorBookstoreTimeline();
  if(social)loadSocialViralDashboard();
+}
+
+let aiRecorderChannels={},aiRecorderState=null,aiRecordSelectedProduct=null,aiProductSearchTimer=null,aiProductSearchMap=new Map();
+async function setupAiRecorderOptions(){
+ const r=await pywebview.api.get_ai_activity_recorder_options();if(!r.ok)return;
+ aiRecorderChannels=r.channel_assignees||{};
+ const channelOptions='<option value="">선택</option>'+Object.keys(aiRecorderChannels).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+ aiRecordChannel.innerHTML=channelOptions;aiDraftChannel.innerHTML=channelOptions;
+ const userOptions='<option value="">선택</option>'+users.map(u=>`<option value="${u.사용자ID}">${esc(u.이름)} · ${esc(u.담당채널||"-")}</option>`).join("");
+ aiRecordRegistrar.innerHTML=userOptions;aiRecordAssignee.innerHTML=userOptions;aiDraftAssignee.innerHTML=userOptions;
+}
+function assigneeOptionsForChannel(channel,selected){
+ const matched=aiRecorderChannels[channel]||[];const source=matched.length?matched:users;
+ return '<option value="">선택</option>'+source.map(u=>`<option value="${u.사용자ID}" ${String(u.사용자ID)===String(selected||"")?"selected":""}>${esc(u.이름)}</option>`).join("");
+}
+function updateAiRecordAssignees(){const current=aiRecordAssignee.value;aiRecordAssignee.innerHTML=assigneeOptionsForChannel(aiRecordChannel.value,current);if(!aiRecordAssignee.value&&(aiRecorderChannels[aiRecordChannel.value]||[]).length===1)aiRecordAssignee.value=aiRecorderChannels[aiRecordChannel.value][0].사용자ID;}
+function syncAiDraftAssignees(){const current=aiDraftAssignee.value;aiDraftAssignee.innerHTML=assigneeOptionsForChannel(aiDraftChannel.value,current);if(!aiDraftAssignee.value&&(aiRecorderChannels[aiDraftChannel.value]||[]).length===1)aiDraftAssignee.value=aiRecorderChannels[aiDraftChannel.value][0].사용자ID;}
+function scheduleAiProductSearch(){clearTimeout(aiProductSearchTimer);aiProductSearchTimer=setTimeout(searchAiProducts,280)}
+async function searchAiProducts(){
+ const q=aiRecordProductQuery.value.trim();if(q.length<2){aiRecordProductOptions.innerHTML="";return}
+ const r=await pywebview.api.search_erp_product_master(q);if(!r.ok){toast(r.message);return}
+ aiProductSearchMap=new Map();aiRecordProductOptions.innerHTML=(r.products||[]).map(p=>{const label=`${p.제품코드} | ${p.제품명}${p.ISBN?" | "+p.ISBN:""}`;aiProductSearchMap.set(label,p);return `<option value="${esc(label)}"></option>`}).join("");
+}
+function selectAiRecordProduct(){
+ const value=aiRecordProductQuery.value.trim(),direct=[...aiProductSearchMap.values()].find(p=>String(p.제품코드)===value),p=aiProductSearchMap.get(value)||direct;
+ if(!p){if(!value){aiRecordSelectedProduct=null;aiRecordProductSelected.textContent="도서를 선택하지 않아도 기록할 수 있습니다."}return}
+ aiRecordSelectedProduct=p;aiRecordProductQuery.value=`${p.제품코드} | ${p.제품명}${p.ISBN?" | "+p.ISBN:""}`;
+ aiRecordProductSelected.textContent=`선택: ${p.제품명} · ${p.제품코드} · ${p.브랜드명||"-"} · ${p.제품상태||"-"}`;
+}
+function aiValue(id,value){const e=document.getElementById(id);if(e)e.value=value===null||value===undefined?"":value}
+function aiBoolValue(v){return v===true?"true":v===false?"false":""}
+async function analyzeAiRecord(){
+ const original=aiRecordPrompt.value.trim();if(!aiRecordChannel.value){toast("채널을 선택해 주세요.");return}if(!aiRecordAssignee.value){toast("담당자를 선택해 주세요.");return}if(!original){toast("활동 내용을 입력해 주세요.");return}
+ aiAnalyzeBtn.disabled=true;aiAnalyzeBtn.textContent="AI 분석 중...";aiRecordSaveStatus.textContent="";
+ const r=await pywebview.api.analyze_ai_marketing_sales_activity({channel:aiRecordChannel.value,assignee_id:aiRecordAssignee.value,selected_product_code:aiRecordSelectedProduct?.제품코드||null,original_text:original});
+ aiAnalyzeBtn.disabled=false;aiAnalyzeBtn.textContent=aiRecorderState?"다시 분석":"AI 분석";if(!r.ok){toast(r.message);return}
+ aiRecorderState=r;renderAiRecordDraft(r);
+}
+function renderAiRecordDraft(result){
+ const d=result.draft||{};aiRecordResult.classList.add("show");aiRecordModel.textContent=`${result.model||"OpenAI"} · ${result.reference_date||""}`;
+ aiRecordWarnings.textContent=(result.warnings||[]).join("\n");aiRecordWarnings.classList.toggle("show",!!(result.warnings||[]).length);
+ aiValue("aiDraftChannel",d.channel||aiRecordChannel.value);syncAiDraftAssignees();aiValue("aiDraftAssignee",d.assignee_id||aiRecordAssignee.value);
+ [["aiDraftClient","client_name"],["aiDraftProductCode","product_code"],["aiDraftProductName","product_name"],["aiDraftIsbn","isbn"],["aiDraftType","activity_type"],["aiDraftStart","activity_start_date"],["aiDraftEnd","activity_end_date"],["aiDraftResultDate","result_date"],["aiDraftMeeting","meeting_count"],["aiDraftDateExpression","original_date_expression"],["aiDraftUnits","delivered_units"],["aiDraftSales","sales_amount"],["aiDraftProfit","operating_profit"],["aiDraftProfitRate","operating_profit_rate"],["aiDraftSummary","activity_summary"],["aiDraftDetails","activity_details"],["aiDraftOther","other_result"],["aiDraftNote","note"]].forEach(([id,key])=>aiValue(id,d[key]));
+ aiDraftProposal.value=aiBoolValue(d.proposal_sent);aiDraftSample.value=aiBoolValue(d.sample_provided);aiRecordDetails.innerHTML="";(d.detail_activities||[]).forEach(addAiDetailRow);
+ aiRecordResult.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function addAiDetailRow(item={}){
+ const row=document.createElement("div");row.className="ai-detail-row";row.innerHTML=`<input class="ai-detail-type" placeholder="활동 유형" value="${esc(item.activity_type||"")}"><input class="ai-detail-start" type="date" value="${esc(item.start_date||item.activity_date||"")}"><input class="ai-detail-end" type="date" value="${esc(item.end_date||"")}"><input class="ai-detail-count" type="number" min="0" placeholder="횟수" value="${esc(item.count??"")}"><input class="ai-detail-expression" placeholder="날짜 표현 원문" value="${esc(item.original_date_expression||"")}"><input class="ai-detail-content" placeholder="세부 내용" value="${esc(item.content||"")}"><button class="ai-detail-remove" onclick="this.parentElement.remove()">삭제</button>`;aiRecordDetails.appendChild(row);
+}
+function nullableNumber(id){const v=document.getElementById(id).value;return v===""?null:Number(v)}
+function nullableBool(id){const v=document.getElementById(id).value;return v===""?null:v==="true"}
+function collectAiDraft(){
+ return {channel:aiDraftChannel.value,assignee_id:aiDraftAssignee.value,client_name:aiDraftClient.value.trim(),product_code:aiDraftProductCode.value.trim()||null,product_name:aiDraftProductName.value,isbn:aiDraftIsbn.value,activity_type:aiDraftType.value.trim(),activity_start_date:aiDraftStart.value||null,activity_end_date:aiDraftEnd.value||null,result_date:aiDraftResultDate.value||null,meeting_count:nullableNumber("aiDraftMeeting"),original_date_expression:aiDraftDateExpression.value.trim(),proposal_sent:nullableBool("aiDraftProposal"),sample_provided:nullableBool("aiDraftSample"),delivered_units:nullableNumber("aiDraftUnits"),sales_amount:nullableNumber("aiDraftSales"),operating_profit:nullableNumber("aiDraftProfit"),operating_profit_rate:nullableNumber("aiDraftProfitRate"),activity_summary:aiDraftSummary.value.trim(),activity_details:aiDraftDetails.value.trim(),other_result:aiDraftOther.value.trim(),note:aiDraftNote.value.trim(),detail_activities:[...aiRecordDetails.querySelectorAll(".ai-detail-row")].map(row=>({activity_type:row.querySelector(".ai-detail-type").value.trim(),start_date:row.querySelector(".ai-detail-start").value||null,end_date:row.querySelector(".ai-detail-end").value||null,count:row.querySelector(".ai-detail-count").value===""?null:Number(row.querySelector(".ai-detail-count").value),original_date_expression:row.querySelector(".ai-detail-expression").value.trim(),content:row.querySelector(".ai-detail-content").value.trim()}))};
+}
+async function saveAiRecord(){
+ if(!aiRecorderState){toast("먼저 AI 분석을 실행해 주세요.");return}if(!aiRecordRegistrar.value){toast("등록자를 선택해 주세요.");return}
+ aiSaveBtn.disabled=true;aiRecordSaveStatus.textContent="Supabase에 저장 중...";
+ const r=await pywebview.api.save_ai_marketing_sales_activity({request_id:aiRecorderState.request_id,registrar_id:aiRecordRegistrar.value,original_text:aiRecorderState.original_text,ai_analysis_json:aiRecorderState.analysis,draft:collectAiDraft()});
+ aiSaveBtn.disabled=false;if(!r.ok){aiRecordSaveStatus.textContent="저장 실패: "+r.message;toast(r.message);return}
+ aiRecordSaveStatus.textContent=r.중복?"이미 저장된 요청입니다. 기존 활동 기록을 유지했습니다.":"활동 기록이 저장되었습니다.";aiSaveBtn.disabled=true;
 }
 function cleanProductName(v){return String(v||"").replace(/^전문>/,"").replace("100세까지월500만원받는ETF연금수업","100살까지 월 500만 원 받는 ETF 연금 수업");}
 function detailMoney(v){return Number(v||0).toLocaleString("ko-KR")+"원";}
@@ -2145,7 +2268,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
  }
 
  window.showDataAdminPage=function(){
-   ["uploadPage","detailPage","performancePage","scmPage","bookstorePage","socialPage","dataAdminPage"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="dataAdminPage");});
+   ["uploadPage","aiRecorderPage","detailPage","performancePage","scmPage","bookstorePage","socialPage","dataAdminPage"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="dataAdminPage");});
    ["navUpload","navDetail","navPerformance","navScm","navBookstore","navSocial","navDataAdmin"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="navDataAdmin");});
    const title=document.getElementById("pageHeaderTitle"),sub=document.getElementById("pageHeaderSub");
    if(title)title.textContent="데이터 관리";

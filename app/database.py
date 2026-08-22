@@ -20,6 +20,56 @@ class Database:
         )
         return response.data or []
 
+    def search_erp_product_master(self, query_text: str, limit: int = 30) -> list[dict[str, Any]]:
+        """제품코드·제품명·ISBN으로 ERP 제품을 제한된 건수만 검색합니다."""
+        term = str(query_text or "").strip()
+        if not term:
+            return []
+        columns = "제품코드,제품명,ISBN,브랜드명,제품상태"
+        rows: list[dict[str, Any]] = []
+        seen: set[str] = set()
+
+        exact = (
+            self.client.table("ERP제품마스터").select(columns)
+            .eq("제품코드", term).limit(1).execute()
+        ).data or []
+        searches = [exact]
+        for column in ("제품명", "ISBN"):
+            searches.append((
+                self.client.table("ERP제품마스터").select(columns)
+                .ilike(column, f"%{term}%").order("제품명").limit(limit).execute()
+            ).data or [])
+        for batch in searches:
+            for row in batch:
+                code = str(row.get("제품코드") or "")
+                if code and code not in seen:
+                    seen.add(code)
+                    rows.append(row)
+                    if len(rows) >= limit:
+                        return rows
+        return rows
+
+    def fetch_erp_product_master(self, product_code: str) -> dict[str, Any] | None:
+        rows = (
+            self.client.table("ERP제품마스터")
+            .select("제품코드,제품명,ISBN,브랜드명,제품상태")
+            .eq("제품코드", str(product_code or "").strip()).limit(1).execute()
+        ).data or []
+        return rows[0] if rows else None
+
+    def save_ai_marketing_sales_activity(
+        self,
+        record: dict[str, Any],
+        details: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """부모와 세부활동을 PostgreSQL 단일 transaction RPC로 확정 저장합니다."""
+        response = self.client.rpc(
+            "AI마케팅영업기록_확정저장",
+            {"p_record": record, "p_details": details},
+        ).execute()
+        data = response.data or {}
+        return data[0] if isinstance(data, list) and data else data
+
     def fetch_product_index(self) -> list[dict[str, Any]]:
         """제품인덱스 전체를 Supabase에서 페이지 단위로 모두 가져옵니다.
 

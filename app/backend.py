@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import base64
+import math
 import mimetypes
 import os
 import subprocess
@@ -8,13 +9,14 @@ import sys
 import threading
 import time
 import webbrowser
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 import webview
 
 from .analyzer import analyze_document
+from .activity_recorder import analyze_sales_activity, enrich_analysis, split_channels
 from .config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE, PROJECT_URL, ATTACHMENT_ROOT
 from .database import Database
 from .erp_import import choose_and_import_erp
@@ -36,6 +38,164 @@ class Backend:
 
     def import_erp_monthly_excel(self) -> dict[str, Any]:
         return choose_and_import_erp(self, None)
+
+    def get_ai_activity_recorder_options(self) -> dict[str, Any]:
+        try:
+            active_users = [u for u in self.users if u.get("사용자ID")]
+            return {"ok": True, "users": active_users, "channel_assignees": split_channels(active_users)}
+        except Exception as exc:
+            logging.exception("AI 활동 기록 옵션 조회 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def search_erp_product_master(self, query_text: str) -> dict[str, Any]:
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            return {"ok": True, "products": self.db.search_erp_product_master(query_text)}
+        except Exception as exc:
+            logging.exception("ERP 제품마스터 검색 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def analyze_ai_marketing_sales_activity(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Structured Output 초안만 생성합니다. 이 단계에서는 DB write를 하지 않습니다."""
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            payload = payload or {}
+            selected_code = str(payload.get("selected_product_code") or "").strip()
+            selected_product = self.db.fetch_erp_product_master(selected_code) if selected_code else None
+            if selected_code and not selected_product:
+                raise ValueError(f"ERP제품마스터에 없는 선택 제품코드입니다: {selected_code}")
+            assignee = next(
+                (u for u in self.users if str(u.get("사용자ID")) == str(payload.get("assignee_id") or "")),
+                None,
+            )
+            result = analyze_sales_activity(
+                payload.get("original_text") or "",
+                get_openai_api_key(),
+                selected_channel=str(payload.get("channel") or "").strip() or None,
+                selected_assignee_name=str((assignee or {}).get("이름") or "") or None,
+                selected_product=selected_product,
+                reference_date=date.today(),
+            )
+            extracted_code = str(result["analysis"].get("product_code") or "").strip()
+            erp_product = self.db.fetch_erp_product_master(extracted_code) if extracted_code else None
+            enriched = enrich_analysis(
+                result,
+                users=self.users,
+                selected_channel=str(payload.get("channel") or "").strip() or None,
+                selected_assignee_id=str(payload.get("assignee_id") or "").strip() or None,
+                selected_product=selected_product,
+                erp_product=erp_product,
+            )
+            return {"ok": True, **enriched}
+        except Exception as exc:
+            logging.exception("AI 마케팅·영업 활동 분석 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def save_ai_marketing_sales_activity(self, payload: dict[str, Any]) -> dict[str, Any]:
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            payload = payload or {}
+            draft = dict(payload.get("draft") or {})
+            original_text = str(payload.get("original_text") or "").strip()
+            request_id = str(payload.get("request_id") or "").strip()
+            channel = str(draft.get("channel") or "").strip()
+            assignee_id = str(draft.get("assignee_id") or "").strip()
+            registrar_id = str(payload.get("registrar_id") or "").strip()
+            if not request_id:
+                raise ValueError("분석 요청ID가 없습니다. AI 분석을 다시 실행해 주세요.")
+            if not original_text:
+                raise ValueError("사용자 입력 원문이 없습니다.")
+            if not channel:
+                raise ValueError("채널을 선택해 주세요.")
+            active_users = {str(u.get("사용자ID")): u for u in self.users if u.get("사용자ID")}
+            if assignee_id not in active_users:
+                raise ValueError("유효한 담당자를 선택해 주세요.")
+            if registrar_id not in active_users:
+                raise ValueError("유효한 등록자를 선택해 주세요.")
+            if not str(draft.get("client_name") or "").strip() and not str(draft.get("activity_details") or "").strip():
+                raise ValueError("거래처 또는 활동내용 중 하나를 입력해 주세요.")
+
+            def number(name: str, *, integer: bool = True) -> int | float | None:
+                value = draft.get(name)
+                if value in (None, ""):
+                    return None
+                try:
+                    parsed = float(str(value).replace(",", "").strip())
+                except ValueError as exc:
+                    raise ValueError(f"{name} 숫자 형식이 올바르지 않습니다.") from exc
+                if not math.isfinite(parsed) or (integer and not parsed.is_integer()):
+                    raise ValueError(f"{name} 숫자 형식이 올바르지 않습니다.")
+                return int(parsed) if integer else parsed
+
+            def date_value(name: str) -> str | None:
+                value = str(draft.get(name) or "").strip()
+                if not value:
+                    return None
+                try:
+                    return date.fromisoformat(value).isoformat()
+                except ValueError as exc:
+                    raise ValueError(f"{name} 날짜 형식이 올바르지 않습니다.") from exc
+
+            product_code = str(draft.get("product_code") or "").strip()
+            product = self.db.fetch_erp_product_master(product_code) if product_code else None
+            if product_code and not product:
+                raise ValueError(f"ERP제품마스터에 없는 제품코드입니다: {product_code}")
+            record = {
+                "요청ID": request_id,
+                "채널": channel,
+                "담당자ID": assignee_id,
+                "담당자명": active_users[assignee_id].get("이름"),
+                "등록자ID": registrar_id,
+                "거래처명": str(draft.get("client_name") or "").strip() or None,
+                "제품코드": product_code or None,
+                "제품명": (product or {}).get("제품명") if product else None,
+                "ISBN": (product or {}).get("ISBN") if product else None,
+                "활동유형": str(draft.get("activity_type") or "").strip() or None,
+                "활동시작일": date_value("activity_start_date"),
+                "활동종료일": date_value("activity_end_date"),
+                "성과발생일": date_value("result_date"),
+                "날짜표현원문": str(draft.get("original_date_expression") or "").strip() or None,
+                "미팅횟수": number("meeting_count"),
+                "제안서발송여부": draft.get("proposal_sent"),
+                "샘플제공여부": draft.get("sample_provided"),
+                "납품부수": number("delivered_units"),
+                "매출액": number("sales_amount"),
+                "영업이익": number("operating_profit"),
+                "영업이익률": number("operating_profit_rate", integer=False),
+                "활동요약": str(draft.get("activity_summary") or "").strip() or None,
+                "상세내용": str(draft.get("activity_details") or "").strip() or None,
+                "기타성과": str(draft.get("other_result") or "").strip() or None,
+                "비고": str(draft.get("note") or "").strip() or None,
+                "원문": original_text,
+                "AI분석JSON": payload.get("ai_analysis_json") or {},
+            }
+            details = []
+            for index, item in enumerate(draft.get("detail_activities") or []):
+                activity_type = str(item.get("activity_type") or "").strip()
+                if not activity_type:
+                    continue
+                clean = {
+                    "활동유형": activity_type,
+                    "활동일": item.get("activity_date") or None,
+                    "시작일": item.get("start_date") or None,
+                    "종료일": item.get("end_date") or None,
+                    "날짜표현원문": item.get("original_date_expression") or None,
+                    "횟수": item.get("count"),
+                    "내용": item.get("content") or None,
+                    "정렬순서": (index + 1) * 10,
+                }
+                for key in ("활동일", "시작일", "종료일"):
+                    if clean[key]:
+                        clean[key] = date.fromisoformat(str(clean[key])).isoformat()
+                details.append(clean)
+            saved = self.db.save_ai_marketing_sales_activity(record, details)
+            return {"ok": True, **saved}
+        except Exception as exc:
+            logging.exception("AI 마케팅·영업 활동 확정 저장 실패")
+            return {"ok": False, "message": str(exc)}
 
     def preview_scm_daily_sales(self) -> dict[str, Any]:
         try:
