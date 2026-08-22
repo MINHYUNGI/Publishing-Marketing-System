@@ -30,7 +30,7 @@ class UiSmokeTests(unittest.TestCase):
             'id="navBookstore"',
             'id="socialPage"',
             'id="navSocial"',
-            "채널별 마케팅 활동 현황",
+            "채널별 마케팅 현황",
             "주요 4개 서점 현황",
             "loadMajorBookstoreTimeline",
             "renderMajorBookstoreTimeline",
@@ -91,6 +91,19 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn('const weekdays=["일","월","화","수","목","금","토"]', self.html)
         self.assertIn('<small>${dateLabel(point.date)}</small>', self.html)
         self.assertIn('point.offset===0?"d0":""', self.html)
+
+    def test_channel_books_are_independently_collapsed_by_default(self):
+        self.assertNotIn("채널별 마케팅 활동 현황", self.html)
+        self.assertIn("const expandedBookstoreProducts=new Set()", self.html)
+        self.assertIn("const expandedSocialProducts=new Set()", self.html)
+        self.assertIn("window.toggleBookstoreProduct=function", self.html)
+        self.assertIn("window.toggleSocialProduct=function", self.html)
+        self.assertIn('aria-expanded="${open}"', self.html)
+        self.assertIn('${open?"▼":"▶"}', self.html)
+        self.assertIn("if(!open)return;items.forEach", self.html)
+        self.assertIn('${open?items.map(item=>contentHtml(item,sharedMax)).join(""):""}', self.html)
+        self.assertIn("bookstoreMillionWon(actualCost)", self.html)
+        self.assertIn("출간일 ${esc(first.출간일", self.html)
 
     def test_bookstore_hover_and_million_won_contract(self):
         tooltips = re.findall(r"function tooltip\(row\)\{[^\r\n]+", self.html)
