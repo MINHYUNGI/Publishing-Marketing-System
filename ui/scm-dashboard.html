@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>미래엔 실판매 대시보드 · 첫 출고일 기준 신간/구간</title>
+  <title>미래엔 실판매 대시보드 · ERP 초판발행일 기준 신간/구간</title>
 
   <!-- 같은 폴더 기준: Y:\출판사업본부\05. 영업 실적\70. 집계 결과\... -->
   <!-- Supabase 데이터는 Python 백엔드에서 같은 window.SALES_DATA 계약으로 주입합니다. -->
@@ -568,6 +568,8 @@
         <option value="전체">전체</option>
         <option value="신간">신간</option>
         <option value="구간">구간</option>
+        <option value="출간예정">출간예정</option>
+        <option value="미확인">미확인</option>
       </select>
     </div>
     <div class="field">
@@ -717,15 +719,11 @@ async function startScmDashboard(){
   }
 
   function isPubDateMissingProduct(product){
-    if(!product) return true;
-    if(product.ageForceOld) return true;
-    if(String(product.baseDateSource || "").includes("출판일자없음")) return true;
-    if(product.ageStatus === "구간" && isBlankDateValue(product.firstDate) && isBlankDateValue(product.firstShipDate)) return true;
-    return false;
+    return !product || !isValidYmd(product.erpPublicationDate || product.firstDate || product.firstShipDate);
   }
 
   function isForcedOldTitle(title){
-    // HTML 강제 보정: 도서명에 '00]'이 포함되면 출간일/첫판매일 계산과 무관하게 구간 처리합니다.
+    // ERP 초판발행일이 없는 제품에 한해서만 과거 강제규칙을 호환용으로 유지합니다.
     const text = String(title ?? "");
     return text.includes("00]");
   }
@@ -788,7 +786,8 @@ async function startScmDashboard(){
       firstShipDate:String(p.firstShipDate||p.firstDate||p.pubDate||"").slice(0,10),
       ageStatus:p.ageStatus||"",
       ageForceOld:!!p.ageForceOld,
-      baseDateSource:p.baseDateSource||""
+      baseDateSource:p.baseDateSource||"",
+      erpPublicationDate:String(p.erpPublicationDate||"").slice(0,10)
     })).filter(p=>p.code);
   }
 
@@ -1181,27 +1180,27 @@ async function startScmDashboard(){
     });
   }
 
-  function isNewBook(code, title, dates){
-    if(isForcedOldTitle(title)) return false;
-
-    // HTML 안전장치:
-    // 출판일자가 비어 있는 제품은 파이썬 계산 결과나 첫 판매일과 무관하게 무조건 구간 처리합니다.
-    // sales_data.js의 products 안에 ageForceOld=true 또는 baseDateSource="출판일자없음"으로 들어온 경우를 우선 적용합니다.
+  function ageStatusForBook(code, title){
     const p = productForBook(code, title);
-    if(!p) return false;
-    if(isPubDateMissingProduct(p)) return false;
+    if(!p) return "미확인";
 
-    // 파이썬이 계산한 신간/구간 결과를 우선 사용합니다.
-    if(p.ageStatus === "구간") return false;
-    if(p.ageStatus === "신간") return true;
+    // 백엔드가 ERP 초판발행일 우선순위로 계산한 결과를 그대로 사용합니다.
+    if(["신간","구간","출간예정","미확인"].includes(p.ageStatus)) return p.ageStatus;
 
     // 구버전 sales_data.js 호환용 보조 계산입니다.
     const end = SALES_RAW.generatedDate || todayStr();
     const firstDate = String(p.firstDate || p.firstShipDate || "").slice(0,10);
-    if(!isValidYmd(firstDate)) return false;
+    if(!isValidYmd(firstDate)) return "미확인";
+    if(!p.erpPublicationDate && isForcedOldTitle(title)) return "구간";
+    if(firstDate > end) return "출간예정";
 
     const days = Math.round((parseDate(end)-parseDate(firstDate))/(24*3600*1000));
-    return days >= 0 && days <= 365;
+    return days <= 365 ? "신간" : "구간";
+  }
+
+  // 기존 대시보드 함수 계약을 유지하되 판정은 ERP 우선 공통 상태 함수를 사용합니다.
+  function isNewBook(code, title, dates){
+    return ageStatusForBook(code, title) === "신간";
   }
 
   function firstDateForBook(code, title){
@@ -1210,13 +1209,8 @@ async function startScmDashboard(){
     const p = productForBook(code, title);
     if(!p) return "";
 
-    // 출판일자 null/빈값 도서는 화면 날짜도 비워두고 구간 처리합니다.
-    if(isPubDateMissingProduct(p)) return "";
-
     const firstDate = String(p.firstDate || p.firstShipDate || "").slice(0,10);
-    const today = SALES_RAW.generatedDate || todayStr();
     if(!isValidYmd(firstDate)) return "";
-    if(firstDate > today) return "";
     return firstDate;
   }
 
@@ -1271,7 +1265,7 @@ async function startScmDashboard(){
       b.marketing = marketingRecordsForBookRange(b.code,b.title,조회시작일,조회종료일);
       b.marketingActive = b.marketing.length > 0;
       b.firstDate = firstDateForBook(b.code, b.title);
-      b.newOld = isNewBook(b.code,b.title,dates) ? "신간" : "구간";
+      b.newOld = ageStatusForBook(b.code,b.title);
     });
 
     const age = el("ageFilter").value;
@@ -1281,7 +1275,10 @@ async function startScmDashboard(){
       if(a.marketingActive !== b.marketingActive) return a.marketingActive ? -1 : 1;
       if(a.main !== b.main) return String(a.main).localeCompare(String(b.main),"ko");
       if(a.mid !== b.mid) return String(a.mid).localeCompare(String(b.mid),"ko");
-      if(a.newOld !== b.newOld) return a.newOld === "신간" ? -1 : 1;
+      if(a.newOld !== b.newOld){
+        const ageOrder={"신간":0,"구간":1,"출간예정":2,"미확인":3};
+        return (ageOrder[a.newOld]??9)-(ageOrder[b.newOld]??9);
+      }
       return compareBooksByCurrentSort(a,b);
     });
 
@@ -1573,7 +1570,7 @@ async function startScmDashboard(){
     books.forEach(b=>{
       const main = b.main || "미분류";
       const mid = b.mid || "미분류";
-      const age = b.newOld || "구간";
+      const age = b.newOld || "미확인";
       if(!groups.has(main)) groups.set(main,new Map());
       if(!groups.get(main).has(mid)) groups.get(main).set(mid,new Map());
       if(!groups.get(main).get(mid).has(age)) groups.get(main).get(mid).set(age,[]);
@@ -1773,7 +1770,7 @@ async function startScmDashboard(){
   }
 
   function sortAgeEntries(entries){
-    const order = {"신간":0,"구간":1};
+    const order = {"신간":0,"구간":1,"출간예정":2,"미확인":3};
     return entries.sort((a,b)=>(order[a[0]] ?? 9) - (order[b[0]] ?? 9));
   }
 

@@ -3,6 +3,7 @@ from typing import Any
 from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
+from .book_age import classify_book_age
 from .content_metrics import platform_from_url, youtube_statistics
 
 class Database:
@@ -918,7 +919,7 @@ class Database:
         mapping_by_isbn = {str(row.get("ISBN13")): row for row in mappings}
         products = {str(row.get("제품코드")): row for row in self.fetch_product_index() if row.get("제품코드")}
         client_names = {"KYOBO": "교보문고", "YPBOOKS": "영풍문고", "YES24": "예스24", "ALADIN": "알라딘"}
-        first_sales: dict[str, str] = {}
+        first_sales_in_range: dict[str, str] = {}
         dashboard_rows = []
         for fact in facts:
             isbn = str(fact.get("ISBN13") or "")
@@ -929,23 +930,106 @@ class Database:
             main, middle = product.get("최종대분류") or "", product.get("최종중분류") or ""
             division = "아동" if any(token in f"{main} {middle}" for token in ("아동", "만화", "01.")) else "성인"
             sale_date = str(fact.get("판매일") or "")
-            if code and sale_date and (code not in first_sales or sale_date < first_sales[code]):
-                first_sales[code] = sale_date
+            if code and sale_date and (code not in first_sales_in_range or sale_date < first_sales_in_range[code]):
+                first_sales_in_range[code] = sale_date
             dashboard_rows.append([sale_date, division, main, middle, code, name, isbn, client_names.get(str(fact.get("거래처코드")), ""), "실판매", fact.get("판매수량") or 0])
+        dashboard_codes = sorted({str(row[4]) for row in dashboard_rows if row[4]})
+        erp_products: dict[str, dict[str, Any]] = {}
+        for offset in range(0, len(dashboard_codes), 200):
+            code_batch = dashboard_codes[offset:offset + 200]
+            rows = (
+                self.client.table("ERP제품마스터")
+                .select("제품코드,초판발행일")
+                .in_("제품코드", code_batch)
+                .execute()
+            ).data or []
+            erp_products.update({str(row["제품코드"]): row for row in rows if row.get("제품코드")})
+
+        fallback_codes = [code for code in dashboard_codes if not erp_products.get(code, {}).get("초판발행일")]
+        first_sales = dict(first_sales_in_range)
+        for offset in range(0, len(fallback_codes), 200):
+            code_batch = fallback_codes[offset:offset + 200]
+            start = 0
+            while code_batch:
+                rows = (
+                    self.client.table("SCM일별실판매")
+                    .select("제품코드,판매일")
+                    .in_("제품코드", code_batch)
+                    .order("판매일")
+                    .range(start, start + 999)
+                    .execute()
+                ).data or []
+                for row in rows:
+                    code = str(row.get("제품코드") or "")
+                    sale_date = str(row.get("판매일") or "")
+                    if code and sale_date and (code not in first_sales or sale_date < first_sales[code]):
+                        first_sales[code] = sale_date
+                if len(rows) < 1000:
+                    break
+                start += 1000
+
+        # 일부 과거 SCM 행은 제품코드 없이 ISBN만 보유하므로, fallback 대상은
+        # SCM제품매핑의 ISBN도 묶어서 조회해 실제 최초 판매일을 놓치지 않습니다.
+        fallback_code_set = set(fallback_codes)
+        fallback_isbn_to_code = {
+            str(row["ISBN13"]): str(row["제품코드"])
+            for row in mappings
+            if row.get("ISBN13") and str(row.get("제품코드") or "") in fallback_code_set
+        }
+        fallback_isbns = sorted(fallback_isbn_to_code)
+        for offset in range(0, len(fallback_isbns), 200):
+            isbn_batch = fallback_isbns[offset:offset + 200]
+            start = 0
+            while isbn_batch:
+                rows = (
+                    self.client.table("SCM일별실판매")
+                    .select("ISBN13,판매일")
+                    .in_("ISBN13", isbn_batch)
+                    .order("판매일")
+                    .range(start, start + 999)
+                    .execute()
+                ).data or []
+                for row in rows:
+                    code = fallback_isbn_to_code.get(str(row.get("ISBN13") or ""), "")
+                    sale_date = str(row.get("판매일") or "")
+                    if code and sale_date and (code not in first_sales or sale_date < first_sales[code]):
+                        first_sales[code] = sale_date
+                if len(rows) < 1000:
+                    break
+                start += 1000
+
         dashboard_products = []
-        for code in sorted({str(row[4]) for row in dashboard_rows if row[4]}):
+        reference_date = date.today()
+        for code in dashboard_codes:
             product = products.get(code, {})
             product_mappings = [row for row in mappings if str(row.get("제품코드") or "") == code]
-            publication_dates = sorted(str(row.get("출판일자")) for row in product_mappings if row.get("출판일자"))
-            first_date = (publication_dates[0] if publication_dates else "") or first_sales.get(code, "")
-            dashboard_products.append({"code": code, "name": product.get("제품명") or next((row.get("SCM상품명") for row in product_mappings if row.get("SCM상품명")), code), "firstDate": first_date, "firstShipDate": first_date, "ageForceOld": not bool(publication_dates), "baseDateSource": "출판일자" if publication_dates else "출판일자없음", "mainCat": product.get("최종대분류") or "", "midCat": product.get("최종중분류") or ""})
+            name = product.get("제품명") or next((row.get("SCM상품명") for row in product_mappings if row.get("SCM상품명")), code)
+            erp_publication_date = erp_products.get(code, {}).get("초판발행일")
+            classification = classify_book_age(
+                erp_publication_date,
+                first_sales.get(code),
+                reference_date,
+                force_old_without_erp="00]" in str(name),
+            )
+            dashboard_products.append({
+                "code": code,
+                "name": name,
+                "firstDate": classification.base_date or "",
+                "firstShipDate": classification.base_date or "",
+                "erpPublicationDate": str(erp_publication_date or ""),
+                "ageStatus": classification.status,
+                "ageForceOld": classification.source.startswith("도서명 강제규칙"),
+                "baseDateSource": classification.source,
+                "mainCat": product.get("최종대분류") or "",
+                "midCat": product.get("최종중분류") or "",
+            })
         dates = sorted({row[0] for row in dashboard_rows if row[0]})
         marketing_rows = self.client.table("마케팅활동").select("활동ID,제품코드,활동분류,채널또는매체,활동명,시작일,종료일,계획실행구분").execute().data or []
         marketing_records = []
         for row in marketing_rows:
             code = str(row.get("제품코드") or "")
             marketing_records.append({"id": row.get("활동ID"), "type": "viral" if any(token in str(row.get("활동분류") or "") for token in ("SNS", "바이럴")) else "store", "name": row.get("활동명") or row.get("채널또는매체") or "마케팅 활동", "start": row.get("시작일"), "end": row.get("종료일") or row.get("시작일"), "books": [{"code": code, "itemCode": code, "title": products.get(code, {}).get("제품명") or code}]})
-        return {"generatedAt": datetime.now().isoformat(), "generatedDate": date.today().isoformat(), "source": "Supabase SCM일별실판매", "rowCount": len(dashboard_rows), "dateMin": dates[0] if dates else "", "dateMax": dates[-1] if dates else "", "availableDateMin": available_date_min, "availableDateMax": available_date_max, "loadedDateFrom": date_from, "loadedDateTo": date_to, "clients": sorted(set(client_names.values())), "products": dashboard_products, "rows": dashboard_rows, "marketingRecords": marketing_records}
+        return {"generatedAt": datetime.now().isoformat(), "generatedDate": reference_date.isoformat(), "source": "Supabase SCM일별실판매 + ERP제품마스터.초판발행일", "rowCount": len(dashboard_rows), "dateMin": dates[0] if dates else "", "dateMax": dates[-1] if dates else "", "availableDateMin": available_date_min, "availableDateMax": available_date_max, "loadedDateFrom": date_from, "loadedDateTo": date_to, "clients": sorted(set(client_names.values())), "products": dashboard_products, "rows": dashboard_rows, "marketingRecords": marketing_records}
 
     def fetch_yes24_buyer_demographics(self, product_code: str) -> list[dict[str, Any]]:
         snapshots = self.client.table("YES24구매자스냅샷").select("스냅샷ID,기준일,기간시작일,기간종료일,계정구분,ISBN13,제품코드,YES24상품번호,상품명,총판매수량,원본파일명").eq("제품코드", product_code).order("기준일").execute().data or []
