@@ -55,7 +55,7 @@ class Database:
         ).data or []
         return {r["제품코드"] for r in rows if r.get("제품코드")}
 
-    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    def fetch_channel_marketing_activities(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, dict[str, Any]]]:
         """Fetch activities, product metadata, SCM facts, and actual executions in batches."""
         rows: list[dict[str, Any]] = []
         page_size = 1000
@@ -73,6 +73,7 @@ class Database:
 
         codes = sorted({str(row.get("제품코드") or "") for row in rows if row.get("제품코드")})
         marketing_products: dict[str, dict[str, Any]] = {}
+        channel_products: dict[str, dict[str, Any]] = {}
         for start in range(0, len(codes), 200):
             batch = (
                 self.client.table("마케팅대상제품")
@@ -81,6 +82,13 @@ class Database:
                 .execute()
             ).data or []
             marketing_products.update({str(row["제품코드"]): row for row in batch})
+            product_batch = (
+                self.client.table("제품인덱스")
+                .select("제품코드,제품명,최종대분류,최종중분류")
+                .in_("제품코드", codes[start:start + 200])
+                .execute()
+            ).data or []
+            channel_products.update({str(row["제품코드"]): row for row in product_batch})
         scm_rows: list[dict[str, Any]] = []
         for offset in range(0, len(codes), 200):
             code_batch = codes[offset:offset + 200]
@@ -106,7 +114,7 @@ class Database:
                 .in_("제품코드", codes[offset:offset + 200])
                 .execute()
             ).data or [])
-        return rows, marketing_products, scm_rows, execution_rows
+        return rows, marketing_products, scm_rows, execution_rows, channel_products
 
     def ensure_marketing_product(self, product_code: str) -> None:
         existing = (

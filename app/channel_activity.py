@@ -47,7 +47,7 @@ def build_bookstore_timeline_rows(
         row = {
             **activity,
             "서점": bookstore,
-            "도서명": product.get("제품명") or code or "제품 미연결",
+            "도서명": product.get("제품명") or "제품명 미확인",
             "분류": classify_product_category(product.get("최종대분류"), product.get("최종중분류")),
             "출간일": marketing.get("출간일"),
         }

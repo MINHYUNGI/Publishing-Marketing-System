@@ -39,6 +39,7 @@ class ChannelActivityTests(unittest.TestCase):
                         {"제품코드":"A","판매일":"2026-08-04","거래처코드":"YES24","판매수량":200},
                     ],
                     [{"원본활동ID":"1","제품코드":"A","실제비용":350000}],
+                    {"A":{"제품코드":"A","제품명":"테스트 도서","최종대분류":"03. 단행본","최종중분류":"경제"}},
                 )
 
         backend = Backend()
@@ -49,6 +50,36 @@ class ChannelActivityTests(unittest.TestCase):
         self.assertEqual(result["bookstores"]["YES24"][0]["실판매부수"], 8)
         self.assertEqual(result["bookstores"]["YES24"][0]["실제집행비용"], 350000)
         self.assertEqual(result["products"], [{"제품코드":"A","제품명":"테스트 도서"}])
+
+    def test_multiple_products_use_authoritative_product_index_names(self):
+        activities = [
+            {"활동ID":"1","제품코드":"A","채널또는매체":"교보","활동명":"광고"},
+            {"활동ID":"2","제품코드":"B","채널또는매체":"YES24","활동명":"강연"},
+            {"활동ID":"3","제품코드":"C","채널또는매체":"알라딘","활동명":"배너"},
+        ]
+        products = {
+            "A":{"제품코드":"A","제품명":"아동 도서","최종대분류":"01. 아동"},
+            "B":{"제품코드":"B","제품명":"만화 도서","최종대분류":"02. 만화"},
+            "C":{"제품코드":"C","제품명":"단행본 도서","최종대분류":"03. 단행본"},
+        }
+        rows = build_bookstore_timeline_rows(activities, products, {})
+        names = {row["제품코드"]:row["도서명"] for store_rows in rows.values() for row in store_rows}
+        self.assertEqual(names, {"A":"아동 도서","B":"만화 도서","C":"단행본 도서"})
+        missing = build_bookstore_timeline_rows([{"활동ID":"4","제품코드":"73706001","채널또는매체":"교보"}], {}, {})["교보문고"][0]
+        self.assertEqual(missing["도서명"], "제품명 미확인")
+        self.assertNotEqual(missing["도서명"], missing["제품코드"])
+
+    def test_channel_query_reads_product_names_directly_from_product_index(self):
+        db = database_with({
+            "마케팅활동":[{"활동ID":"1","제품코드":"A","채널또는매체":"교보","활동명":"광고"}],
+            "마케팅대상제품":[{"제품코드":"A","출간일":"2026-08-01"}],
+            "제품인덱스":[{"제품코드":"A","제품명":"직접 조회 도서","최종대분류":"03. 단행본","최종중분류":"경제"}],
+            "SCM일별실판매":[],"마케팅실행활동":[],
+        })
+        _, _, _, _, products = db.fetch_channel_marketing_activities()
+        self.assertEqual(products["A"]["제품명"], "직접 조회 도서")
+        product_calls = [call for call in db.client.calls if call[0] == "제품인덱스" and call[1] == "select"]
+        self.assertEqual(len(product_calls), 1)
 
     def test_activity_update_keeps_one_source_row_and_upserts_actual_cost(self):
         db = database_with({"마케팅활동":[{

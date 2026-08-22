@@ -114,8 +114,7 @@ class Backend:
         try:
             if not self.db:
                 raise RuntimeError("Supabase가 연결되지 않았습니다.")
-            activities, marketing_products, scm_rows, execution_rows = self.db.fetch_channel_marketing_activities()
-            product_map = {str(row.get("제품코드") or ""): row for row in self.product_index}
+            activities, marketing_products, scm_rows, execution_rows, product_map = self.db.fetch_channel_marketing_activities()
             bookstores = build_bookstore_timeline_rows(activities, product_map, marketing_products)
             client_store = {"KYOBO": "교보문고", "YPBOOKS": "영풍문고", "YES24": "YES24", "ALADIN": "알라딘"}
             sales_by_key: dict[tuple[str, str], list[tuple[str, int]]] = {}
