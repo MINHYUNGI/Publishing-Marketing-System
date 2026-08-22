@@ -56,6 +56,14 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("ERP일별판매실적", self.html)
         self.assertIn('role="dialog"', self.html)
 
+    def test_scm_chart_stops_after_last_collected_date(self):
+        self.assertIn("hasScm?perfNum(x.SCM실판매부수):null", self.html)
+        self.assertIn("key<=currentPerformanceData.SCM최종데이터일", self.html)
+        self.assertIn("scm:hasScm?0:null", self.html)
+        self.assertIn("function perfScmSvg(rows,centerX,y)", self.html)
+        self.assertEqual(self.html.count("const scmLine=perfScmSvg(rows,centerX,y);"), 3)
+        self.assertNotIn("const hasScm=rows.some", self.html)
+
     def test_bookstore_hover_and_million_won_contract(self):
         tooltips = re.findall(r"function tooltip\(row\)\{[^\r\n]+", self.html)
         self.assertTrue(tooltips)

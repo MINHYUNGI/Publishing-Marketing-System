@@ -1703,7 +1703,8 @@ function perfDday(pub){const d=perfDate(pub);if(!d)return "출간일 미정";con
 function perfBudget(a){return (a||[]).reduce((s,x)=>s+perfNum(x.비용),0)}
 function perfActualBudget(a){return (a||[]).reduce((s,x)=>s+perfNum(x.실제비용),0)}
 function perfGoal12(s,bp){return perfNum(s?.출간12개월부수)||perfNum(bp?.연간계획부수)||0}
-function perfSeries(rows){return (rows||[]).map(x=>({date:x.판매일,scm:perfNum(x.SCM실판매부수),erp:perfNum(x.ERP출고부수),scmSales:perfNum(x.SCM환산매출액),erpSales:perfNum(x.ERP매출액),kyobo:perfNum(x.SCM교보부수),ypbooks:perfNum(x.SCM영풍부수),yes24:perfNum(x.SCMYES24부수),aladin:perfNum(x.SCM알라딘부수)})).filter(x=>x.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function perfSeries(rows,scmLastDate){return (rows||[]).map(x=>{const date=String(x.판매일||"").slice(0,10),hasScm=Boolean(scmLastDate&&date<=scmLastDate);return {date,scm:hasScm?perfNum(x.SCM실판매부수):null,erp:perfNum(x.ERP출고부수),scmSales:hasScm?perfNum(x.SCM환산매출액):null,erpSales:perfNum(x.ERP매출액),kyobo:perfNum(x.SCM교보부수),ypbooks:perfNum(x.SCM영풍부수),yes24:perfNum(x.SCMYES24부수),aladin:perfNum(x.SCM알라딘부수)}}).filter(x=>x.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function perfScmSvg(rows,centerX,y){const segments=[];let current=[];const flush=()=>{if(current.length)segments.push(current);current=[];};rows.forEach((row,index)=>{if(row.scm===null||row.scm===undefined){flush();return;}current.push([centerX(index),y(row.scm)]);});flush();return segments.map(points=>points.length===1?`<circle cx="${points[0][0]}" cy="${points[0][1]}" r="3.5" fill="#316fc8"/>`:`<polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${points.map(point=>point.join(",")).join(" ")}"/>`).join("");}
 function perfActivityStatus(a){
  if(a.실행상태)return String(a.실행상태);
  const today=new Date();today.setHours(0,0,0,0);
@@ -1778,7 +1779,7 @@ function performanceCoverKeydown(event){
 function renderPerformancePage(r){
  const b=r.기본정보||{},p=r.마케팅기획||{},acts=sortDetailActivities(r.마케팅활동||[]),sales=r.영업목표||{},bp=r.사업계획목표||{};
  const salesRows=r.판매실적일별||[],contents=r.콘텐츠성과||[],executionRows=r.마케팅실행활동||[],buyer=r.구매자반응||{},evaluation=r.마케팅성과평가||{};
- const series=perfSeries(salesRows),pub=b.출간일||"",goal12=perfGoal12(sales,bp),budget=perfBudget(acts),actualBudget=perfActualBudget(acts);
+ const series=perfSeries(salesRows,r.SCM최종데이터일),pub=b.출간일||"",goal12=perfGoal12(sales,bp),budget=perfBudget(acts),actualBudget=perfActualBudget(acts);
  const cumulative=series.reduce((s,x)=>s+x.scm,0),scmAmount=series.reduce((s,x)=>s+x.scmSales,0),erpQty=series.reduce((s,x)=>s+x.erp,0),erpAmount=series.reduce((s,x)=>s+x.erpSales,0);
  const last7=series.slice(-7).reduce((s,x)=>s+x.scm,0),prev7=series.slice(-14,-7).reduce((s,x)=>s+x.scm,0),wow=prev7?((last7-prev7)/prev7*100):null;
  const goalRate=goal12?cumulative/goal12*100:0,execRate=budget?actualBudget/budget*100:0;
@@ -1920,7 +1921,8 @@ function performanceVisibleSeries(){
  for(let i=0;i<performancePeriod;i++){
    const d=new Date(anchor);d.setDate(anchor.getDate()+i);
    const key=d.toISOString().slice(0,10);
-   rows.push(byDate.get(key)||{date:key,scm:0,erp:0,scmSales:0,erpSales:0});
+   const hasScm=Boolean(currentPerformanceData?.SCM최종데이터일&&key<=currentPerformanceData.SCM최종데이터일);
+   rows.push(byDate.get(key)||{date:key,scm:hasScm?0:null,erp:0,scmSales:hasScm?0:null,erpSales:0});
  }
  return rows;
 }
@@ -1945,8 +1947,7 @@ function renderP271SalesGrid(){
  const grids=[.25,.5,.75,1].map(t=>`<line x1="0" y1="${T+ph*(1-t)}" x2="1000" y2="${T+ph*(1-t)}"/>`).join("");
  const bw=Math.max(4,Math.min(16,760/n));
  const bars=rows.map((r,i)=>`<rect x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
- const hasScm=rows.some(r=>perfNum(r.scm)!==0);
- const scmLine=hasScm?`<polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${rows.map((r,i)=>`${centerX(i)},${y(r.scm)}`).join(" ")}"/>`:"";
+ const scmLine=perfScmSvg(rows,centerX,y);
 
  const calendarBands=[],mondayLabels=[],mondayLines=[];
  rows.forEach((r,i)=>{
@@ -2261,8 +2262,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
    const grids=[.25,.5,.75,1].map(t=>`<line x1="0" y1="${T+ph*(1-t)}" x2="1000" y2="${T+ph*(1-t)}"/>`).join("");
    const bw=Math.max(4,Math.min(16,760/n));
    const bars=rows.map((r,i)=>`<rect class="p-detail-sales-bar" data-sales-date="${esc(r.date||"")}" data-sales-units="${perfNum(r.erp)}" x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
-   const hasScm=rows.some(r=>perfNum(r.scm)!==0);
-   const scmLine=hasScm?`<polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${rows.map((r,i)=>`${centerX(i)},${y(r.scm)}`).join(" ")}"/>`:"";
+   const scmLine=perfScmSvg(rows,centerX,y);
 
    const calendarBands=[],mondayLabels=[],mondayLines=[];
    rows.forEach((r,i)=>{
@@ -2349,8 +2349,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
    const grids=[.25,.5,.75,1].map(t=>`<line x1="0" y1="${T+ph*(1-t)}" x2="1000" y2="${T+ph*(1-t)}"/>`).join("");
    const bw=Math.max(4,Math.min(16,760/n));
    const bars=rows.map((r,i)=>`<rect class="p-detail-sales-bar" data-sales-date="${esc(r.date||"")}" data-sales-units="${perfNum(r.erp)}" x="${centerX(i)-bw/2}" y="${y(r.erp)}" width="${bw}" height="${Math.max(0,T+ph-y(r.erp))}" rx="2"/>`).join("");
-   const hasScm=rows.some(r=>perfNum(r.scm)!==0);
-   const scmLine=hasScm?`<polyline fill="none" stroke="#316fc8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${rows.map((r,i)=>`${centerX(i)},${y(r.scm)}`).join(" ")}"/>`:"";
+   const scmLine=perfScmSvg(rows,centerX,y);
 
    const calendarBands=[],mondayLabels=[],mondayLines=[];
    rows.forEach((r,i)=>{
@@ -3054,7 +3053,7 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
 // SCM/YES24 실데이터를 기존 출간 후 성과 UI 구조에 표시합니다.
 (function(){
  const previous=window.renderPerformancePage;if(typeof previous!=="function")return;
- window.renderPerformancePage=function(r){previous(r);const rows=perfSeries(r.판매실적일별||[]),scm=rows.reduce((s,x)=>s+x.scm,0),erp=rows.reduce((s,x)=>s+x.erp,0),clients=rows.reduce((a,x)=>({k:a.k+(x.kyobo||0),y:a.y+(x.ypbooks||0),n:a.n+(x.yes24||0),l:a.l+(x.aladin||0)}),{k:0,y:0,n:0,l:0});
+ window.renderPerformancePage=function(r){previous(r);const rows=perfSeries(r.판매실적일별||[],r.SCM최종데이터일),scm=rows.reduce((s,x)=>s+(x.scm||0),0),erp=rows.reduce((s,x)=>s+x.erp,0),clients=rows.reduce((a,x)=>({k:a.k+(x.kyobo||0),y:a.y+(x.ypbooks||0),n:a.n+(x.yes24||0),l:a.l+(x.aladin||0)}),{k:0,y:0,n:0,l:0});
   const kpis=[...document.querySelectorAll("#performanceContent .p271-kpi")];if(kpis[0])kpis[0].innerHTML=`<span>SCM 누적 실판매</span><strong>${scm.toLocaleString("ko-KR")}부</strong><small>교보 ${clients.k.toLocaleString("ko-KR")} · 영풍 ${clients.y.toLocaleString("ko-KR")} · YES24 ${clients.n.toLocaleString("ko-KR")} · 알라딘 ${clients.l.toLocaleString("ko-KR")}</small>`;if(kpis[1])kpis[1].querySelector("strong").textContent=erp.toLocaleString("ko-KR")+"부";
   const legend=document.querySelector("#performanceContent .p271-legend");if(legend)legend.innerHTML='<span>SCM 일별 실판매</span><span class="erp">ERP 일별 매출부수</span>';
   const source=r.YES24구매자분포||[],latest=source.reduce((v,x)=>String(x.기준일||"")>v?String(x.기준일):v,"");const selected=source.filter(x=>String(x.기준일||"")===latest);if(selected.length){const totals=type=>selected.flatMap(x=>x.분포?.[type]||[]).reduce((a,x)=>(a[x.구간]=(a[x.구간]||0)+Number(x.수량||0),a),{}),g=totals("성별"),a=totals("연령"),known=(g.남||0)+(g.녀||0),ageTotal=Object.values(a).reduce((s,x)=>s+x,0),pct=n=>ageTotal?n/ageTotal*100:0;const ageRows=[["20대",(a["20대 초"]||0)+(a["20대 후"]||0)],["30대",(a["30대 초"]||0)+(a["30대 후"]||0)],["40대",(a["40대 초"]||0)+(a["40대 후"]||0)],["50대",(a["50대 초"]||0)+(a["50대 후"]||0)],["60대+",a["60대 이상"]||0]],max=Math.max(1,...ageRows.map(x=>pct(x[1]))),aud=document.querySelector("#performanceContent .p271-audience");if(aud)aud.innerHTML=`<div class="p271-audience-grid"><div class="p271-donut-wrap"><div class="p271-donut" style="background:conic-gradient(#2f6bd5 0 ${known?(g.남||0)/known*100:0}%,#27b7a4 0 100%)"></div><div class="p271-mini-legend"><b>YES24</b><br>남성 ${known?((g.남||0)/known*100).toFixed(1):"0.0"}%<br>여성 ${known?((g.녀||0)/known*100).toFixed(1):"0.0"}%</div></div><div class="p271-age-bars">${ageRows.map(x=>`<div class="p271-age"><div class="row"><span>${x[0]}</span><b>${pct(x[1]).toFixed(1)}%</b></div><div class="p271-track"><div class="p271-fill" style="width:${pct(x[1])/max*100}%"></div></div></div>`).join("")}</div></div><div class="p271-match"><b>기준일 ${latest}</b> · 미가입 ${Number(g.미가입||0).toLocaleString("ko-KR")}명 · 10대 이하 ${Number(a["10대 이하"]||0).toLocaleString("ko-KR")}명 · 원본 세부 구간은 DB에 그대로 보존됩니다.</div>`;}

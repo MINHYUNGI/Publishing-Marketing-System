@@ -24,6 +24,24 @@ class PerformanceAndCoverTests(unittest.TestCase):
         self.assertEqual(activity["실행정렬순서"], 20)
         self.assertEqual(activity["콘텐츠링크"][0]["콘텐츠성과ID"], "content-1")
 
+    @patch("app.security.get_youtube_api_key", return_value=None)
+    def test_performance_distinguishes_zero_scm_sales_from_uncollected_dates(self, _key):
+        tables = performance_tables()
+        tables["SCM일별실판매"] = [
+            {
+                "제품코드": "P1",
+                "판매일": "2026-08-10",
+                "거래처코드": "YES24",
+                "판매수량": 0,
+            }
+        ]
+        detail = database_with(tables).fetch_post_launch_performance("P1")
+        rows = {row["판매일"]: row for row in detail["판매실적일별"]}
+
+        self.assertEqual(detail["SCM최종데이터일"], "2026-08-10")
+        self.assertEqual(rows["2026-08-10"]["SCM실판매부수"], 0)
+        self.assertEqual(rows["2026-08-11"]["ERP출고부수"], 12)
+
     def test_mark_reference_as_cover_demotes_previous_cover(self):
         database = database_with(
             {

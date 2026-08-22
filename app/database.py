@@ -932,6 +932,11 @@ class Database:
             .select("제품코드,제품명,매출일자,매출부수,매출금액,출고부수,출고금액,반품부수,반품금액,원본파일명")
             .eq("제품코드", product_code).order("매출일자").execute()
         ).data or []
+        latest_scm_rows = (
+            self.client.table("SCM일별실판매").select("판매일")
+            .order("판매일", desc=True).limit(1).execute()
+        ).data or []
+        latest_scm_date = str(latest_scm_rows[0].get("판매일") or "") if latest_scm_rows else ""
         by_date: dict[str, dict[str, Any]] = {}
         client_fields = {"KYOBO": "SCM교보부수", "YPBOOKS": "SCM영풍부수", "YES24": "SCMYES24부수", "ALADIN": "SCM알라딘부수"}
         for row in self._fetch_scm_rows(product_code):
@@ -959,6 +964,7 @@ class Database:
         return {
             **detail,
             "판매실적일별": sales_rows,
+            "SCM최종데이터일": latest_scm_date,
             "ERP일별판매실적": erp_rows,
             "콘텐츠성과": content_rows,
             "구매자반응": buyer_rows[0] if buyer_rows else None,
