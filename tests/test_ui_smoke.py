@@ -81,6 +81,17 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn('point.sales===null?""', self.html)
         self.assertNotIn('class="social-curve"', self.html)
 
+    def test_social_chart_markers_and_date_axis_share_center_scale(self):
+        self.assertIn(".social-sales-point{position:absolute;width:6px;height:6px", self.html)
+        self.assertIn("border-radius:50%", self.html)
+        self.assertIn("x=index=>48+index/14*504,xPct=index=>8+index/14*84", self.html)
+        self.assertIn('class="post-line" x1="300"', self.html)
+        self.assertIn('left:50%', self.html)
+        self.assertIn('grid-template-columns:repeat(15,minmax(0,1fr))', self.html)
+        self.assertIn('const weekdays=["일","월","화","수","목","금","토"]', self.html)
+        self.assertIn('<small>${dateLabel(point.date)}</small>', self.html)
+        self.assertIn('point.offset===0?"d0":""', self.html)
+
     def test_bookstore_hover_and_million_won_contract(self):
         tooltips = re.findall(r"function tooltip\(row\)\{[^\r\n]+", self.html)
         self.assertTrue(tooltips)
