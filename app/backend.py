@@ -21,7 +21,7 @@ from .erp_import import choose_and_import_erp
 from .scm_import import preview_scm_sync, sync_scm_ledger
 from .scm_collection import get_scm_collection_status, plan_scm_collection, start_scm_collection, submit_scm_collection_input
 from .scm_credentials import public_settings, save_account, save_recipient, delete_recipient
-from .channel_activity import build_bookstore_timeline_rows
+from .channel_activity import build_bookstore_timeline_rows, build_social_viral_rows
 from .file_store import copy_document, copy_reference_file, save_reference_bytes
 from .security import get_openai_api_key, get_supabase_secret_key, sha256_file
 
@@ -145,6 +145,24 @@ class Backend:
             return {"ok": True, "bookstores": bookstores, "products": products, "date_from": dates[0] if dates else None, "date_to": dates[-1] if dates else None}
         except Exception as exc:
             logging.exception("주요 4개 서점 마케팅 활동 조회 실패")
+            return {"ok": False, "message": str(exc)}
+
+    def get_social_viral_marketing_dashboard(self) -> dict[str, Any]:
+        try:
+            if not self.db:
+                raise RuntimeError("Supabase가 연결되지 않았습니다.")
+            data = self.db.fetch_social_viral_dashboard_data()
+            rows = build_social_viral_rows(
+                data["contents"], data["activities"], data["executions"], data["products"],
+                data["marketing_products"], data["scm_rows"], data["scm_date_min"], data["scm_date_max"],
+            )
+            products = sorted(
+                ({"제품코드": code, "제품명": product.get("제품명") or code} for code, product in data["products"].items() if any(str(row.get("제품코드") or "") == code for row in rows)),
+                key=lambda row: str(row["제품명"]),
+            )
+            return {"ok": True, "rows": rows, "products": products, "scm_date_min": data["scm_date_min"], "scm_date_max": data["scm_date_max"]}
+        except Exception as exc:
+            logging.exception("SNS·바이럴 마케팅 현황 조회 실패")
             return {"ok": False, "message": str(exc)}
 
     def open_external_url(self, url: str) -> dict[str, Any]:

@@ -2,12 +2,53 @@ from __future__ import annotations
 
 import unittest
 
-from app.channel_activity import build_bookstore_timeline_rows, classify_bookstore, classify_product_category
+from app.channel_activity import build_bookstore_timeline_rows, build_social_viral_rows, classify_bookstore, classify_product_category
 from app.backend import Backend
 from tests.fakes import database_with
 
 
 class ChannelActivityTests(unittest.TestCase):
+    def test_social_dashboard_calculates_relative_scm_and_missing_future(self):
+        activities = [{"활동ID":"A1","제품코드":"P1","활동분류":"SNS·바이럴","채널또는매체":"YouTube","활동명":"저자 출연"}]
+        contents = [
+            {"콘텐츠성과ID":"C1","활동ID":"A1","제품코드":"P1","콘텐츠명":"영상 1","게시일":"2026-08-10"},
+            {"콘텐츠성과ID":"C2","활동ID":"A1","제품코드":"P1","콘텐츠명":"영상 2","게시일":"2026-08-13"},
+        ]
+        scm = []
+        for day, quantity in (("2026-08-03",7),("2026-08-04",14),("2026-08-10",30),("2026-08-11",40),("2026-08-12",50)):
+            scm.extend([
+                {"제품코드":"P1","판매일":day,"거래처코드":"KYOBO","판매수량":quantity},
+                {"제품코드":"P1","판매일":day,"거래처코드":"YES24","판매수량":1},
+                {"제품코드":"P1","판매일":day,"거래처코드":"OTHER","판매수량":999},
+            ])
+        rows = build_social_viral_rows(contents, activities, [{"원본활동ID":"A1","실제비용":7000000}], {"P1":{"제품명":"테스트 도서","최종대분류":"03. 단행본"}}, {"P1":{"출간일":"2026-08-01"}}, scm, "2026-08-01", "2026-08-12")
+        first = next(row for row in rows if row["콘텐츠성과ID"] == "C1")
+        self.assertEqual(first["게시일실판매"], 31)
+        self.assertAlmostEqual(first["게시전7일일평균"], 23 / 7)
+        self.assertEqual(first["게시후7일누적"], 92)
+        self.assertEqual(first["게시후집계일수"], 2)
+        self.assertIsNone(first["판매포인트"][-1]["sales"])
+        self.assertEqual(first["동기간SNS게시일"], ["2026-08-13"])
+        self.assertEqual(first["실제집행비용"], 7000000)
+        self.assertEqual(first["도서명"], "테스트 도서")
+
+    def test_social_dashboard_query_batches_contents_instead_of_n_plus_one(self):
+        db = database_with({
+            "콘텐츠성과":[
+                {"콘텐츠성과ID":"C1","제품코드":"P1","활동ID":"A1","게시일":"2026-08-10"},
+                {"콘텐츠성과ID":"C2","제품코드":"P1","활동ID":"A1","게시일":"2026-08-11"},
+            ],
+            "마케팅활동":[{"활동ID":"A1","제품코드":"P1","활동분류":"SNS·바이럴","시작일":"2026-08-10"}],
+            "마케팅실행활동":[],
+            "제품인덱스":[{"제품코드":"P1","제품명":"도서"}],
+            "마케팅대상제품":[{"제품코드":"P1","출간일":"2026-08-01"}],
+            "SCM일별실판매":[{"제품코드":"P1","판매일":"2026-08-10","거래처코드":"YES24","판매수량":3}],
+        })
+        result = db.fetch_social_viral_dashboard_data()
+        self.assertEqual(len(result["contents"]), 2)
+        scm_selects = [call for call in db.client.calls if call[0] == "SCM일별실판매" and call[1] == "select"]
+        self.assertEqual(len(scm_selects), 3)  # one product batch + global min/max
+
     def test_bookstore_aliases_are_classified_without_changing_source(self):
         cases = {"교보문고 광화문점":"교보문고", "영풍 스타필드":"영풍문고", "예스24 온라인":"YES24", "yes24":"YES24", "Yes24":"YES24", "알라딘 강남점":"알라딘"}
         for source, expected in cases.items():

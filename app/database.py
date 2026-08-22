@@ -116,6 +116,52 @@ class Database:
             ).data or [])
         return rows, marketing_products, scm_rows, execution_rows, channel_products
 
+    def fetch_social_viral_dashboard_data(self) -> dict[str, Any]:
+        """Fetch social contents and their related product/SCM data in bounded batch queries."""
+        def paged(table: str, columns: str, order: str) -> list[dict[str, Any]]:
+            result: list[dict[str, Any]] = []
+            for start in range(0, 1000000, 1000):
+                batch = self.client.table(table).select(columns).order(order).range(start, start + 999).execute().data or []
+                result.extend(batch)
+                if len(batch) < 1000:
+                    break
+            return result
+
+        contents = paged("콘텐츠성과", "콘텐츠성과ID,제품코드,활동ID,실행활동ID,플랫폼,채널명,콘텐츠명,게시일,URL,조회수,좋아요수,댓글수,공유수,저장수,클릭수,원천구분,비고,링크순서", "게시일")
+        contents = [row for row in contents if row.get("게시일")]
+        activities = paged("마케팅활동", "활동ID,제품코드,활동분류,채널또는매체,활동명,시작일,종료일,일정비고,비용,URL,비고", "시작일")
+        executions = paged("마케팅실행활동", "실행활동ID,원본활동ID,제품코드,실제시작일,실제종료일,실제비용", "실제시작일")
+        execution_by_id = {str(row.get("실행활동ID")): row for row in executions if row.get("실행활동ID")}
+        activity_by_id = {str(row.get("활동ID")): row for row in activities if row.get("활동ID")}
+        codes = sorted({
+            str(row.get("제품코드") or execution_by_id.get(str(row.get("실행활동ID") or ""), {}).get("제품코드") or activity_by_id.get(str(row.get("활동ID") or ""), {}).get("제품코드") or "")
+            for row in contents
+        } - {""})
+        products: dict[str, dict[str, Any]] = {}
+        marketing_products: dict[str, dict[str, Any]] = {}
+        scm_rows: list[dict[str, Any]] = []
+        for offset in range(0, len(codes), 200):
+            code_batch = codes[offset:offset + 200]
+            product_rows = self.client.table("제품인덱스").select("제품코드,제품명,최종대분류,최종중분류").in_("제품코드", code_batch).execute().data or []
+            products.update({str(row["제품코드"]): row for row in product_rows})
+            marketing_rows = self.client.table("마케팅대상제품").select("제품코드,출간일").in_("제품코드", code_batch).execute().data or []
+            marketing_products.update({str(row["제품코드"]): row for row in marketing_rows})
+            start = 0
+            while code_batch:
+                batch = self.client.table("SCM일별실판매").select("제품코드,판매일,거래처코드,판매수량").in_("제품코드", code_batch).order("판매일").range(start, start + 999).execute().data or []
+                scm_rows.extend(batch)
+                if len(batch) < 1000:
+                    break
+                start += 1000
+        first = self.client.table("SCM일별실판매").select("판매일").order("판매일").limit(1).execute().data or []
+        last = self.client.table("SCM일별실판매").select("판매일").order("판매일", desc=True).limit(1).execute().data or []
+        return {
+            "contents": contents, "activities": activities, "executions": executions,
+            "products": products, "marketing_products": marketing_products, "scm_rows": scm_rows,
+            "scm_date_min": str(first[0].get("판매일") or "") if first else "",
+            "scm_date_max": str(last[0].get("판매일") or "") if last else "",
+        }
+
     def ensure_marketing_product(self, product_code: str) -> None:
         existing = (
             self.client.table("마케팅대상제품")

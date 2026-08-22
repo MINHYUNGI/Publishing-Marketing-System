@@ -782,6 +782,7 @@ body.p299-resizing-timeline *{
 .bookstore-product-filter{min-width:280px;flex:1}.bookstore-product-filter input{width:100%}.bookstore-section.unified>summary{cursor:default}.bookstore-section.unified>summary:before{content:'▾'}
 .bookstore-grid.unified{--bookstore-info-width:310px;--bookstore-cost-width:96px;position:relative;min-width:946px}.bookstore-grid.unified .bookstore-axis,.bookstore-grid.unified .bookstore-product-row,.bookstore-grid.unified .bookstore-activity-row,.bookstore-grid.unified .bookstore-category-row{display:grid;grid-template-columns:var(--bookstore-info-width) var(--bookstore-cost-width) minmax(600px,1fr)}.bookstore-grid.unified .bookstore-axis-label{grid-column:auto}.bookstore-category-row{margin-top:14px;border-top:1px solid #c9d8e8;border-bottom:1px solid #c9d8e8}.bookstore-grid.unified .bookstore-category-row>div{grid-column:1/-1;padding:10px 12px;background:#e7f0fa;color:#183d64;font-size:calc(var(--font-md) * var(--font-scale));font-weight:900}.bookstore-product-cell{display:flex;align-items:center;padding:10px 12px;background:#f8fafc;color:#26364a;font-weight:800}.bookstore-cost-cell{display:flex;align-items:center;justify-content:flex-end;padding:9px 7px;border-left:1px solid #e2e8f0;background:#f8fafc;color:#344054;font-weight:800;white-space:nowrap}.bookstore-product-row{border-top:1px solid #e2e8f0}.bookstore-product-row>div:last-child{background:#f8fafc}.bookstore-activity-row .bookstore-activity-label{border-right:1px solid #edf1f5}.bookstore-activity-row .bookstore-cost-cell{background:#fff}.bookstore-activity-bar{z-index:2;display:flex;align-items:center;justify-content:center;padding:0 7px;overflow:visible;white-space:nowrap;font-size:11px;font-weight:800}.bookstore-sales-label{color:#fff}.bookstore-activity-bar.short .bookstore-sales-label{position:absolute;left:100%;margin-left:5px;color:#344054;background:#fff;border:1px solid #d8e1eb;border-radius:4px;padding:1px 4px;box-shadow:0 1px 3px rgba(15,23,42,.08)}.bookstore-activity-bar.short.edge .bookstore-sales-label{left:auto;right:100%;margin-left:0;margin-right:5px}.bookstore-weekend{position:absolute;top:0;bottom:0;pointer-events:none;z-index:0}.bookstore-weekend.sat{background:rgba(111,145,180,.11)}.bookstore-weekend.sun{background:rgba(215,103,103,.10)}.bookstore-monday-line{position:absolute;top:0;bottom:0;width:1px;background:#dce4ed;z-index:1;pointer-events:none}.bookstore-axis .bookstore-monday-line{background:#b9c6d4}.bookstore-resizer{position:absolute;z-index:8;top:0;bottom:0;left:calc(var(--bookstore-info-width) + var(--bookstore-cost-width) - 4px);width:9px;cursor:col-resize;background:transparent}.bookstore-resizer:after{content:'';position:absolute;left:4px;top:0;bottom:0;width:1px;background:#b8c5d3}.bookstore-resizer:hover:after,.bookstore-resizer.dragging:after{width:3px;left:3px;background:#316fc8}.bookstore-resizing{cursor:col-resize!important;user-select:none!important}
 .bookstore-activity-label.bookstore-editable{cursor:pointer}.bookstore-activity-label.bookstore-editable:hover{background:#eef5ff;box-shadow:inset 3px 0 #316fc8}
+.social-dashboard{display:grid;gap:14px}.social-category{padding:10px 14px;border:1px solid #c9d8e8;border-radius:9px;background:#e7f0fa;color:#183d64;font-weight:900}.social-book{border:1px solid #d7e0ea;border-radius:10px;background:#fff;overflow:hidden}.social-book-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:#f8fafc;color:#26364a;font-weight:900}.social-book-head span{color:#6b7788;font-size:12px;font-weight:600}.social-content{display:grid;grid-template-columns:minmax(260px,1.1fr) minmax(420px,1.9fr);gap:18px;padding:15px 16px;border-top:1px solid #edf1f5}.social-content-info{min-width:0}.social-content-title{color:#23364d;font-weight:900;cursor:pointer}.social-content-title:hover{color:#2f6bd5}.social-content-meta{margin-top:5px;color:#68778a;font-size:12px}.social-kpis{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}.social-kpi{padding:6px 9px;border-radius:7px;background:#f2f6fb;color:#42546a;font-size:12px}.social-kpi b{color:#173d68}.social-overlap{margin-top:8px;color:#a15b13;font-size:12px;font-weight:800}.social-chart{position:relative;height:118px;padding:8px 4px 20px}.social-chart svg{width:100%;height:92px;overflow:visible}.social-chart .grid{stroke:#e4eaf1;stroke-width:1}.social-chart .post-line{stroke:#d9485f;stroke-width:2;stroke-dasharray:4 3}.social-chart .sales-line{fill:none;stroke:#316fc8;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.social-chart .sales-dot{fill:#316fc8}.social-chart-labels{position:absolute;left:4px;right:4px;bottom:0;display:grid;grid-template-columns:repeat(15,1fr);font-size:10px;color:#788596;text-align:center}.social-chart-post{position:absolute;top:0;left:50%;transform:translateX(-50%);color:#c8324a;font-size:11px;font-weight:900}.social-tip{position:fixed;display:none;z-index:14000;padding:8px 10px;border-radius:7px;background:#1f2937;color:#fff;font-size:12px;line-height:1.5;white-space:pre-line;pointer-events:none}.social-tip.show{display:block}@media(max-width:1100px){.social-content{grid-template-columns:1fr}.social-chart{margin-top:4px}}
 @media(max-width:1250px){.bookstore-title{display:block}.bookstore-toolbar.compact{margin-top:12px;flex-wrap:wrap}.bookstore-load-state{text-align:left;margin-top:0}}
 </style>
 
@@ -822,6 +823,7 @@ body.p299-resizing-timeline *{
   <div class="nav-group">CHANNEL</div>
   <div class="channel-nav-parent"><span class="nav-icon">◇</span><span class="nav-label">채널별 마케팅 활동 현황</span></div>
   <button id="navBookstore" class="channel-nav-child" title="주요 4개 서점 현황" onclick="showAppPage('bookstore')"><span class="nav-icon">└</span><span class="nav-label">주요 4개 서점 현황</span></button>
+  <button id="navSocial" class="channel-nav-child" title="SNS·바이럴 마케팅 현황" onclick="showAppPage('social')"><span class="nav-icon">└</span><span class="nav-label">SNS·바이럴 마케팅 현황</span></button>
   <div class="nav-group result-group">RESULT</div>
   <button id="navPerformance" title="신간 마케팅 성과 분석" onclick="showAppPage('performance')"><span class="nav-icon">▥</span><span class="nav-label">신간 마케팅 성과 분석</span></button>
 </nav>
@@ -939,6 +941,12 @@ body.p299-resizing-timeline *{
   <div class="title bookstore-title"><div><h1>주요 4개 서점 마케팅 실행 현황</h1><div class="sub">교보문고·영풍문고·YES24·알라딘의 마케팅 활동을 공통 날짜축에서 확인합니다.</div></div><div class="bookstore-toolbar compact"><label class="bookstore-product-filter">도서 검색·선택 <input id="bookstoreProductFilter" list="bookstoreProductOptions" placeholder="제품명을 입력하거나 선택" onchange="renderMajorBookstoreTimeline()"><datalist id="bookstoreProductOptions"></datalist></label><label>시작일 <input id="bookstoreDateFrom" type="date"></label><label>종료일 <input id="bookstoreDateTo" type="date"></label><button class="btn primary" onclick="renderMajorBookstoreTimeline()">조회</button><button class="btn light" onclick="loadMajorBookstoreTimeline(true)">새로고침</button></div></div>
   <div id="bookstoreLoadState" class="bookstore-load-state">데이터를 불러오는 중...</div>
   <div id="bookstoreTimelineRoot"><div class="perf-empty">메뉴를 선택하면 주요 서점 활동을 불러옵니다.</div></div>
+</div>
+
+<div id="socialPage" class="page-view">
+  <div class="title bookstore-title"><div><h1>SNS·바이럴 마케팅 현황</h1><div class="sub">SNS 콘텐츠 게시일 전후의 SCM 실판매 변화를 D-7부터 D+7까지 비교합니다.</div></div><div class="bookstore-toolbar compact"><label class="bookstore-product-filter">도서 검색·선택 <input id="socialProductFilter" list="socialProductOptions" placeholder="제품명을 입력하거나 선택" onchange="renderSocialViralDashboard()"><datalist id="socialProductOptions"></datalist></label><button class="btn primary" onclick="renderSocialViralDashboard()">조회</button><button class="btn light" onclick="loadSocialViralDashboard(true)">새로고침</button></div></div>
+  <div id="socialLoadState" class="bookstore-load-state">데이터를 불러오는 중...</div>
+  <div id="socialDashboardRoot"><div class="perf-empty">메뉴를 선택하면 SNS 게시물별 판매반응을 불러옵니다.</div></div>
 </div>
 
 <div id="detailPage" class="page-view">
@@ -1347,23 +1355,26 @@ let currentDetailCode=null,currentDetailTitle="",currentDetailActivityCount=0,cu
 let editingStrategyField=null;
 let editingActivityId=null,editingActivitySource="detail",editingActivitySnapshot=null;
 function showAppPage(page){
- const upload=page==="upload",detail=page==="detail",performance=page==="performance",scm=page==="scm",bookstore=page==="bookstore";
+ const upload=page==="upload",detail=page==="detail",performance=page==="performance",scm=page==="scm",bookstore=page==="bookstore",social=page==="social";
  document.getElementById("uploadPage").classList.toggle("active",upload);
  document.getElementById("detailPage").classList.toggle("active",detail);
  document.getElementById("performancePage").classList.toggle("active",performance);
  document.getElementById("scmPage").classList.toggle("active",scm);
  document.getElementById("bookstorePage").classList.toggle("active",bookstore);
+ document.getElementById("socialPage").classList.toggle("active",social);
  document.getElementById("navUpload").classList.toggle("active",upload);
  document.getElementById("navDetail").classList.toggle("active",detail);
  document.getElementById("navPerformance").classList.toggle("active",performance);
  document.getElementById("navScm").classList.toggle("active",scm);
  document.getElementById("navBookstore").classList.toggle("active",bookstore);
- pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":performance?"신간 마케팅 성과 분석":bookstore?"주요 4개 서점 현황":"일별 실판매 현황";
- pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":bookstore?"주요 서점별 마케팅 실행 일정을 공통 날짜축으로 조회합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
+ document.getElementById("navSocial").classList.toggle("active",social);
+ pageHeaderTitle.textContent=upload?"AI 문서 등록":detail?"마케팅 기획 상세":performance?"신간 마케팅 성과 분석":bookstore?"주요 4개 서점 현황":social?"SNS·바이럴 마케팅 현황":"일별 실판매 현황";
+ pageHeaderSub.textContent=upload?"제품은 사람이 제품인덱스에서 연결하고, AI는 마케팅활동을 추출합니다.":detail?"등록된 마케팅 기획과 활동을 도서별로 조회합니다.":performance?"출간 전 계획과 출간 후 판매·실행 결과를 연결해 도서별 경과를 확인합니다.":bookstore?"주요 서점별 마케팅 실행 일정을 공통 날짜축으로 조회합니다.":social?"SNS 게시일을 기준으로 전후 SCM 실판매 변화를 비교합니다.":"기존 실판매 대시보드의 화면과 기능을 그대로 사용합니다.";
  if(detail) loadMarketingPlanList();
  if(performance) loadPerformancePlanList();
  if(scm){const frame=document.getElementById("scmDashboardFrame");if(!frame.getAttribute("src"))frame.setAttribute("src","scm-dashboard.html");}
  if(bookstore)loadMajorBookstoreTimeline();
+ if(social)loadSocialViralDashboard();
 }
 function cleanProductName(v){return String(v||"").replace(/^전문>/,"").replace("100세까지월500만원받는ETF연금수업","100살까지 월 500만 원 받는 ETF 연금 수업");}
 function detailMoney(v){return Number(v||0).toLocaleString("ko-KR")+"원";}
@@ -1539,13 +1550,13 @@ function openNewActivityEditor(){
  activityEditorModal.classList.add("show");setTimeout(()=>editActivityName.focus(),50);
 }
 function openSharedActivityEditor(a,source="detail"){
- if(!a?.활동ID)return;editingActivityId=a.활동ID;editingActivitySource=source;editingActivitySnapshot={...a};activityEditorTitle.textContent="마케팅 활동 수정";deleteActivityBtn.disabled=false;editActivityCostLabel.textContent=source==="bookstore"?"실제 집행 비용":"비용";
- editActivityCategory.value=a.활동분류||"서점 마케팅";editActivityChannel.value=a.채널또는매체||"";editActivityName.value=a.활동명||"";editActivityStart.value=a.시작일||"";editActivityEnd.value=a.종료일||"";editActivityCost.value=Number(source==="bookstore"?a.실제집행비용:a.비용||0).toLocaleString("ko-KR");editActivityUrl.value=a.URL||"";editActivitySchedule.value=a.일정비고||"";editActivityNote.value=a.비고||"";
+ if(!a?.활동ID)return;editingActivityId=a.활동ID;editingActivitySource=source;editingActivitySnapshot={...a};activityEditorTitle.textContent="마케팅 활동 수정";deleteActivityBtn.disabled=false;editActivityCostLabel.textContent=["bookstore","social"].includes(source)?"실제 집행 비용":"비용";
+ editActivityCategory.value=a.활동분류||"서점 마케팅";editActivityChannel.value=a.채널또는매체||"";editActivityName.value=a.활동명||"";editActivityStart.value=a.시작일||"";editActivityEnd.value=a.종료일||"";editActivityCost.value=Number(["bookstore","social"].includes(source)?a.실제집행비용:a.비용||0).toLocaleString("ko-KR");editActivityUrl.value=a.URL||"";editActivitySchedule.value=a.일정비고||"";editActivityNote.value=a.비고||"";
  activityEditorModal.classList.add("show");setTimeout(()=>editActivityName.focus(),50);
 }
 function openActivityEditor(activityId){const a=currentDetailActivities.find(x=>String(x.활동ID)===String(activityId));if(a)openSharedActivityEditor(a,"detail");}
 function closeActivityEditor(){activityEditorModal.classList.remove("show");editingActivityId=null;editingActivitySource="detail";editingActivitySnapshot=null;editActivityCostLabel.textContent="비용";}
-function activityEditorPayload(){const amount=editorCostValue(),payload={activity_category:editActivityCategory.value,channel_or_media:editActivityChannel.value.trim(),activity_name:editActivityName.value.trim(),start_date:editActivityStart.value||null,end_date:editActivityEnd.value||null,cost:editingActivitySource==="bookstore"?Number(editingActivitySnapshot?.비용||0):amount,url:editActivityUrl.value.trim()||null,schedule_note:editActivitySchedule.value.trim()||null,note:editActivityNote.value.trim()||null};if(editingActivitySource==="bookstore")payload.actual_cost=amount;return payload;}
+function activityEditorPayload(){const amount=editorCostValue(),channelView=["bookstore","social"].includes(editingActivitySource),payload={activity_category:editActivityCategory.value,channel_or_media:editActivityChannel.value.trim(),activity_name:editActivityName.value.trim(),start_date:editActivityStart.value||null,end_date:editActivityEnd.value||null,cost:channelView?Number(editingActivitySnapshot?.비용||0):amount,url:editActivityUrl.value.trim()||null,schedule_note:editActivitySchedule.value.trim()||null,note:editActivityNote.value.trim()||null};if(channelView)payload.actual_cost=amount;return payload;}
 async function saveActivityFromEditor(){
  const payload=activityEditorPayload();if(!payload.activity_name){toast("마케팅 활동명을 입력해 주세요.");editActivityName.focus();return;}
  if(payload.start_date&&payload.end_date&&payload.end_date<payload.start_date){toast("종료일은 시작일보다 빠를 수 없습니다.");return;}
@@ -1554,7 +1565,7 @@ async function saveActivityFromEditor(){
  const r=editingActivityId?await pywebview.api.update_marketing_activity(editingActivityId,payload):await pywebview.api.create_marketing_activity(currentDetailCode,payload);
   if(!r.ok){toast(r.message||"저장에 실패했습니다.");return;}
   const wasNew=!editingActivityId,source=editingActivitySource;closeActivityEditor();toast(wasNew?"마케팅 활동을 추가했습니다.":"마케팅 활동을 수정했습니다.");marketingPlanList=[];
-  if(source==="bookstore")await loadMajorBookstoreTimeline(true);else await loadMarketingPlanDetail(currentDetailCode);
+  if(source==="bookstore")await loadMajorBookstoreTimeline(true);else if(source==="social")await loadSocialViralDashboard(true);else await loadMarketingPlanDetail(currentDetailCode);
  }catch(e){toast("활동 저장 실패: "+e);}finally{activityEditorBox.classList.remove("activity-saving");}
 }
 async function deleteActivityFromEditor(){
@@ -1563,7 +1574,7 @@ async function deleteActivityFromEditor(){
  activityEditorBox.classList.add("activity-saving");
  try{
   const r=await pywebview.api.delete_marketing_activity(editingActivityId);if(!r.ok){toast(r.message||"삭제에 실패했습니다.");return;}
-  closeActivityEditor();toast("마케팅 활동을 삭제했습니다.");marketingPlanList=[];if(source==="bookstore")await loadMajorBookstoreTimeline(true);else await loadMarketingPlanDetail(currentDetailCode);
+  closeActivityEditor();toast("마케팅 활동을 삭제했습니다.");marketingPlanList=[];if(source==="bookstore")await loadMajorBookstoreTimeline(true);else if(source==="social")await loadSocialViralDashboard(true);else await loadMarketingPlanDetail(currentDetailCode);
  }catch(e){toast("활동 삭제 실패: "+e);}finally{activityEditorBox.classList.remove("activity-saving");}
 }
 document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(activityEditorModal.classList.contains("show"))closeActivityEditor();if(referenceFileModal.classList.contains("show"))closeReferenceFileModal();if(strategyEditorModal.classList.contains("show"))closeStrategyEditor();});
@@ -2133,8 +2144,8 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
  }
 
  window.showDataAdminPage=function(){
-   ["uploadPage","detailPage","performancePage","scmPage","bookstorePage","dataAdminPage"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="dataAdminPage");});
-   ["navUpload","navDetail","navPerformance","navScm","navBookstore","navDataAdmin"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="navDataAdmin");});
+   ["uploadPage","detailPage","performancePage","scmPage","bookstorePage","socialPage","dataAdminPage"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="dataAdminPage");});
+   ["navUpload","navDetail","navPerformance","navScm","navBookstore","navSocial","navDataAdmin"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle("active",id==="navDataAdmin");});
    const title=document.getElementById("pageHeaderTitle"),sub=document.getElementById("pageHeaderSub");
    if(title)title.textContent="데이터 관리";
    if(sub)sub.textContent="ERP·SCM 등 성과 원천 데이터를 업로드하고 관리합니다.";
@@ -3144,6 +3155,32 @@ function buildSalesGoalSeries(businessMonthly, marketingGoal, pubDate){
   groups.forEach(items=>{productCount++;const first=items[0],category=first.분류||"단행본";if(category!==lastCategory){body+=`<div class="bookstore-category-row"><div>${esc(category)}</div></div>`;lastCategory=category;}const actualCost=items.reduce((sum,row)=>sum+Number(row.실제집행비용||0),0);body+=`<div class="bookstore-product-row"><div class="bookstore-product-cell">${esc(bookstoreBookName(first))}</div><div class="bookstore-cost-cell">${bookstoreMillionWon(actualCost)}</div><div></div></div>`;items.forEach(row=>{let bar="";if(row.시작일||row.종료일){const rawStart=parse(row.시작일||row.종료일),rawEnd=parse(row.종료일||row.시작일),shownStart=rawStart<start?start:rawStart,shownEnd=rawEnd>end?end:rawEnd,left=(shownStart-start)/dayMs/total*100,duration=Math.max(1,Math.round((rawEnd-rawStart)/dayMs)+1),width=Math.max(100/total,(Math.round((shownEnd-shownStart)/dayMs)+1)/total*100),sales=Number(row.실판매부수||0),short=duration===1?" short":"",edge=left>88?" edge":"";bar=`<span class="bookstore-activity-bar${short}${edge} ${row.서점==="YES24"?"yes24":row.서점==="알라딘"?"aladin":row.서점==="영풍문고"?"ypbooks":""}" style="left:${left}%;width:${Math.min(width,100-left)}%" data-bookstore-tip="${encodeURIComponent(tooltip(row))}"><span class="bookstore-sales-label">${sales.toLocaleString("ko-KR")}부</span></span>`;}body+=`<div class="bookstore-activity-row"><div class="bookstore-activity-label bookstore-editable" title="더블클릭하여 활동 수정" ondblclick="openBookstoreActivityEditor('${esc(row.활동ID||"")}')"><b>${esc(row.활동명||"활동명 없음")}</b> · ${esc(row.서점||"")}</div><div class="bookstore-cost-cell">${bookstoreMillionWon(row.실제집행비용)}</div><div class="bookstore-track">${cal.bands}${bar}</div></div>`;});});
   if(!rows.length)body+=`<div class="bookstore-empty">선택한 도서와 기간에 등록된 활동이 없습니다.</div>`;root.innerHTML=`<details class="bookstore-section unified" open><summary>주요 4개 서점<span>도서 ${productCount.toLocaleString("ko-KR")}권 · 활동 ${rows.length.toLocaleString("ko-KR")}건</span></summary><div class="bookstore-scroll"><div class="bookstore-grid unified">${body}<div class="bookstore-resizer" title="드래그해서 도서명·활동 영역 너비 조절"></div></div></div></details>`;installResizer(root.querySelector(".bookstore-grid"));state.textContent=`${iso(start)} ~ ${iso(end)} · 도서 ${productCount.toLocaleString("ko-KR")}권 · 활동 ${rows.length.toLocaleString("ko-KR")}건`;
  };
+})();
+</script>
+<script>
+// SNS·바이럴 게시일을 D0로 맞춰 SCM 판매반응을 비교합니다.
+(function(){
+ const categories=["아동","만화","단행본"];let socialData=null,socialLoading=false;
+ const money=value=>(Math.round(Number(value||0)/100000)/10).toFixed(1)+"백만원";
+ const bookName=row=>cleanProductName(row.도서명||"제품명 미확인");
+ function setOptions(){const list=document.getElementById("socialProductOptions");if(list)list.innerHTML=(socialData?.products||[]).map(row=>`<option value="${esc(cleanProductName(row.제품명||row.제품코드))}"></option>`).join("");}
+ window.loadSocialViralDashboard=async function(force){
+  if(socialLoading)return;if(socialData&&!force){renderSocialViralDashboard();return;}socialLoading=true;const state=document.getElementById("socialLoadState");state.textContent="Supabase에서 불러오는 중...";
+  try{const result=await pywebview.api.get_social_viral_marketing_dashboard();if(!result.ok)throw new Error(result.message||"조회 실패");socialData=result;setOptions();renderSocialViralDashboard();}
+  catch(error){state.textContent="조회 실패";document.getElementById("socialDashboardRoot").innerHTML=`<div class="bookstore-empty">${esc(error?.message||error)}</div>`;}finally{socialLoading=false;}
+ };
+ function chart(row){
+  const points=row.판매포인트||[],values=points.filter(point=>point.sales!==null).map(point=>Number(point.sales||0)),max=Math.max(1,...values),x=index=>index/14*100,y=value=>82-Number(value||0)/max*70;
+  const segments=[];let current=[];const flush=()=>{if(current.length)segments.push(current);current=[];};points.forEach((point,index)=>{if(point.sales===null){flush();return;}current.push(`${x(index)},${y(point.sales)}`);});flush();
+  const lines=segments.map(segment=>segment.length===1?"":`<polyline class="sales-line" points="${segment.join(" ")}"/>`).join("");
+  const dots=points.map((point,index)=>point.sales===null?"":`<circle class="sales-dot" cx="${x(index)}" cy="${y(point.sales)}" r="2.8" data-social-tip="${encodeURIComponent(`${point.date}\n${point.offset===0?"게시일\n":""}실판매 ${Number(point.sales).toLocaleString("ko-KR")}부`)}"/>`).join("");
+  const labels=points.map(point=>`<span>${point.offset===0?"D0":point.offset>0?`+${point.offset}`:`${point.offset}`}</span>`).join("");
+  return `<div class="social-chart"><span class="social-chart-post">게시일</span><svg viewBox="0 0 100 92" preserveAspectRatio="none"><line class="grid" x1="0" y1="82" x2="100" y2="82"/><line class="post-line" x1="50" y1="5" x2="50" y2="86"/>${lines}${dots}</svg><div class="social-chart-labels">${labels}</div></div>`;
+ }
+ function contentHtml(row){const average=row.게시전7일일평균===null?"집계 전":`${Number(row.게시전7일일평균).toFixed(1)}부`,daySales=row.게시일실판매===null?"미수집":`${Number(row.게시일실판매).toLocaleString("ko-KR")}부`,after=`${Number(row.게시후7일누적||0).toLocaleString("ko-KR")}부`,progress=Number(row.게시후집계일수||0),collecting=progress<7?` · ${progress}/7일 집계`:"",overlap=(row.동기간SNS게시일||[]).length?`<div class="social-overlap">동기간 SNS 활동 ${(row.동기간SNS게시일||[]).length}건 · ${(row.동기간SNS게시일||[]).join(", ")}</div>`:"",editable=row.활동ID?`ondblclick="openSocialActivityEditor('${esc(row.활동ID)}')" title="더블클릭하여 활동 수정"`:"";return `<div class="social-content"><div class="social-content-info"><div class="social-content-title" ${editable}>${esc(row.콘텐츠명||row.활동명||"콘텐츠명 없음")}</div><div class="social-content-meta">${esc(row.채널명||row.플랫폼||row.채널또는매체||"채널 미입력")} · 게시일 ${esc(row.게시일||"-")} · 조회 ${Number(row.조회수||0).toLocaleString("ko-KR")} · 좋아요 ${Number(row.좋아요수||0).toLocaleString("ko-KR")}</div><div class="social-kpis"><span class="social-kpi">게시일 <b>${daySales}</b></span><span class="social-kpi">게시 후 7일 <b>${after}</b>${collecting}</span><span class="social-kpi">게시 전 일평균 <b>${average}</b></span><span class="social-kpi">실제 집행비용 <b>${money(row.실제집행비용)}</b></span></div>${overlap}</div>${chart(row)}</div>`;}
+ window.openSocialActivityEditor=function(activityId){const row=(socialData?.rows||[]).find(item=>String(item.활동ID||"")===String(activityId));if(row)openSharedActivityEditor(row,"social");};
+ window.renderSocialViralDashboard=function(){if(!socialData)return;const query=String(document.getElementById("socialProductFilter")?.value||"").trim().toLocaleLowerCase("ko"),rows=(socialData.rows||[]).filter(row=>!query||bookName(row).toLocaleLowerCase("ko").includes(query)||String(row.제품코드||"").toLocaleLowerCase("ko").includes(query));let html="";categories.forEach(category=>{const categoryRows=rows.filter(row=>row.분류===category);if(!categoryRows.length)return;html+=`<div class="social-category">${category}</div>`;const books=new Map();categoryRows.forEach(row=>{const key=String(row.제품코드||row.도서명);if(!books.has(key))books.set(key,[]);books.get(key).push(row);});books.forEach(items=>{const first=items[0];html+=`<section class="social-book"><div class="social-book-head"><b>${esc(bookName(first))}</b><span>출간일 ${esc(first.출간일||"-")} · 콘텐츠 ${items.length}건</span></div>${items.map(contentHtml).join("")}</section>`;});});document.getElementById("socialDashboardRoot").innerHTML=`<div class="social-dashboard">${html||'<div class="bookstore-empty">선택한 도서의 SNS 콘텐츠가 없습니다.</div>'}</div>`;document.getElementById("socialLoadState").textContent=`SCM ${socialData.scm_date_min||"-"} ~ ${socialData.scm_date_max||"-"} · 도서 ${new Set(rows.map(row=>row.제품코드)).size.toLocaleString("ko-KR")}권 · 콘텐츠 ${rows.length.toLocaleString("ko-KR")}건`;};
+ const tip=document.createElement("div");tip.className="social-tip";document.body.appendChild(tip);document.addEventListener("pointerover",event=>{const target=event.target.closest?.("[data-social-tip]");if(!target)return;tip.textContent=decodeURIComponent(target.dataset.socialTip);tip.classList.add("show");});document.addEventListener("pointermove",event=>{if(!tip.classList.contains("show"))return;tip.style.left=Math.min(event.clientX+12,window.innerWidth-tip.offsetWidth-10)+"px";tip.style.top=Math.min(event.clientY+12,window.innerHeight-tip.offsetHeight-10)+"px";});document.addEventListener("pointerout",event=>{if(event.target.closest?.("[data-social-tip]"))tip.classList.remove("show");});
 })();
 </script>
 </body>
