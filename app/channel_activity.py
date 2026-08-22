@@ -99,7 +99,13 @@ def build_social_viral_rows(
             sales[(code, sale_day)] = sales.get((code, sale_day), 0) + int(row.get("판매수량") or 0)
 
     prepared: list[tuple[dict[str, Any], dict[str, Any], str, str]] = []
+    seen_content_ids: set[str] = set()
     for content in contents:
+        content_id = str(content.get("콘텐츠성과ID") or "")
+        if content_id and content_id in seen_content_ids:
+            continue
+        if content_id:
+            seen_content_ids.add(content_id)
         execution = execution_by_id.get(str(content.get("실행활동ID") or ""), {})
         activity_id = str(content.get("활동ID") or execution.get("원본활동ID") or "")
         activity = social_activities.get(activity_id)

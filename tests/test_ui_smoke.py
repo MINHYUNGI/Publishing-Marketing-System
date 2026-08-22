@@ -45,6 +45,9 @@ class UiSmokeTests(unittest.TestCase):
             "openSocialActivityEditor",
             "게시 후 7일",
             "social-chart-post",
+            "공통 Y축 최대",
+            "social-y-label zero",
+            '<polyline class="sales-line"',
             'ondblclick="openBookstoreActivityEditor',
             "실제 집행 비용",
             'Math.round(Number(value||0)/100000)/10',
@@ -70,6 +73,13 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("function perfScmSvg(rows,centerX,y)", self.html)
         self.assertEqual(self.html.count("const scmLine=perfScmSvg(rows,centerX,y);"), 3)
         self.assertNotIn("const hasScm=rows.some", self.html)
+
+    def test_social_chart_uses_straight_segments_and_shared_book_scale(self):
+        self.assertIn('stroke-width:1.4', self.html)
+        self.assertIn('stroke-linejoin:miter', self.html)
+        self.assertIn('items.flatMap(item=>(item.판매포인트||[])', self.html)
+        self.assertIn('point.sales===null?""', self.html)
+        self.assertNotIn('class="social-curve"', self.html)
 
     def test_bookstore_hover_and_million_won_contract(self):
         tooltips = re.findall(r"function tooltip\(row\)\{[^\r\n]+", self.html)

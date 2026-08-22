@@ -12,6 +12,7 @@ class ChannelActivityTests(unittest.TestCase):
         activities = [{"활동ID":"A1","제품코드":"P1","활동분류":"SNS·바이럴","채널또는매체":"YouTube","활동명":"저자 출연"}]
         contents = [
             {"콘텐츠성과ID":"C1","활동ID":"A1","제품코드":"P1","콘텐츠명":"영상 1","게시일":"2026-08-10"},
+            {"콘텐츠성과ID":"C1","활동ID":"A1","제품코드":"P1","콘텐츠명":"중복 행","게시일":"2026-08-10"},
             {"콘텐츠성과ID":"C2","활동ID":"A1","제품코드":"P1","콘텐츠명":"영상 2","게시일":"2026-08-13"},
         ]
         scm = []
@@ -22,6 +23,7 @@ class ChannelActivityTests(unittest.TestCase):
                 {"제품코드":"P1","판매일":day,"거래처코드":"OTHER","판매수량":999},
             ])
         rows = build_social_viral_rows(contents, activities, [{"원본활동ID":"A1","실제비용":7000000}], {"P1":{"제품명":"테스트 도서","최종대분류":"03. 단행본"}}, {"P1":{"출간일":"2026-08-01"}}, scm, "2026-08-01", "2026-08-12")
+        self.assertEqual(len(rows), 2)
         first = next(row for row in rows if row["콘텐츠성과ID"] == "C1")
         self.assertEqual(first["게시일실판매"], 31)
         self.assertAlmostEqual(first["게시전7일일평균"], 23 / 7)
